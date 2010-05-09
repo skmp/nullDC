@@ -238,6 +238,7 @@ extern HMODULE hMod;
 struct Settings_Struct
 {
 	bool AutoHideMenu;
+	bool Fullscreen;
 };
 
 extern Settings_Struct settings;
