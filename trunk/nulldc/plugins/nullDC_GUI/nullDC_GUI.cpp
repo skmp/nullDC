@@ -8,11 +8,13 @@ Settings_Struct settings;
 void SaveSettings()
 {
 	emu.ConfigSaveInt(L"nullDC_GUI",L"AutoHideMenu",settings.AutoHideMenu);
+	emu.ConfigSaveInt(L"nullDC_GUI",L"Fullscreen",settings.Fullscreen);
 }
 
 void LoadSettings()
 {
 	settings.AutoHideMenu=emu.ConfigLoadInt(L"nullDC_GUI",L"AutoHideMenu",1);
+	settings.Fullscreen=emu.ConfigLoadInt(L"nullDC_GUI",L"Fullscreen",0);
 }
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,

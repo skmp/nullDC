@@ -128,6 +128,7 @@ void SetWindowPtr( HWND hWnd,int nIndex,void* dwNewLong)
  
 void InitMenu();
 HMENU GetHMenu();
+void ToggleFullscreen(HWND hWnd);
 bool uiInit()
 {
 	g_hInst =(HINSTANCE)hMod;
@@ -155,6 +156,8 @@ bool uiInit()
 
 	g_hWnd = CreateWindow( L"ndc_main_window", emu_name, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		CW_USEDEFAULT, CW_USEDEFAULT, 640,480, NULL, NULL, g_hInst, NULL );
+	if (settings.Fullscreen)
+		ToggleFullscreen(g_hWnd);
 	if( !IsWindow(g_hWnd) ) {
 		MessageBox( NULL, L"Couldn't Create nullDC Window!",L"ERROR",MB_ICONERROR );
 		return false;
@@ -735,6 +738,17 @@ MENU_HANDLER( Handle_Options_AutoHideMenu)
 	SaveSettings();
 	SetMenuItemStyle(id,settings.AutoHideMenu?MIS_Checked:0,MIS_Checked);
 }
+MENU_HANDLER( Handle_Options_Fullscreen)
+{
+	if (settings.Fullscreen)
+		settings.Fullscreen=0;
+	else
+		settings.Fullscreen=1;
+
+	ToggleFullscreen((HWND)hWnd);
+	SaveSettings();
+	SetMenuItemStyle(id,settings.Fullscreen?MIS_Checked:0,MIS_Checked);
+}
 MENU_HANDLER( Handle_Options_SelectPlugins)
 {
 	EmuSelectPlugins();
@@ -780,7 +794,7 @@ MENU_HANDLER( Handle_Option_Bool_Template )
 	SetSettingI(sffid,(GetSettingI(sffid)^1)&1);
 }
 
-
+u32 gui_fullscreen_mid;
 u32 rec_cpp_mid;
 u32 rec_enb_mid;
 u32 rec_ufpu_mid;
@@ -897,6 +911,7 @@ void CreateBasicMenus()
 
 	//Options Menu
 	u32 menu_setts=AddMenuItem(menu_options,-1,L"nullDC Settings",Handle_Options_Config,0);
+	gui_fullscreen_mid=AddMenuItem(menu_setts,-1,L"Fullscreen",Handle_Options_Fullscreen,settings.Fullscreen);
 	AddMenuItem(menu_setts,-1,L"Auto Hide Menu",Handle_Options_AutoHideMenu,settings.AutoHideMenu);
 		AddSeperator(menu_setts);
 		AddMenuItem(menu_setts,-1,L"Show",Handle_Options_Config,0);
@@ -988,6 +1003,35 @@ void SetMouseState(HWND hWnd,bool visible)
 	mouse_visible=visible;
 }
 
+void ToggleFullscreen(HWND hWnd)
+{
+	HMONITOR hmon=MonitorFromWindow(hWnd,0);
+	MONITORINFO mi;
+	mi.cbSize=sizeof(mi);
+	GetMonitorInfo(hmon,&mi);
+	static RECT oldrect;
+
+	if (GetWindowLong(hWnd,GWL_STYLE)&WS_CAPTION)
+	{
+		GetClientRect(hWnd,&oldrect);
+		RECT pos;
+		GetWindowRect(hWnd,&pos);
+		oldrect.top=pos.top;
+		oldrect.bottom+=pos.top;
+		oldrect.left=pos.left;
+		oldrect.right+=pos.left;
+
+		SetWindowLong(hWnd,GWL_STYLE,(GetWindowLong(hWnd,GWL_STYLE)&~WS_OVERLAPPEDWINDOW) | WS_POPUP);
+		SetWindowPos(hWnd,HWND_TOPMOST,mi.rcMonitor.left,mi.rcMonitor.top,mi.rcMonitor.right-mi.rcMonitor.left,mi.rcMonitor.bottom-mi.rcMonitor.top,0);
+	}
+	else
+	{
+		SetWindowLong(hWnd,GWL_STYLE,(GetWindowLong(hWnd,GWL_STYLE)&~WS_POPUP) | WS_OVERLAPPEDWINDOW);
+		RECT r=oldrect;
+		AdjustWindowRectEx(&r,GetWindowLong(hWnd,GWL_STYLE),GetMenu(hWnd)!=NULL,GetWindowLong(hWnd,GWL_EXSTYLE));
+		SetWindowPos( hWnd, NULL, oldrect.left, oldrect.top, r.right - r.left, r.bottom - r.top,SWP_NOZORDER) ;
+	}
+}
 static CPicture ndclogo;
 LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
@@ -1164,32 +1208,7 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		{
 			if (LOWORD(wParam)==VK_RETURN)
 			{
-				HMONITOR hmon=MonitorFromWindow(hWnd,0);
-				MONITORINFO mi;
-				mi.cbSize=sizeof(mi);
-				GetMonitorInfo(hmon,&mi);
-				static RECT oldrect;
-
-				if (GetWindowLong(hWnd,GWL_STYLE)&WS_CAPTION)
-				{
-					GetClientRect(hWnd,&oldrect);
-					RECT pos;
-					GetWindowRect(hWnd,&pos);
-					oldrect.top=pos.top;
-					oldrect.bottom+=pos.top;
-					oldrect.left=pos.left;
-					oldrect.right+=pos.left;
-
-					SetWindowLong(hWnd,GWL_STYLE,(GetWindowLong(hWnd,GWL_STYLE)&~WS_OVERLAPPEDWINDOW) | WS_POPUP);
-					SetWindowPos(hWnd,HWND_TOPMOST,mi.rcMonitor.left,mi.rcMonitor.top,mi.rcMonitor.right-mi.rcMonitor.left,mi.rcMonitor.bottom-mi.rcMonitor.top,0);
-				}
-				else
-				{
-					SetWindowLong(hWnd,GWL_STYLE,(GetWindowLong(hWnd,GWL_STYLE)&~WS_POPUP) | WS_OVERLAPPEDWINDOW);
-					RECT r=oldrect;
-					AdjustWindowRectEx(&r,GetWindowLong(hWnd,GWL_STYLE),GetMenu(hWnd)!=NULL,GetWindowLong(hWnd,GWL_EXSTYLE));
-					SetWindowPos( hWnd, NULL, oldrect.left, oldrect.top, r.right - r.left, r.bottom - r.top,SWP_NOZORDER) ;
-				}
+				Handle_Options_Fullscreen(gui_fullscreen_mid,hWnd,0);
 				return 0;
 			}
 		}
