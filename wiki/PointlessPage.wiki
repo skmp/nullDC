@@ -1,0 +1,10 @@
+#summary This page serves no purpose.
+
+= Introduction =
+
+There's no content here.
+
+
+= Details =
+
+No details.
