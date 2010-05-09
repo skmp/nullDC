@@ -1,0 +1,1 @@
+put dc_boot.bin and dc_flash.bin in this directory
