@@ -1,0 +1,9 @@
+Running the emulator should require those:
+
+The same Visual C++ Runtime and DirectX 9.0c versions that were used to compile the emulator and/or the plugins.
+
+The same rule applies to SDL, WinPcap and the Logitech LCD thing. If you miss the compiled libraries of those and the plugins/emulator were compiled with those development libraries, their features will either not work, or the emulator will not work at all.
+
+ImgReader uses the .CDI File Mounter (pfctoc.dll) from Padus to mount .cdi images. Those images will not work without it. You should get it and place it in the plugins directory of the emulator (where ImgReader_Win32.dll is placed).
+
+EOF
