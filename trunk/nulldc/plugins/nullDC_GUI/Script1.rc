@@ -1,0 +1,376 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PROFILER DIALOGEX 0, 0, 271, 207
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_NOFAILCREATE | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW
+CAPTION "nullDC profiler"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CTEXT           "Profiler info :)",IDC_STATIC,7,7,256,12
+    EDITTEXT        IDC_PROFTEXT,7,24,256,161,ES_MULTILINE | ES_READONLY | NOT WS_BORDER
+    PUSHBUTTON      "To Clipboard ;)",IDC_COPY,211,187,52,12
+END
+
+IDD_PLUGIN_SELECT DIALOGEX 0, 0, 392, 299
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select Plugins"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_MAPLETAB,"SysTabControl32",WS_TABSTOP,5,136,377,112
+    DEFPUSHBUTTON   "OK",IDOK,5,281,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,332,282,50,14
+    COMBOBOX        IDC_C_PVR,7,23,377,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_C_GDR,7,50,377,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "PowerVR (Graphics) Plugin :",IDC_STATIC,7,9,201,10
+    LTEXT           "GDRom Plugin :",IDC_STATIC,7,40,220,9
+    COMBOBOX        IDC_C_AICA,7,79,377,68,CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "AICA (Sound Core) Plugin :",IDC_STATIC,7,68,228,9
+    LTEXT           "|\n|-\n|\n|-\n|\n|-\n|\n|-\n|\n|-\n",IDC_STATIC,17,160,10,83
+    COMBOBOX        IDC_MAPLEMAIN,13,152,360,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MAPLESUB0,23,167,350,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MAPLESUB1,23,183,350,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MAPLESUB2,23,199,350,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MAPLESUB3,23,215,350,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_MAPLESUB4,23,231,350,68,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_C_EXTDEV,5,261,377,68,CBS_DROPDOWNLIST | CBS_SORT | WS_TABSTOP
+    LTEXT           "Ext.Device (Modem/BBA) Plugin :",IDC_STATIC,5,251,218,9
+    LTEXT           "Maple (Input/Saves) Plugins :",IDC_STATIC,5,127,205,8
+    COMBOBOX        IDC_C_ARM,7,108,377,68,CBS_DROPDOWNLIST | WS_TABSTOP
+    LTEXT           "ARM7 (Sound CPU) Plugin :",IDC_STATIC,7,97,228,9
+END
+
+IDD_MEMVIEW DIALOGEX 0, 0, 423, 230
+STYLE DS_SETFONT | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+EXSTYLE WS_EX_TOOLWINDOW | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+CAPTION "Memory Viewer"
+FONT 10, "Courier New", 0, 0, 0x1
+BEGIN
+    CONTROL         "CC MEM VIEWER",IDC_CUSTOM,"zMemView",WS_VSCROLL | WS_TABSTOP,7,22,409,201
+    EDITTEXT        IDC_SEARCH,7,6,92,12,ES_AUTOHSCROLL,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    PUSHBUTTON      "&Find",IDC_FIND,101,6,31,12,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    COMBOBOX        IDC_MEMSEL,298,6,117,71,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+END
+
+IDD_ABOUT DIALOGEX 0, 0, 255, 124
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW | WS_EX_STATICEDGE
+CAPTION "About nullDC ..."
+FONT 8, "Tahoma", 400, 0, 0xA1
+BEGIN
+    DEFPUSHBUTTON   "Close",IDOK,106,106,42,15
+    LTEXT           "nullDC v[~version~]",IDC_NDC_VER,29,4,192,9
+    EDITTEXT        IDC_THXLIST,35,21,215,80,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_STATICEDGE
+    ICON            IDI_NDC_ICON,IDC_STATIC,5,7,21,20
+END
+
+IDD_SH4DEBUG DIALOGEX 0, 0, 585, 279
+STYLE DS_SETFONT | DS_MODALFRAME | WS_MINIMIZEBOX | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_OVERLAPPEDWINDOW
+CAPTION "SH4 Debugger"
+FONT 10, "Courier New", 0, 0, 0x1
+BEGIN
+    RTEXT           "R0",IDC_STATIC,291,20,14,8
+    RTEXT           "R1",IDC_STATIC,291,30,14,8
+    RTEXT           "R2",IDC_STATIC,291,40,14,8
+    RTEXT           "R3",IDC_STATIC,291,50,14,8
+    RTEXT           "R4",IDC_STATIC,291,60,14,8
+    RTEXT           "R5",IDC_STATIC,291,70,14,8
+    RTEXT           "R6",IDC_STATIC,291,80,14,8
+    RTEXT           "R7",IDC_STATIC,291,90,14,8
+    LTEXT           "00000000",IDS_R0,310,20,38,8
+    LTEXT           "00000000",IDS_R1,310,30,38,8
+    LTEXT           "00000000",IDS_R2,310,40,37,8
+    LTEXT           "00000000",IDS_R3,310,50,43,8
+    LTEXT           "00000000",IDS_R4,310,60,41,8
+    LTEXT           "00000000",IDS_R5,310,70,41,8
+    LTEXT           "00000000",IDS_R6,310,80,41,8
+    LTEXT           "00000000",IDS_R7,310,90,39,8
+    GROUPBOX        "General Regs",IDC_STATIC,291,7,63,175
+    LTEXT           "B0",IDC_STATIC,369,123,10,8
+    LTEXT           "B1",IDC_STATIC,369,133,10,8
+    LTEXT           "B2",IDC_STATIC,369,143,10,8
+    LTEXT           "B3",IDC_STATIC,369,154,10,8
+    LTEXT           "B4",IDC_STATIC,369,163,10,8
+    LTEXT           "B5",IDC_STATIC,369,173,10,8
+    LTEXT           "B6",IDC_STATIC,369,183,10,8
+    LTEXT           "00000000",IDS_B0,387,123,37,8
+    LTEXT           "B7",IDC_STATIC,369,193,10,8
+    LTEXT           "00000000",IDS_B1,387,133,33,8
+    LTEXT           "00000000",IDS_B2,387,143,33,8
+    LTEXT           "00000000",IDS_B3,387,154,33,8
+    LTEXT           "00000000",IDS_B4,387,163,33,8
+    LTEXT           "00000000",IDS_B5,387,173,33,8
+    LTEXT           "00000000",IDS_B6,387,183,33,8
+    GROUPBOX        "Banked Regs",IDC_STATIC,359,112,72,94
+    LTEXT           "00000000",IDS_B7,387,193,33,8
+    RTEXT           "R8",IDC_STATIC,294,100,11,8
+    RTEXT           "R9",IDC_STATIC,295,110,10,8
+    RTEXT           "R10",IDC_STATIC,293,120,12,8
+    RTEXT           "R11",IDC_STATIC,293,130,12,8
+    RTEXT           "R12",IDC_STATIC,293,140,12,8
+    RTEXT           "R13",IDC_STATIC,293,150,12,8
+    RTEXT           "R14",IDC_STATIC,293,160,12,8
+    RTEXT           "R15",IDC_STATIC,293,170,12,8
+    LTEXT           "00000000",IDS_R8,310,101,41,8
+    LTEXT           "00000000",IDS_R9,310,110,42,8
+    LTEXT           "00000000",IDS_R10,310,120,38,8
+    LTEXT           "00000000",IDS_R11,310,130,38,8
+    LTEXT           "00000000",IDS_R12,310,140,37,8
+    LTEXT           "00000000",IDS_R13,310,150,40,8
+    LTEXT           "00000000",IDS_R14,310,160,40,8
+    LTEXT           "00000000",IDS_R15,310,170,33,8
+    GROUPBOX        "Control Regs",IDC_STATIC,359,10,72,100
+    LTEXT           "GBR",IDC_STATIC,367,29,16,8
+    LTEXT           "SSR",IDC_STATIC,367,39,16,8
+    LTEXT           "SPC",IDC_STATIC,367,49,15,8
+    LTEXT           "VBR",IDC_STATIC,367,59,16,8
+    LTEXT           "SGR",IDC_STATIC,367,69,16,8
+    LTEXT           "DBR",IDC_STATIC,367,79,16,8
+    LTEXT           "00000000",IDS_GBR,389,29,39,8
+    LTEXT           "00000000",IDS_SSR,389,39,40,8
+    LTEXT           "00000000",IDS_SPC,389,49,39,8
+    LTEXT           "00000000",IDS_VBR,389,59,38,8
+    LTEXT           "00000000",IDS_SGR,389,69,38,8
+    LTEXT           "00000000",IDS_DBR,389,79,38,8
+    LTEXT           "MACH",IDC_STATIC,365,89,22,8
+    LTEXT           "MACL",IDC_STATIC,365,99,20,8
+    LTEXT           "00000000",IDS_MACH,389,89,39,8
+    LTEXT           "00000000",IDS_MACL,389,99,38,8
+    GROUPBOX        "Status Reg",IDC_STATIC,293,180,57,60
+    LTEXT           "IMASK:",IDC_STATIC,311,228,23,8
+    LTEXT           "PC:",IDC_STATIC,489,226,12,9,SS_SUNKEN
+    LTEXT           "00",IDS_SR_IMASK,337,228,9,8
+    PUSHBUTTON      "St&ep",IDB_STEP,439,258,47,14,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    PUSHBUTTON      "&Stop",IDB_STOP,487,258,47,14,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    PUSHBUTTON      "Start",IDB_START,534,258,44,14,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    PUSHBUTTON      "S&kip",IDB_SKIP,439,243,47,14,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    LTEXT           "S:",IDC_STATIC,297,190,8,8
+    LTEXT           "2",IDS_SR_S,309,190,8,8
+    LTEXT           "PR",IDC_STATIC,367,19,11,8
+    LTEXT           "00000000",IDS_PR,389,19,38,8
+    LTEXT           "Q:",IDC_STATIC,297,208,8,8
+    LTEXT           "M:",IDC_STATIC,297,217,8,8
+    LTEXT           "2",IDS_SR_Q,309,208,8,8
+    LTEXT           "2",IDS_SR_M,309,217,8,8
+    LTEXT           "BL:",IDC_STATIC,323,208,12,8
+    LTEXT           "FD:",IDC_STATIC,323,190,12,8
+    LTEXT           "2",IDS_SR_BL,339,208,8,8
+    LTEXT           "2",IDS_SR_FD,339,190,8,8
+    LTEXT           "RB:",IDC_STATIC,323,217,13,8
+    LTEXT           "MD:",IDC_STATIC,321,199,14,8
+    LTEXT           "2",IDS_SR_RB,339,217,8,8
+    LTEXT           "2",IDS_SR_MD,339,199,8,8
+    LTEXT           "T:",IDC_STATIC,297,199,8,8
+    LTEXT           "2",IDS_SR_T,309,199,8,8
+    GROUPBOX        "MMU/OCR Regs",IDC_STATIC,496,178,82,45
+    CONTROL         "Tab1",IDC_VIEWSEL,"SysTabControl32",TCS_BOTTOM | TCS_BUTTONS,7,7,282,187,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    LTEXT           "CCR:",IDC_STATIC,510,194,18,8
+    LTEXT           "QACR0:",IDC_STATIC,502,202,27,8
+    LTEXT           "QACR1:",IDC_STATIC,502,210,27,8
+    LTEXT           "00000000",IDS_CCR,534,194,33,8
+    LTEXT           "00000000",IDS_QACR0,534,202,33,8
+    LTEXT           "00000000",IDS_QACR1,534,210,33,8
+    LTEXT           "MMUCR",IDC_STATIC,504,186,28,8
+    LTEXT           "00000000",IDS_MMUCR,534,186,33,8
+    LTEXT           "FPU Area",IDS_FPUREGS,434,14,144,158
+    CONTROL         "SP",IDC_FPSEL1,"Button",BS_AUTORADIOBUTTON,462,186,26,10,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    CONTROL         "DP",IDC_FPSEL2,"Button",BS_AUTORADIOBUTTON,462,196,26,10,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    CONTROL         "Vec",IDC_FPSEL3,"Button",BS_AUTORADIOBUTTON,462,206,26,10,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    GROUPBOX        "FPmode",IDC_STATIC,460,178,31,41
+    CONTROL         "XF/XD/XM",IDC_XF,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,439,225,47,10
+    EDITTEXT        IDC_ADDR,487,243,45,13,ES_AUTOHSCROLL,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    PUSHBUTTON      "Goto addr",IDB_GOTO,533,243,45,14,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    EDITTEXT        IDC_CALLSTACK,7,193,280,79,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL,WS_EX_STATICEDGE
+    EDITTEXT        IDS_PC,502,225,46,10,ES_AUTOHSCROLL | ES_READONLY
+    PUSHBUTTON      "Remove MBP",IDB_REMOVEMBP,390,257,47,14,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    PUSHBUTTON      "Add MBP",IDB_ADDMBP,342,257,47,14,BS_FLAT,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+    EDITTEXT        IDC_MBPADDR,342,243,95,13,ES_AUTOHSCROLL,WS_EX_CLIENTEDGE | WS_EX_STATICEDGE
+END
+
+IDD_MEMVIEW__ DIALOG  0, 0, 168, 113
+STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
+FONT 10, "Courier New"
+BEGIN
+    CONTROL         "Custom1",IDC_VIEW,"CtrlMemView",WS_TABSTOP,0,0,167,112
+END
+
+IDD_DISVIEW DIALOG  0, 0, 190, 114
+STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS
+FONT 10, "Courier New"
+BEGIN
+    CONTROL         "Custom1",IDC_VIEW,"CtrlDisAsmView",WS_TABSTOP,0,0,189,113
+END
+
+IDD_PVRVIEW DIALOGEX 0, 0, 187, 92
+STYLE DS_SETFONT | WS_CHILD | WS_VISIBLE | WS_CAPTION
+FONT 10, "Courier New", 0, 0, 0x0
+BEGIN
+    LTEXT           "This function is not yet enabled",IDC_STATIC,72,70,108,13
+END
+
+IDD_CONFIG DIALOGEX 0, 0, 268, 153
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "nullDC Settings"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,211,132,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,211,116,50,14
+    CONTROL         "Enable Dynarec",IDC_REC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,7,254,15
+    CONTROL         "Enable Constant Propagation",IDC_REC_CPP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,39,254,10
+    LTEXT           "Enabling the dynarec will make the emulator much faster.There are no known bugs on it :).This setting is defaults to enabled.",IDC_STATIC,7,20,254,19
+    LTEXT           "Constant propagation is a dynarec optimisation pass.Enabling it will make the dynarec faster , however due to a known bug some games may not work correctly (Soul Reaver,Toy Commander missles , more).This setting is defaults to enabled.",IDC_STATIC,7,49,254,34
+    CONTROL         "Underclock FPU",IDC_REC_UFPU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,84,254,10
+    LTEXT           "Underclocking the FPU will make the emulator run faster , but some games will have speed problems (DOA2,VF3,more).This setting is defaults to disabled.",IDC_STATIC,7,95,254,21
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_PROFILER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 263
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 199
+    END
+
+    IDD_PVRVIEW, DIALOG
+    BEGIN
+        BOTTOMMARGIN, 90
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_NDC_ICON            ICON                    "ndc_icon.ico"
+IDI_BRKPT               ICON                    "icon2.ico"
+IDI_BRKPTDIS            ICON                    "icon3.ico"
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog Info
+//
+
+IDD_MEMVIEW DLGINIT
+BEGIN
+    IDC_MEMSEL, 0x403, 1, 0
+"\000" 
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE 
+BEGIN
+    IDS_DBG_STR_START       """Start of Debugger String Table"""
+    IDS_LVCOL01             "Address"
+    IDS_LVCOL02             "DWORD"
+    IDS_LVCOL03             "DWORD"
+    IDS_LVCOL04             "DWORD"
+    IDS_LVCOL05             "DWORD"
+    IDS_LVCOL06             " STRVAL"
+END
+
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (Ireland) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENI)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_EIRE
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// JPEG
+//
+
+IDR_NDC_LOGO            JPEG                    "nulldc640_bluebg-opt96.jpeg"
+#endif    // English (Ireland) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

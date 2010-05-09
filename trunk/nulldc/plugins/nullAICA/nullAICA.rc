@@ -1,0 +1,131 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Greek resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ELL)
+#ifdef _WIN32
+LANGUAGE LANG_GREEK, SUBLANG_DEFAULT
+#pragma code_page(1253)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_SETTINGS DIALOGEX 0, 0, 268, 210
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "nullAica Settings"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,189,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,211,189,50,14
+    LTEXT           "This option will sync the emulator to the audio output.This will result is much better audio quality, but it will limit the speed to 100%.It is recomended to have this setting enabled",IDC_STATIC,14,64,247,25
+    LTEXT           "Buffer size :",IDC_STATIC,8,8,40,8
+    CONTROL         "884",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,57,9,25,10
+    CONTROL         "1024",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,82,9,28,10
+    CONTROL         "1536",IDC_RADIO3,"Button",BS_AUTORADIOBUTTON,111,9,28,10
+    CONTROL         "1768",IDC_RADIO4,"Button",BS_AUTORADIOBUTTON,140,9,28,10
+    CONTROL         "2048",IDC_RADIO5,"Button",BS_AUTORADIOBUTTON,169,9,27,10
+    CONTROL         "4096",IDC_RADIO6,"Button",BS_AUTORADIOBUTTON,197,9,28,10
+    CONTROL         "Other",IDC_RADIO7,"Button",BS_AUTORADIOBUTTON,226,9,35,10
+    CONTROL         "Use Hardware Mixing",IDC_HWMIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,128,83,10
+    CONTROL         "Global Focus",IDC_GFOCUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,94,56,10
+    CONTROL         "Sync to audio",IDC_FSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,54,59,10
+    LTEXT           "If set , the sound will play even if the emu is on the background.It doesnt affect the emulation in any way.",IDC_STATIC,13,104,248,20
+    LTEXT           "If set the hardware mixer will be used.This usualy results in bad sound , but may speed things up a bit.On x64 versions of windows it has no effect.It is recomended to have this setting disabled",IDC_STATIC,13,138,246,26
+    LTEXT           "This sets the size of the sound buffer.If the sound is coppy/clicky increase it , if the sound is laggy/too late decrease it.It is recomended to adjust this setting and see what works best for your PC.The default setting is 1024.For Windows Vista use 2048.",IDC_STATIC,13,18,247,35
+    LTEXT           "Note : If the emulation is started , some of these settings won't take effect  without restarting the emulator.",IDC_STATIC,7,170,254,19
+END
+
+IDD_DEBUGGER DIALOGEX 0, 0, 187, 95
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_STATICEDGE
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,130,7,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,130,24,50,14
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_SETTINGS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 261
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 203
+    END
+
+    IDD_DEBUGGER, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 180
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Greek resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
