@@ -23,6 +23,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vbaARM", "plugins\vbaARM\vb
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PuruPuru", "plugins\PuruPuru\PuruPuru.vcproj", "{BF68EEEB-92DE-443E-A6E0-AB9CC357D0F3}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XMaple", "plugins\XMaple\XMaple.vcproj", "{28B511F6-D1EC-448D-9A71-5044D6F12ABE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -119,6 +121,14 @@ Global
 		{BF68EEEB-92DE-443E-A6E0-AB9CC357D0F3}.Release|Win32.Build.0 = Release|Win32
 		{BF68EEEB-92DE-443E-A6E0-AB9CC357D0F3}.Release-NoTrace|Win32.ActiveCfg = Release|Win32
 		{BF68EEEB-92DE-443E-A6E0-AB9CC357D0F3}.Release-NoTrace|Win32.Build.0 = Release|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Debug|Win32.Build.0 = Debug|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Debug-NoTrace|Win32.ActiveCfg = Debug|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Debug-NoTrace|Win32.Build.0 = Debug|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Release|Win32.ActiveCfg = Release|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Release|Win32.Build.0 = Release|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Release-NoTrace|Win32.ActiveCfg = Release|Win32
+		{28B511F6-D1EC-448D-9A71-5044D6F12ABE}.Release-NoTrace|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
