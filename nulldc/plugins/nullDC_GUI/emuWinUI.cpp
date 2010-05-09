@@ -156,8 +156,8 @@ bool uiInit()
 
 	g_hWnd = CreateWindow( L"ndc_main_window", emu_name, WS_OVERLAPPEDWINDOW | WS_VISIBLE,
 		CW_USEDEFAULT, CW_USEDEFAULT, 640,480, NULL, NULL, g_hInst, NULL );
-	if (settings.Fullscreen)
-		ToggleFullscreen(g_hWnd);
+	
+
 	if( !IsWindow(g_hWnd) ) {
 		MessageBox( NULL, L"Couldn't Create nullDC Window!",L"ERROR",MB_ICONERROR );
 		return false;
@@ -168,6 +168,11 @@ bool uiInit()
 	RECT r= { 0,0,640,480};
 	AdjustWindowRectEx(&r,GetWindowLong(g_hWnd,GWL_STYLE),GetMenu(g_hWnd)!=NULL,GetWindowLong(g_hWnd,GWL_EXSTYLE));
 	SetWindowPos( g_hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_NOMOVE ) ;
+
+	if (settings.Fullscreen)
+	{
+		ToggleFullscreen(g_hWnd);
+	}
 
 	MSG msg;
 	while( PeekMessage( &msg, NULL, 0, 0 ,TRUE) != 0)
