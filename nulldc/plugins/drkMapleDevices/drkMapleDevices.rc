@@ -1,0 +1,234 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (Ireland) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENI)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_EIRE
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG1 DIALOGEX 0, 0, 270, 230
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "NAOMI-blehwhatever"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_PORTTAB,"SysTabControl32",0x0,13,15,243,20
+    LTEXT           "Digital Up",IDC_STATIC,16,43,43,10
+    PUSHBUTTON      "D UP",IDC_NAOMI_UP_KEY,78,43,56,10,BS_FLAT
+    LTEXT           "Digital Left",IDC_STATIC,16,52,43,10
+    PUSHBUTTON      "D LEFT",IDC_NAOMI_LEFT_KEY,78,52,56,10,BS_FLAT
+    LTEXT           "Digital Right",IDC_STATIC,16,63,43,10
+    PUSHBUTTON      "D RIGHT",IDC_NAOMI_RIGHT_KEY,78,63,56,10,BS_FLAT
+    LTEXT           "Digital Down",IDC_STATIC,16,73,43,10
+    PUSHBUTTON      "D DOWN",IDC_NAOMI_DOWN_KEY,78,73,56,10,BS_FLAT
+    LTEXT           "Button #0",IDC_STATIC,17,98,52,10
+    PUSHBUTTON      "Y BUTTON",IDC_NAOMI_BTN0_KEY,79,98,56,10,BS_FLAT
+    LTEXT           "Button #1",IDC_STATIC,17,109,55,10
+    PUSHBUTTON      "X BUTTON",IDC_NAOMI_BTN1_KEY,79,109,56,10,BS_FLAT
+    LTEXT           "Button #4",IDC_STATIC,15,139,43,10
+    PUSHBUTTON      "Z BUTTON",IDC_NAOMI_BTN4_KEY,80,141,56,10,BS_FLAT
+    LTEXT           "Button #2",IDC_STATIC,17,119,55,8
+    PUSHBUTTON      "B BUTTON",IDC_NAOMI_BTN2_KEY,79,119,56,10,BS_FLAT
+    LTEXT           "Button #5",IDC_STATIC,16,150,43,10
+    PUSHBUTTON      "C BUTTON",IDC_NAOMI_BTN5_KEY,79,151,56,10,BS_FLAT
+    LTEXT           "Button #3",IDC_STATIC,17,129,54,10
+    PUSHBUTTON      "A BUTTON",IDC_NAOMI_BTN3_KEY,79,129,56,10,BS_FLAT
+    LTEXT           "Start  Button",IDC_STATIC,143,44,43,10
+    PUSHBUTTON      "START BUTTON",IDC_NAOMI_START_KEY,207,44,56,10,BS_FLAT
+    CTEXT           "~[STATUS]~",IDC_STATUS,17,183,240,18
+    DEFPUSHBUTTON   "OK",IDOK,111,205,50,14
+    LTEXT           "Coin Button",IDC_STATIC,145,57,43,10
+    PUSHBUTTON      "START BUTTON",IDC_NAOMI_COIN_KEY,207,57,56,10,BS_FLAT
+    LTEXT           "Service Button",IDC_STATIC,143,70,54,10
+    PUSHBUTTON      "START BUTTON",IDC_NAOMI_SERVICE_KEY_1,207,72,56,10,BS_FLAT
+    LTEXT           "Test Button",IDC_STATIC,146,82,56,10
+    PUSHBUTTON      "START BUTTON",IDC_NAOMI_TEST_KEY_1,207,81,56,10,BS_FLAT
+    LTEXT           "Service Button 2",IDC_STATIC,145,92,57,10
+    PUSHBUTTON      "START BUTTON",IDC_NAOMI_SERVICE_KEY_2,207,94,56,10,BS_FLAT
+    LTEXT           "Test Button 2",IDC_STATIC,149,103,54,10
+    PUSHBUTTON      "START BUTTON",IDC_NAOMI_TEST_KEY_2,207,103,56,10,BS_FLAT
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 263
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 223
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // English (Ireland) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// Greek resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ELL)
+#ifdef _WIN32
+LANGUAGE LANG_GREEK, SUBLANG_DEFAULT
+#pragma code_page(1253)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ConfigKeys DIALOGEX 0, 0, 252, 214
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "nullDC Controller Key config"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_PORTTAB,"SysTabControl32",0x0,3,7,246,165
+    LTEXT           "Analog Up",IDC_STATIC,8,30,43,10
+    PUSHBUTTON      "A UP",IDC_BUTTON16,70,30,56,10,BS_FLAT
+    LTEXT           "Digital Up 2",IDC_STATIC,142,30,43,10
+    PUSHBUTTON      "??????",IDC_BUTTON15,190,30,56,10,BS_FLAT
+    LTEXT           "Analog Left",IDC_STATIC,8,40,43,10
+    PUSHBUTTON      "A LEFT",IDC_BUTTON18,70,40,56,10,BS_FLAT
+    LTEXT           "Digital Left 2",IDC_STATIC,142,40,43,10
+    PUSHBUTTON      "??????",IDC_BUTTON12,190,40,56,10,BS_FLAT
+    LTEXT           "Analog Right",IDC_STATIC,8,50,43,10
+    PUSHBUTTON      "A Right",IDC_BUTTON19,70,50,56,10,BS_FLAT
+    LTEXT           "Digital Right 2",IDC_STATIC,142,50,47,10
+    PUSHBUTTON      "??????",IDC_BUTTON13,190,50,56,10,BS_FLAT
+    LTEXT           "Analog Down",IDC_STATIC,8,60,43,10
+    PUSHBUTTON      "A DOWN",IDC_BUTTON17,70,60,56,10,BS_FLAT
+    LTEXT           "Digital Down 2",IDC_STATIC,142,60,49,10
+    PUSHBUTTON      "??????",IDC_BUTTON14,190,60,56,10,BS_FLAT
+    LTEXT           "Digital Up",IDC_STATIC,8,72,43,10
+    PUSHBUTTON      "D UP",IDC_BUTTON5,70,72,56,10,BS_FLAT
+    LTEXT           "Digital Left",IDC_STATIC,8,82,43,10
+    PUSHBUTTON      "D LEFT",IDC_BUTTON7,70,82,56,10,BS_FLAT
+    LTEXT           "Left Slider",IDC_STATIC,142,82,48,10
+    PUSHBUTTON      "LEFT SLIDER",IDC_BUTTON20,190,82,56,10,BS_FLAT
+    LTEXT           "Digital Right",IDC_STATIC,8,92,43,10
+    PUSHBUTTON      "D RIGHT",IDC_BUTTON8,70,92,56,10,BS_FLAT
+    LTEXT           "Right Slider",IDC_STATIC,142,92,45,10
+    PUSHBUTTON      "RIGHT SLIDER",IDC_BUTTON21,190,92,56,10,BS_FLAT
+    LTEXT           "Digital Down",IDC_STATIC,8,102,43,10
+    PUSHBUTTON      "D DOWN",IDC_BUTTON6,70,102,56,10,BS_FLAT
+    LTEXT           "Y Button",IDC_STATIC,8,114,52,10
+    PUSHBUTTON      "Y BUTTON",IDC_BUTTON10,70,114,56,10,BS_FLAT
+    LTEXT           "X Button",IDC_STATIC,8,124,55,10
+    PUSHBUTTON      "X BUTTON",IDC_BUTTON11,70,124,56,10,BS_FLAT
+    LTEXT           "Z button",IDC_STATIC,142,124,43,10
+    PUSHBUTTON      "Z BUTTON",IDC_BUTTON9,190,124,56,10,BS_FLAT
+    LTEXT           "B Button",IDC_STATIC,8,134,55,8
+    PUSHBUTTON      "B BUTTON",IDC_BUTTON2,70,134,56,10,BS_FLAT
+    LTEXT           "C button",IDC_STATIC,142,134,43,10
+    PUSHBUTTON      "C BUTTON",IDC_BUTTON1,190,134,56,10,BS_FLAT
+    LTEXT           "A Button",IDC_STATIC,8,144,54,10
+    PUSHBUTTON      "A BUTTON",IDC_BUTTON3,70,144,56,10,BS_FLAT
+    LTEXT           "Start  Button",IDC_STATIC,8,156,43,10
+    PUSHBUTTON      "START BUTTON",IDC_BUTTON4,70,156,56,10,BS_FLAT
+    CTEXT           "~[STATUS]~",IDC_STATUS,8,174,240,18
+    DEFPUSHBUTTON   "OK",IDOK,101,196,50,14
+END
+
+IDD_LCD DIALOGEX 0, 0, 186, 95
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_DISABLED | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW | WS_EX_APPWINDOW
+CAPTION "VMU STUFF"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_ConfigKeys, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 245
+        TOPMARGIN, 7
+    END
+
+    IDD_LCD, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 179
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 88
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+#endif    // Greek resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
