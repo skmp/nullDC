@@ -1,29 +1,29 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullDC", "nullDC\nullDC.vcxproj", "{47CE9BF1-542B-4C45-A22A-353A9FC97322}"
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullDC", "nullDC\nullDC.vcproj", "{47CE9BF1-542B-4C45-A22A-353A9FC97322}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EmptyAICA", "plugins\EmptyAICA\EmptyAICA.vcxproj", "{8004518C-2321-4CFC-BA6C-873736195691}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EmptyAICA", "plugins\EmptyAICA\EmptyAICA.vcproj", "{8004518C-2321-4CFC-BA6C-873736195691}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "drkMapleDevices", "plugins\drkMapleDevices\drkMapleDevices.vcxproj", "{73FFA215-6F86-4C88-AA59-5735505A8B05}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "drkMapleDevices", "plugins\drkMapleDevices\drkMapleDevices.vcproj", "{73FFA215-6F86-4C88-AA59-5735505A8B05}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImgReader", "plugins\ImgReader\ImgReader.vcxproj", "{2415C385-C878-4D66-A097-FF25BCCDC1EB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ImgReader", "plugins\ImgReader\ImgReader.vcproj", "{2415C385-C878-4D66-A097-FF25BCCDC1EB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "drkPvr", "plugins\drkPvr\drkPvr.vcxproj", "{0520BA33-1A98-4DDE-8B36-99F25EDC5BD6}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "drkPvr", "plugins\drkPvr\drkPvr.vcproj", "{0520BA33-1A98-4DDE-8B36-99F25EDC5BD6}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullExtDev", "plugins\nullExtDev\nullExtDev.vcxproj", "{70FF77F6-E0CE-44EF-AF61-1BBAF3F60CD2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullExtDev", "plugins\nullExtDev\nullExtDev.vcproj", "{70FF77F6-E0CE-44EF-AF61-1BBAF3F60CD2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullDC_GUI", "plugins\nullDC_GUI\nullDC_GUI.vcxproj", "{BA607CBC-BBF5-441B-9778-B86FD2D710EB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullDC_GUI", "plugins\nullDC_GUI\nullDC_GUI.vcproj", "{BA607CBC-BBF5-441B-9778-B86FD2D710EB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "emitter", "..\emitter\emitter.vcxproj", "{B0B56062-39D6-4BEA-B0C9-A06AC2A65555}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "emitter", "..\emitter\emitter.vcproj", "{B0B56062-39D6-4BEA-B0C9-A06AC2A65555}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullAICA", "plugins\nullAICA\nullAICA.vcxproj", "{9C6F5978-A6CE-4A09-A3EA-5FE45CC12232}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "nullAICA", "plugins\nullAICA\nullAICA.vcproj", "{9C6F5978-A6CE-4A09-A3EA-5FE45CC12232}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vbaARM", "plugins\vbaARM\vbaARM.vcxproj", "{9C6F597F-A6CE-4AB9-A3EA-5FE45CC12232}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vbaARM", "plugins\vbaARM\vbaARM.vcproj", "{9C6F597F-A6CE-4AB9-A3EA-5FE45CC12232}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PuruPuru", "plugins\PuruPuru\PuruPuru.vcxproj", "{BF68EEEB-92DE-443E-A6E0-AB9CC357D0F3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PuruPuru", "plugins\PuruPuru\PuruPuru.vcproj", "{BF68EEEB-92DE-443E-A6E0-AB9CC357D0F3}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XMaple", "plugins\XMaple\XMaple.vcxproj", "{28B511F6-D1EC-448D-9A71-5044D6F12ABE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XMaple", "plugins\XMaple\XMaple.vcproj", "{28B511F6-D1EC-448D-9A71-5044D6F12ABE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
