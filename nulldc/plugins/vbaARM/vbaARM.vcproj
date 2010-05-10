@@ -189,7 +189,7 @@
 	<References>
 		<ProjectReference
 			ReferencedProjectIdentifier="{B0B56062-39D6-4BEA-B0C9-A06AC2A65555}"
-			RelativePathToProject="..\emitter\emitter\emitter.vcproj"
+			RelativePathToProject="..\emitter\emitter.vcproj"
 		/>
 	</References>
 	<Files>
