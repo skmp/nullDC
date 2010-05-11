@@ -287,11 +287,11 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_resolution.format=L"Resolution: %s";
 	menu_resolution.callback=handler_resmode;
 
-	menu_resolution.Add(RSM,L"Window",0);
-	menu_resolution.Add(RSM,L"HD or window (up to 1280x800)",1);
+	menu_resolution.Add(RSM,L"Maximum Supported",0);
+	menu_resolution.Add(RSM,L"Maximum, but up to 1280x800",1);
 	menu_resolution.Add(RSM,L"Native (640x480)",2);
-	menu_resolution.Add(RSM,L"Half window pixels",3);
-	menu_resolution.Add(RSM,L"Quarter window pixels",4);
+	menu_resolution.Add(RSM,L"Half of maximum pixels",3);
+	menu_resolution.Add(RSM,L"Quarter of maximum pixels",4);
 	menu_resolution.SetValue(settings.Video.ResolutionMode);
 
 
