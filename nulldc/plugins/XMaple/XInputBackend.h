@@ -15,4 +15,12 @@ void StopRumble(int XPadPlayer);
 
 void VibrationThread(void* _status);
 
+struct _settings
+{
+	int deadzone;
+};
+
+void loadConfig();
+void saveConfig();
+
 } //namespace

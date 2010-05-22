@@ -13,37 +13,34 @@
 #include "FT8.h"
 
 namespace XInput
-{
+{	
+	_settings settings;
 
 void ScaleStickValues(unsigned char* outx, unsigned char* outy, short inx, short iny)
 {
-	const float kDeadZone = 0.1f;
+	const float kDeadZone = settings.deadzone;
+	const int	center 	  = 0x80;
 
-	float x = ((float)inx + 0.5f) / 32767.5f;
-	float y = ((float)iny + 0.5f) / 32767.5f;
+	float magnitude = sqrtf( inx*inx + iny*iny );		
+	
+	float x = inx / magnitude;
+	float y = iny / magnitude;
 
-	if ((x == 0.0f) && (y == 0.0f)) // to be safe
+	if (magnitude < kDeadZone * 327.68f)
+		magnitude = 0;
+	else
 	{
-		*outx = 0;
-		*outy = 0;
-		return;
+		magnitude  = (magnitude - kDeadZone) * 32767.0f / (32767.0f - kDeadZone);
+		magnitude /= 256.0f; // Reducing to 0-128 values
+		
+		if ( magnitude > 128.0f ) magnitude = 128; // Just for safety
 	}
-
-	float magnitude = sqrtf(x * x + y * y);
-	float nx = x / magnitude;
-	float ny = y / magnitude;
-
-	if (magnitude < kDeadZone)
-		magnitude = kDeadZone;
-
-	magnitude  = (magnitude - kDeadZone) / (1.0f - kDeadZone);
-	magnitude *= magnitude; // another power may be more appropriate
-	nx *= magnitude;
-	ny *= magnitude;
-	int ix = (int)(nx * 100);
-	int iy = (int)(ny * 100);
-	*outx = 0x80 + ix;
-	*outy = -(0x80 + iy);
+	
+	x *= magnitude;
+	y *= magnitude;
+	
+	*outx = center + x;
+	*outy = center - y;
 }
 
 bool Read(int XPadPlayer, u32 deviceType, EmulatedDevices::FT0::SStatus* status)
@@ -51,6 +48,9 @@ bool Read(int XPadPlayer, u32 deviceType, EmulatedDevices::FT0::SStatus* status)
 	const int base = 0x80;
 	XINPUT_STATE xstate;
 	DWORD xresult = XInputGetState(XPadPlayer, &xstate);
+
+	// load setting
+	loadConfig();
 
 	// Let's .. yes, let's use XINPUT!
 	if (xresult == ERROR_SUCCESS)
@@ -326,4 +326,22 @@ void VibrationThread(void* _status)
 	} //while(true)
 }
 
+void loadConfig()
+{
+	
+	 settings.deadzone = host.ConfigLoadInt(L"Xmaple", L"DeadZone", 25);
+	 saveConfig();
+	
+}
+
+void saveConfig()
+{
+	
+	 host.ConfigSaveInt(L"Xmaple", L"DeadZone", settings.deadzone);
+	
+}
+
 } //namespace
+
+
+

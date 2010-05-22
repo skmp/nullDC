@@ -37,6 +37,8 @@
 
 //#pragma pack(1)
 
+extern emu_info host;
+
 //////////////////////////////////////////////////////////////////////////
 // For recognizing which device the emu requests
 enum
