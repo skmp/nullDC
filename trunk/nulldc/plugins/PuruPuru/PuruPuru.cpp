@@ -11,6 +11,7 @@
 
 
 #include "PuruPuru.h"
+#include <math.h>
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Variables
@@ -363,8 +364,11 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 			if (joystate[port].halfpress)
 				triggervalue = 100;
 
+			// http://mc.pp.se/dc/controller.html
+			// First goes R then L... I think.
+
 			// Set shoulder buttons (actually analog)
-			if (joystate[port].buttons[CTL_L_SHOULDER])
+			if (joystate[port].buttons[CTL_R_SHOULDER])
 			{
 				w8(triggervalue);				
 			}
@@ -373,7 +377,7 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 				w8(0);	// not pressed?
 			}
 
-			if (joystate[port].buttons[CTL_R_SHOULDER])	
+			if (joystate[port].buttons[CTL_L_SHOULDER])	
 			{
 				w8(triggervalue);				
 			}
@@ -384,42 +388,45 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 
 			// Set Analog sticks (Main)
 			// Reset!
-			int base = 0x80;
+
+			int center = 0x80;
+			
 			// Set analog controllers
 			// Set Deadzones perhaps out of function
-			int deadzone = (int)(((float)(128.00/100.00)) * (float)(joysticks[port].deadzone+1));
-			int deadzone2 = -(int)(((float)(128.00/100.00)) * (float)(joysticks[port].deadzone+1));
-
-			// Adjust range
-			// The value returned by SDL_JoystickGetAxis is a signed integer (-32768 to 32768)
-			// The value used for the gamecube controller is an unsigned char (0 to 255)
-			int main_stick_x = (joystate[port].axis[CTL_MAIN_X]>>8);
-			int main_stick_y = (joystate[port].axis[CTL_MAIN_Y]>>8);
-
-			// Quick fix
-			if(main_stick_x > 127)
-				main_stick_x = 127;
-			if(main_stick_y > 127)
-				main_stick_y = 127;		
-
-			if(main_stick_x < -128)
-				main_stick_x = -128;
-			if(main_stick_y < -128)
-				main_stick_y = -128;
 			
-			if ((main_stick_x < deadzone2)	|| (main_stick_x > deadzone))	
-			{
-				w8(base + main_stick_x);
-			}
-			else
-				w8(base); // base
+			float deadzone = (float)joysticks[port].deadzone + 1.0f;		
+			
+			// The value returned by SDL_JoystickGetAxis is a signed integer (-32768 to 32767)
+			// The value used for the gamecube controller is an unsigned char (0 to 255)
+			
+			float main_stick_x = joystate[port].axis[CTL_MAIN_X];
+			float main_stick_y = joystate[port].axis[CTL_MAIN_Y];						
+			
+			float radius = sqrt(main_stick_x*main_stick_x + main_stick_y*main_stick_y);
 
-			if ((main_stick_y < deadzone2)	|| (main_stick_y > deadzone))
-			{
-				w8(base + main_stick_y);
+			deadzone = deadzone * 327.68f;
+			
+			if (radius < deadzone)
+			{ 
+				radius = 0;
 			}
 			else
-				w8(base); // base
+			{				
+				main_stick_x = main_stick_x / radius;
+				main_stick_y = main_stick_y / radius;
+				
+				radius = (radius - deadzone) * 32767.0f/(32767.0f - deadzone);
+				
+				radius = radius / 256.0f;
+				
+				if (radius > 128) radius = 128;				
+			}					
+
+			main_stick_x = main_stick_x * radius;
+			main_stick_y = main_stick_y * radius;
+			
+			w8(center + (int)main_stick_x);
+			w8(center + (int)main_stick_y);
 				
 			//x/y2 are missing on DC
 			//1
@@ -501,8 +508,7 @@ void SaveConfig()
 	for (int port=0;port<4;port++)
 	{		
 		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
-
-		host.ConfigSaveInt(SectionName, L"l_shoulder", joysticks[port].buttons[CTL_L_SHOULDER]);		
+				
 		host.ConfigSaveInt(SectionName, L"l_shoulder", joysticks[port].buttons[CTL_L_SHOULDER]);
 		host.ConfigSaveInt(SectionName, L"r_shoulder", joysticks[port].buttons[CTL_R_SHOULDER]);
 		host.ConfigSaveInt(SectionName, L"a_button", joysticks[port].buttons[CTL_A_BUTTON]);
