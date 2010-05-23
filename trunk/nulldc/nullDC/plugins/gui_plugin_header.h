@@ -188,6 +188,7 @@ struct gui_emu_info
 	GetEmuPerformanceInfoFP* GetPerformanceInfo;
 	SendMsgFP*		BroardcastEvent;
 	void* EmuThread;
+	int nCmdShow;
 };
 struct MenuIDList
 {

@@ -421,7 +421,7 @@ void EXPORT_CALL b_GetPerformanceInfo(nullDCPerfomanceInfo* dst)
 
 }
 
-
+int nCmdShow;
 bool OpenAndLoadGUI(wchar* file)
 {
 	if (!gui.Load(file))
@@ -488,6 +488,7 @@ bool OpenAndLoadGUI(wchar* file)
 
 	gpi.BroardcastEvent=BroadcastEvent;
 	gpi.EmuThread=hEmuThread;
+	gpi.nCmdShow = nCmdShow;
 
 	if (rv_ok != libgui.Load(&gpi))
 		return false;
