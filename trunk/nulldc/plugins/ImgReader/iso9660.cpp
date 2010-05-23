@@ -1,9 +1,5 @@
 #include "iso9660.h"
 
-bool inbios=true;
-FILE* f_1=0;
-FILE* f_2=0;
-
 u8 isotemshit[5000];
 struct file_TrackInfo
 {
@@ -80,116 +76,8 @@ void FASTCALL iso_DriveReadSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 
 		StartSector++;
 	}
 	return;
-	/*
-	if (f_1==0)
-	{
-		f_1 = fopen("D:/Tekaman/Games/Dreamcast RAW/thps/45000to63139.bin","rb");
-		f_2 = fopen("D:/Tekaman/Games/Dreamcast RAW/thps/69313to549150.bin","rb");
-	}
-	
-	if (StartSector>=69463)
-	{
-		StartSector-=69463;
-		for (u32 i = 0 ; i < SectorCount;i++)
-		{
-			rss(buff,StartSector+i,f_2);
-			buff+=2048;
-		}
-	}
-	else if (StartSector>=63438 )
-	{
-		StartSector-=63438 ;
-		for (u32 i = 0 ; i < SectorCount;i++)
-		{
-			printf("Unable to read %d\n",StartSector+i); 
-			buff+=2048;
-		}
-	}
-	else if (StartSector>=45150 )
-	{
-		StartSector-=45150 ;
-		for (u32 i = 0 ; i < SectorCount;i++)
-		{
-			rss(buff,StartSector+i,f_1);
-			buff+=2048;
-		}
-	}
-	else
-	{
-		for (u32 i = 0 ; i < SectorCount;i++)
-		{
-			printf("Unable to read %d\n",StartSector+i); 
-			buff+=2048;
-		}
-	}*/
-	/*
-	if (StartSector>=45000)
-	{
-		if (inbios)
-		{
-			StartSector-=45000;
-			if (StartSector==150+16)
-				inbios=false;//bios dma'd pvd
-		}
-	}
-	else
-	{
-		if (inbios)
-			inbios=false;//prop not bios/bios after pvd
-	}
-
-	if (StartSector>=150)
-		StartSector-=150;
-
-
-	if (StartSector<16)
-	{
-		FILE* fip=fopen("c:\\ip.bin","rb");
-		fseek(fip,StartSector*2048,SEEK_SET);
-		size_t rd=fread(buff,1,SectorCount*2048,fip);
-		fclose(fip);
-		return;
-	}*/
-	/*
-	StartSector-=45150;
-	if (f_iso)
-	{
-		fseek(f_iso,StartSector*2048,SEEK_SET);
-		size_t rd=fread(buff,1,SectorCount*2048,f_iso);
-		if (rd!=SectorCount*2048)
-		{
-			printf("fread  failed ; managed to read %d sectors olny (%d bytes)\n",rd/2048,rd);
-			getc(stdin);
-		}
-	}
-	else
-	{
-		char fn[512]="";
-		if(GetFile(fn,"FILE0003.DUP \0FILE0003.DUP\0\0")==false)
-			return;
-		f_iso=fopen(fn,"rb");
-		
-		fseek(f_iso,StartSector*2048,SEEK_SET);
-		size_t rd=fread(buff,1,SectorCount*2048,f_iso);
-		if (rd!=SectorCount*2048)
-		{
-			printf("fread  failed ; managed to read %d sectors olny (%d bytes)\n",rd/2048,rd);
-			getc(stdin);
-		}
-	}*/
-
 }
-/*
-void iso_GetSessionsInfo(SessionInfo* sessions)
-{
-	printf("iso_GetSessionsInfo\n");
-}
-void iso_DriveGetTocInfo(TocInfo* toc,DiskArea area)
-{
-	printf("GDROM toc\n");
-	memset(toc,0,sizeof(TocInfo));
-}
-*/
+
 void iso_DriveGetTocInfo(TocInfo* toc,DiskArea area)
 {
 	memcpy(toc,&gdi_toc,sizeof(TocInfo));
@@ -262,8 +150,26 @@ bool load_gdi(wchar* file_)
 		
 		//TRACK FADS CTRL SSIZE file OFFSET
 		
-		fscanf(t,"%d %d %d %d %s %d\r\n",&TRACK,&FADS,&CTRL,&SSIZE,temp,&OFFSET);
-		printf("file %s[%d] : FAD:%d,CTRL : %d, SSIZE :%d,OFFSET:%d\n",temp,TRACK,FADS,CTRL,SSIZE,OFFSET);
+		fscanf(t,"%d %d %d %d",&TRACK,&FADS,&CTRL,&SSIZE);
+		//%s %d\r\n,temp,&OFFSET);
+
+		while(iswspace(fgetc(t))) ;
+		fseek(t,-1,SEEK_CUR);
+		if (fgetc(t)=='"')
+		{
+			char c;
+			int i=0;
+			while((c=fgetc(t))!='"')
+				temp[i++]=c;
+			temp[i]=0;
+		}
+		else
+		{
+			fseek(t,-1,SEEK_CUR);
+			fscanf(t,"%s",temp);
+		}
+		fscanf(t,"%d\r\n",&OFFSET);
+		printf("file[%d] \"%s\": FAD:%d, CTRL:%d, SSIZE:%d, OFFSET:%d\n",TRACK,temp,FADS,CTRL,SSIZE,OFFSET);
 		
 		if (SSIZE!=0)
 		{
