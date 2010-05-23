@@ -8,7 +8,7 @@ x86_features x86_caps;
 #define EXCEPTION_EXECUTE_HANDLER       1
 #endif
 
-x86_features::x86_features()
+void x86_features::detect()
 {
 	sse_1=true;
 	sse_2=true;

@@ -216,7 +216,7 @@ copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
       <AdditionalDependencies>winmm.lib;wsock32.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>$(SolutionDir)\WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>

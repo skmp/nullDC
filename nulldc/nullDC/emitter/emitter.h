@@ -3,8 +3,7 @@
  
 struct x86_features
 {
-public :
-	x86_features();
+	void detect();
 	bool sse_1;
 	bool sse_2;
 	bool sse_3;

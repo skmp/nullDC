@@ -168,6 +168,7 @@ bool uiInit()
 	RECT r= { 0,0,640,480};
 	AdjustWindowRectEx(&r,GetWindowLong(g_hWnd,GWL_STYLE),GetMenu(g_hWnd)!=NULL,GetWindowLong(g_hWnd,GWL_EXSTYLE));
 	SetWindowPos( g_hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_NOMOVE ) ;
+	ShowWindow(g_hWnd,emu.nCmdShow);
 
 	if (settings.Fullscreen)
 	{

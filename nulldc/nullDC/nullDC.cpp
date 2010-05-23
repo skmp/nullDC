@@ -13,6 +13,7 @@
 #include "plugins/plugin_manager.h"
 #include "serial_ipc/serial_ipc_client.h"
 #include "cl/cl.h"
+#include "emitter/emitter.h"
 
 __settings settings;
 
@@ -131,7 +132,9 @@ int main___(int argc,wchar* argv[])
 	LoadSettings();
 
 	if (settings.emulator.NoConsole)
+	{
 		FreeConsole();
+	}
 
 	if (!CreateGUI())
 	{
@@ -179,14 +182,13 @@ cleanup:
 
 int _tmain(int argc, wchar* argv[])
 {
+	x86_caps.detect();
 	if (!_vmem_reserve())
 	{
 		msgboxf(L"Unable to reserve nullDC memory ...",MBX_OK | MBX_ICONERROR);
 		return -5;
 	}
 	int rv=0;
-	
-	SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE ) ;
 
 	__try
 	{
@@ -201,6 +203,26 @@ int _tmain(int argc, wchar* argv[])
 	return rv;
 }
 
+extern int nCmdShow;
+int CALLBACK WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,int nCmdShowCmd)
+{
+	int argc=0;
+	nCmdShow=nCmdShowCmd;
+	wchar* cmd_line=GetCommandLineW();
+	wchar** argv=CommandLineToArgvW(cmd_line,&argc);
+	if(wcsstr(cmd_line,L"NoConsole")==0)
+	{
+		if (AllocConsole())
+		{
+			freopen("CON","w",stdout);
+			freopen("CON","w",stderr);
+			freopen("CON","r",stdin);
+		}
+		SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
+	}
+	
+	return _tmain(argc,argv);
+}
 
 void LoadSettings()
 {
