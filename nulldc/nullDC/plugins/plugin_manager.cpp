@@ -51,8 +51,8 @@ vector<cDllHandler*>				LoadedTempDlls;
 
 const wchar* pluginDefaults[]=
 {
-	L"nullPvr_Win32.dll",
-	L"nullGDR_Win32.dll",
+	L"drkPvr_Win32.dll",
+	L"ImgReader_Win32.dll",
 	L"nullAica_Win32.dll",
 	L"vbaARM_Win32.dll",
 	L"nullExtDev_Win32.dll",
