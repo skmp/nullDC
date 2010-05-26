@@ -12,16 +12,17 @@
 #include "XMaple.h"
 #include "FT8.h"
 
-namespace XInput
-{	
-	_settings settings;
+extern xmaple_settings settings;
 
-void ScaleStickValues(unsigned char* outx, unsigned char* outy, short inx, short iny)
+namespace XInput
+{		
+
+static void ScaleStickValues(unsigned char* outx, unsigned char* outy, short inx, short iny)
 {
-	const float kDeadZone = settings.deadzone;
+	const float kDeadZone = (float)settings.Controller.Deadzone;
 	const int	center 	  = 0x80;
 
-	float magnitude = sqrtf( inx*inx + iny*iny );		
+	float magnitude = sqrtf( (float)inx*inx + (float)iny*iny );		
 	
 	float x = inx / magnitude;
 	float y = iny / magnitude;
@@ -39,8 +40,8 @@ void ScaleStickValues(unsigned char* outx, unsigned char* outy, short inx, short
 	x *= magnitude;
 	y *= magnitude;
 	
-	*outx = center + x;
-	*outy = center - y;
+	*outx = (unsigned char)(center + x);
+	*outy = (unsigned char)(center - y);
 }
 
 bool Read(int XPadPlayer, u32 deviceType, EmulatedDevices::FT0::SStatus* status)
@@ -48,9 +49,6 @@ bool Read(int XPadPlayer, u32 deviceType, EmulatedDevices::FT0::SStatus* status)
 	const int base = 0x80;
 	XINPUT_STATE xstate;
 	DWORD xresult = XInputGetState(XPadPlayer, &xstate);
-
-	// load setting
-	loadConfig();
 
 	// Let's .. yes, let's use XINPUT!
 	if (xresult == ERROR_SUCCESS)
@@ -181,129 +179,126 @@ void VibrationThread(void* _status)
 {
 	DEBUG_LOG("   VIBRATION THREAD STARTED\n");
 
-	EmulatedDevices::FT8::SStatus* status = (EmulatedDevices::FT8::SStatus*)_status;
-	u32* tickCount = &status->tickCount;
-	u32* tickAutoStop = &status->tickAutoStop;
-	u32* tickIncPeriod = &status->tickIncPeriod;
+	EmulatedDevices::FT8::SStatus* status = (EmulatedDevices::FT8::SStatus*)_status;	
 
-	// ...aaaand here is the mess ><
+	XINPUT_VIBRATION vib;
+
+	EmulatedDevices::FT8::UVibConfig* config = &status->config;	
+
+	float xIntensity;
+	u32 timeLength;
+	u16 intensity;
+	u16 intensityStep;	
+	u8 fm;
+
+	bool hasDirection;	
+
 	while (true)
 	{
-	// Left = low freq, right = high freq
-	XINPUT_VIBRATION vib;
-	vib.wLeftMotorSpeed = 0;
-	vib.wRightMotorSpeed = 0;
+		
+		timeLength = settings.PuruPuru.Length;
+		intensity = 0;
 
-	WORD intensity = 0;
-	u16 intensityReal = 0;
-
-	EmulatedDevices::FT8::UVibConfig* config = &status->config;
-
-	Sleep(1);
-
-	EnterCriticalSection(&status->section);
-	*tickCount = GetTickCount();
-	*tickAutoStop = *tickCount + (status->AST * 250);
-	LeaveCriticalSection(&status->section);
-
-	u8 periodsPast = 0;
-	u32 startTime = *tickCount;
-	u32 timeLength = *tickAutoStop - startTime;
-	if (config->INC)
-	{
-		EnterCriticalSection(&status->section);
-		*tickIncPeriod = timeLength / config->INC;
-		LeaveCriticalSection(&status->section);
-	}
-
-	if (config->CNT && *tickCount < *tickAutoStop)
-	{
-		if (config->Ppow)
-			intensity = intensityReal = config->Ppow * (65535 / 7);
-		else if (config->Mpow)
-			intensity = intensityReal = config->Mpow * (65535 / 7);
-
-		while (config->CNT && (intensity || periodsPast)) // The continuous mode loop
-		{
-			Sleep(1); // Force kernel to release a timeslice
-			EnterCriticalSection(&status->section);
-			*tickCount = GetTickCount();
-			LeaveCriticalSection(&status->section);
-			if (*tickCount > *tickAutoStop)
-			{
-				config->CNT = 0; // break loop AND don't re-enter if
-				intensity = 0;
-			}
-
-			if (config->INC && (config->INH || config->EXH) && *tickCount >= ((*tickIncPeriod * periodsPast) + startTime))
-			{
-				// it's time to handle con/divergence
-				if (config->INH)
-				{
-					// diminishing
-					if (periodsPast == config->INC - 1)
-						intensity = 0;
-					else
-						intensity -= intensityReal / config->INC;
-				}
-				else
-				{
-					// rising
-					if (periodsPast == 0)
-						intensity = 0;
-					else
-						intensity += intensityReal / config->INC;
-				}
-				periodsPast++;
-
-				if (periodsPast == config->INC)
-					config->INC = 0;
-				DEBUG_LOG("    %s intensity %i pPast %i\n", config->INH?"Convergence":"Divergence", intensity,periodsPast);
-			}
-
-			if (status->useFreq)
-			{
-				u8 fm = status->srcSettings.FM1 - status->srcSettings.FM0;
-				if (config->Freq > (u8)((fm / 4)*3))	// top 1/4
-					vib.wRightMotorSpeed = intensity;
-				else if (config->Freq < (u8)(fm / 3))// low 1/3
-					vib.wLeftMotorSpeed = intensity;
-				else							// mid
-				{
-					vib.wRightMotorSpeed = intensity;
-					vib.wLeftMotorSpeed = intensity;
-				}
-			}
+		hasDirection = (config->Mpow || config->Ppow);
+		
+#ifdef _DEBUG
+		if (hasDirection)
+			printf("CNT: %i, Mpow: %i, Ppow: %i | INC: %i, EXH: %i, INH: %i\n", 
+				config->CNT, config->Mpow, config->Ppow, config->INC, config->EXH, config->INH);
+#endif
+		
+		if ( config->CNT && hasDirection )
+		{							
+			if ( config->Mpow > config->Ppow )
+				intensity = (u16)((config->Mpow+1) * 8192 - 1);
 			else
-			{
-				vib.wRightMotorSpeed = intensity;
-				vib.wLeftMotorSpeed = intensity;
+				intensity = (u16)((config->Ppow+1) * 8192 - 1);
+
+			xIntensity = intensity * (settings.PuruPuru.Intensity / 100.0f);
+			if(xIntensity > 65535) intensity = 65535;
+			else intensity = (int)xIntensity;			
+			
+			// Convergence/Divergence
+			if ( config->INC && (config->INH || config->EXH) )
+			{						
+				timeLength = (timeLength + 50 * (config->INC)) / config->INC; // Takes longer
+				
+				if ( config->INH ) // Diminish			
+					intensityStep = (intensity - 8191) / config->INC;							
+				else 		
+					intensityStep = (65535 - intensity) / config->INC;																				
+				
+				for(int i = config->INC; i > 0; i--)
+				{
+					if (settings.PuruPuru.UseRealFreq)
+					{
+						// Left = low freq, right = high freq
+						fm = status->srcSettings.FM1 - status->srcSettings.FM0;
+		
+						if ( config->Freq > (u8)((fm/4) * 3 ))		// top 1/4
+							vib.wRightMotorSpeed = intensity;
+						else if ( config->Freq < (u8)(fm/3) )	// low 1/3
+							vib.wLeftMotorSpeed = intensity;	
+						else
+						{
+							vib.wRightMotorSpeed = intensity;
+							vib.wLeftMotorSpeed = intensity;
+						}
+					}
+					else
+					{
+						vib.wRightMotorSpeed = intensity;
+						vib.wLeftMotorSpeed = intensity;
+					}
+
+					XInputSetState(status->currentXPad, &vib);
+
+					// Must be done last
+				
+					if ( config->INH ) // Diminish
+						intensity -= intensityStep;
+					else 
+						intensity += intensityStep;
+
+					Sleep(timeLength); 
+				}	
+				
+				config->CNT = config->INC = config->Mpow = config->Ppow = 0;
+
+				continue; // End of Convergence/Divergence
 			}
-			// Actually set that crap! D:
-			XInputSetState(status->currentXPad, &vib);
-		}
-	}
-	else if (config->Mpow || config->Ppow)
-	{
-		if (config->Ppow)
-		{
-			intensity = config->Ppow * (65535 / 7);
-			config->Ppow = 0;
+
+			 config->CNT = config->Mpow = config->Ppow = 0;
+		} 
+		else if ( hasDirection )
+		{		
+			if ( config->Mpow > config->Ppow )
+				intensity = (u16)((config->Mpow+1) * 8192 - 1); 			
+			else			
+				intensity = (u16)((config->Ppow+1) * 8192 - 1);
+
+			xIntensity = intensity * (settings.PuruPuru.Intensity / 100.0f);
+			if(xIntensity > 65535) intensity = 65535;
+			else intensity = (int)xIntensity;
+
+			config->Mpow = config->Ppow = 0;
 		}
 		else
 		{
-			intensity = config->Mpow * (65535 / 7);
-			config->Mpow = 0;
+			intensity = 0;		
+			timeLength = 10;
 		}
-
-		if (status->useFreq)
+			
+		if (intensity && settings.PuruPuru.UseRealFreq)
 		{
-			u8 fm = status->srcSettings.FM1 - status->srcSettings.FM0;
-			if (config->Freq > (u8)((fm / 4)*3))	// top 1/4
+			// Left = low freq, right = high freq
+			fm = status->srcSettings.FM1 - status->srcSettings.FM0;
+		
+			if ( config->Freq > (u8)((fm/4) * 3 ))		// top 1/4
 				vib.wRightMotorSpeed = intensity;
-			else if (config->Freq < (u8)(fm / 3))// low 1/3
-				vib.wLeftMotorSpeed = intensity;
-			else							// mid
+			else if ( config->Freq < (u8)(fm/3) )	// low 1/3
+				vib.wLeftMotorSpeed = intensity;	
+			else
 			{
 				vib.wRightMotorSpeed = intensity;
 				vib.wLeftMotorSpeed = intensity;
@@ -314,32 +309,13 @@ void VibrationThread(void* _status)
 			vib.wRightMotorSpeed = intensity;
 			vib.wLeftMotorSpeed = intensity;
 		}
+	
 		XInputSetState(status->currentXPad, &vib);
-		//Sleep(800); // x360pad spin up time (the motor is slow...) :(
-	}
-	else
-	{
-		vib.wLeftMotorSpeed = 0;
-		vib.wRightMotorSpeed = 0;
-		XInputSetState(status->currentXPad, &vib);
-	}
+		Sleep(timeLength);
+
 	} //while(true)
-}
 
-void loadConfig()
-{
-	
-	 settings.deadzone = host.ConfigLoadInt(L"Xmaple", L"DeadZone", 25);
-	 saveConfig();
-	
-}
-
-void saveConfig()
-{
-	
-	 host.ConfigSaveInt(L"Xmaple", L"DeadZone", settings.deadzone);
-	
-}
+} // Vibration Thread
 
 } //namespace
 

@@ -14,7 +14,7 @@ Maxi::Maxi(maple_subdevice_instance* instance)
 	m_strName = "Puru Puru Pack";
 	m_mAstandby = 0x00C8;
 	m_mAmax = 0x0640;
-	m_strNameEx = "Version 1.000,1998/11/10,315-6211-AH   ,Vibration Motor:1,Fm:4 ñ 30Hz,Pow:7   ";
+	m_strNameEx = "Version 1.000,1998/11/10,315-6211-AH   ,Vibration Motor:1,Fm:4 ÅE30Hz,Pow:7   ";
 
 
 	// init with maxi srcSettings
@@ -35,25 +35,24 @@ Maxi::Maxi(maple_subdevice_instance* instance)
 void Maxi::StartVibThread()
 {
 	DEBUG_LOG("   VIBRATION THREAD STARTING...\n");
-	m_thread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)XInput::VibrationThread, &m_status, 0, NULL);
-	InitializeCriticalSection(&m_status.section);
+	CreateThread(0, 0, (LPTHREAD_START_ROUTINE)XInput::VibrationThread, &m_status, 0, NULL);
+	InitializeCriticalSection(&m_status.section);	
+	
 }
 
 void Maxi::StopVibThread()
-{
+{				
 	// Kill thread or whatever
 	XInput::StopRumble(m_xpad);
+	
+	// It crashes when using Xmaple as main device too and closing the GUI.
+	// Doesn't crash when using PuruPuru as main device, nor when closing through console.
 
-	TerminateThread(m_thread, 0);
+	// TODO: Find out why. =S
+
 	CloseHandle(m_thread);
+	TerminateThread(m_thread, 0);	
 	DEBUG_LOG("   VIBRATION THREAD STOPPED\n");
-}
-
-void Maxi::UseFreqScaling(bool enable)
-{
-	EnterCriticalSection(&m_status.section);
-	m_status.useFreq = enable;
-	LeaveCriticalSection(&m_status.section);
 }
 
 u32 Maxi::DMA(u32 Command,

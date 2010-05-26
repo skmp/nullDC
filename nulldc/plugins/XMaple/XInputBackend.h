@@ -1,5 +1,4 @@
 #pragma once
-
 #include "FT0.h"
 
 namespace XInput
@@ -14,13 +13,5 @@ bool IsConnected(int XPadPlayer);
 void StopRumble(int XPadPlayer);
 
 void VibrationThread(void* _status);
-
-struct _settings
-{
-	int deadzone;
-};
-
-void loadConfig();
-void saveConfig();
 
 } //namespace

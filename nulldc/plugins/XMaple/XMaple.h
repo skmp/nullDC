@@ -60,3 +60,21 @@ static const wchar_t* deviceNames[] =
 	L"Mic",
 	L"Dreameye Mic",
 };
+
+struct xmaple_settings
+{
+	struct 
+	{
+		int Deadzone;		
+	} Controller;
+	
+	struct 
+	{
+		bool UseRealFreq;
+		int Length;
+		int Intensity;
+	} PuruPuru;	
+};
+
+void loadConfig();
+void saveConfig();
