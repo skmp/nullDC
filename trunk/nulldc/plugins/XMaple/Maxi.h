@@ -16,7 +16,7 @@ public:
 	void StartVibThread();
 	void StopVibThread();
 
-	void UseFreqScaling(bool enable);
+	// void UseFreqScaling(bool enable);
 };
 
 } //namespace

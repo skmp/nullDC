@@ -21,10 +21,7 @@ public:
 		u32* buffer_out, u32& buffer_out_len) = 0;
 
 	virtual void StartVibThread() = 0;
-	virtual void StopVibThread() = 0;
-
-	virtual void UseFreqScaling(bool enable) = 0;
-
+	virtual void StopVibThread() = 0;	
 
 	//needed to get port/etc
 	// LOOK! it's a subdevice!!
@@ -39,13 +36,16 @@ public:
 	{
 		u32 U32;
 		// byte swapped
-		struct{
+		struct
+		{
 			u8 Vset0;
 			u8 Vset1;
 			u8 FM0;
 			u8 FM1;
 		};
-		struct{
+		
+		struct
+		{
 			unsigned VD		:2; // direction the source vibrates along 0: none 1: X 10: Y 11: Z
 			unsigned VP		:2; // source position 0: front 1: back 10: left 11: right
 			unsigned VN		:4; // number of sources (1-F) 0 is illegal
@@ -69,13 +69,16 @@ public:
 	{
 		u32 U32;
 		// byte swapped
-		struct{
+		struct
+		{
 			u8 CTRL;
 			u8 POW;
 			u8 FREQ;
 			u8 INC;
 		};
-		struct{
+		
+		struct
+		{
 			unsigned CNT	:1; // continuous
 			unsigned Res	:3; // reserved
 			unsigned VN		:4; // source number (1-F) 0 is illegal
@@ -89,6 +92,7 @@ public:
 
 			unsigned Inc	:8; // inclination
 		};
+
 		UVibConfig() {U32 = 0;}
 		UVibConfig(u32 _hex) {U32 = _hex;}
 	};
@@ -97,19 +101,20 @@ public:
 	{
 		UVibSourceSettings srcSettings;
 		UVibConfig config;
-
+		
 		u8 AST;			// 1:.25 seconds
 
 		// Threading crap
-		u32 tickCount;
-		u32 tickAutoStop;
-		u32 tickIncPeriod;
+		//u32 tickCount;
+		//u32 tickAutoStop;
+		//u32 tickIncPeriod;
 		// To lock modifications to m_status
 		CRITICAL_SECTION section;
 
 		u8 currentXPad;
-		bool useFreq;
+		// bool useFreq;
 	};
+
 	SStatus m_status;
 };
 

@@ -30,6 +30,7 @@ u32 Twinstick::DMA(u32 Command,
 	{
 		switch (Command)
 		{
+		case 0: // bogus
 		default:
 			printf("UNKNOWN MAPLE COMMAND %d (sent to %s)\n", Command, m_strName);
 			return CommandUnknown;

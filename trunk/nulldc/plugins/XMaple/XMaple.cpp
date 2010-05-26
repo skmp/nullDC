@@ -19,6 +19,8 @@ emu_info host;
 u32 deviceMenu;
 u32 devicemenuItem[4];
 
+xmaple_settings settings;
+
 void UpdateMenu(u32 parentmenu, maple_device_instance* inst, bool override);
 
 
@@ -39,6 +41,8 @@ s32 FASTCALL Load(emu_info* emu)
 {
 	memcpy(&host, emu, sizeof(host));
 
+	loadConfig();
+
 	return rv_ok;
 }
 
@@ -49,21 +53,17 @@ void FASTCALL Unload()
 
 void EXPORT_CALL MaxiCallback(u32 id, void* w, void* p)
 {
-	maple_subdevice_instance* inst = (maple_subdevice_instance*)p;
+	// Same setting for EVERY PuruPuru Pack, but doesn't crash. :)
+	// TODO: Make it per subdevice.
 
-	// Get the selection
-	MenuItem mi;
-	host.GetMenuItem(id, &mi, MIM_Style);
-	if (mi.Style & MIS_Checked)
-	{
-		((EmulatedDevices::FT8*)inst->data)->UseFreqScaling(false);
-		host.SetMenuItemStyle(id, 0, MIM_Style);
-	}
+	if (settings.PuruPuru.UseRealFreq)
+		settings.PuruPuru.UseRealFreq = 0;
 	else
-	{
-		((EmulatedDevices::FT8*)inst->data)->UseFreqScaling(true);
-		host.SetMenuItemStyle(id, MIS_Checked, MIM_Style);	
-	}
+		settings.PuruPuru.UseRealFreq = 1;
+
+	host.SetMenuItemStyle(id,settings.PuruPuru.UseRealFreq?MIS_Checked:0,MIS_Checked);
+
+	saveConfig();
 }
 
 void EXPORT_CALL AboutBoxCallback(u32 id, void* w, void* p)
@@ -169,6 +169,7 @@ void UpdateMenu(u32 parentmenu, maple_device_instance* inst, bool override)
 ///rootmenu : Root menu for the device
 s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 rootmenu)
 {
+	
 	// Only FT0 here for the time being...so w/e
 	//pass the interface pointer using the device_instance field
 	inst->data = (EmulatedDevices::MapleInterface*)(EmulatedDevices::CreateFT0(id, inst));
@@ -196,20 +197,18 @@ s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 root
 //Create subdevice, same params as CreateMain
 s32 FASTCALL CreateSub(maple_subdevice_instance* inst, u32 id, u32 flags, u32 rootmenu)
 {
+	
 	//pass the interface pointer using the device_instance field
 	switch (id)
 	{
 	case ID_PURUPURUPACK:
 		{
 		inst->data = (EmulatedDevices::MapleInterface*)(EmulatedDevices::CreateFT8(id, inst));
-		// Frequency menuitem
-		MenuItem mi;
-		u32 freqMenuItem = host.AddMenuItem(rootmenu, -1, L"Real Frequency Scaling", MaxiCallback, 0);
-		host.GetMenuItem(freqMenuItem, &mi, 0);
-		mi.PUser = inst;
-		mi.Text = L"Real Frequency Scaling";
-		mi.Handler = MaxiCallback;
-		host.SetMenuItem(freqMenuItem, &mi, MIM_PUser | MIM_Text | MIM_Handler);
+		
+		// Frequency menuitem 
+		
+		host.AddMenuItem(rootmenu, -1, L"Real Frequency Scaling", MaxiCallback, settings.PuruPuru.UseRealFreq);
+		
 		}
 		break;
 
@@ -241,9 +240,10 @@ s32 FASTCALL CreateSub(maple_subdevice_instance* inst, u32 id, u32 flags, u32 ro
 //NOTE: Hot plugged devices can miss this call if the emulation is started
 // before the device is hotplugged.This is a bug on the emu %) ;p
 s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
-{
+{	
+	
 	//Emulation was started ! OMFG ! GET THE GUNSHIPS READYYYY
-	//Err, init dinput or smth, i do all my init work on the Create() part anyway ..
+	//Err, init dinput or smth, i do all my init work on the Create() part anyway ..			
 	switch (id)
 	{
 	case ID_PURUPURUPACK:
@@ -261,6 +261,7 @@ s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
 // Called only if Init() was called ;)
 void FASTCALL Term(void* data, u32 id)
 {
+	
 	//kill whatever you did on Init()
 	// TODO figure out why this only gets called for main devices
 	switch (id)
@@ -280,13 +281,13 @@ void FASTCALL Destroy(void* data,u32 id)
 }
 
 #define AddMapleDevice(name, flags)	\
-	wcscpy(info->maple.devices[id].Name, ##name##L" [XInput] (" _T(__DATE__) L")"); \
+	wcscpy_s(info->maple.devices[id].Name, ##name##L" [XInput] (" _T(__DATE__) L")"); \
 	info->maple.devices[id].Type	= MDT_Main;	\
 	info->maple.devices[id].Flags	= flags;	\
 	id++;
 
 #define AddMapleSubDevice(name, flags) \
-	wcscpy(info->maple.devices[id].Name, ##name##L" [XInput] (" _T(__DATE__) L")"); \
+	wcscpy_s(info->maple.devices[id].Name, ##name##L" [XInput] (" _T(__DATE__) L")"); \
 	info->maple.devices[id].Type	= MDT_Sub;	\
 	info->maple.devices[id].Flags	= flags;	\
 	id++;
@@ -296,7 +297,7 @@ void FASTCALL Destroy(void* data,u32 id)
 #define __T(x) L##x
 #define _T(x) __T(x)
 void EXPORT_CALL dcGetInterface(plugin_interface* info)
-{
+{		
 	//Fill in the common (for all plugin types) info
 	info->InterfaceVersion			= PLUGIN_I_F_VERSION;
 	info->common.InterfaceVersion	= MAPLE_PLUGIN_I_F_VERSION;
@@ -305,7 +306,7 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	info->common.Type	= Plugin_Maple;
 
 	//wcscpy : unicode ;)
-	wcscpy(info->common.Name, L"XInput for nullDC by shuffle2 [" _T(__DATE__) L"]");
+	wcscpy_s(info->common.Name, L"XInput for nullDC by shuffle2 [" _T(__DATE__) L"]");
 
 	//Fill in the maple info
 	info->maple.CreateMain	= CreateMain;
@@ -326,4 +327,22 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 
 	//EOL marker
 	info->maple.devices[id].Type = MDT_EndOfList;
+}
+
+void loadConfig()
+{
+	settings.Controller.Deadzone = host.ConfigLoadInt(L"Xmaple", L"Controller.DeadZone", 25);
+
+	settings.PuruPuru.UseRealFreq = host.ConfigLoadInt(L"Xmaple", L"PuruPuru.UseRealFrequency", 1) == 1 ? true:false;
+	settings.PuruPuru.Length = host.ConfigLoadInt(L"Xmaple", L"PuruPuru.Length", 175);
+	settings.PuruPuru.Intensity = host.ConfigLoadInt(L"Xmaple", L"PuruPuru.Intensity", 100);
+	
+	// Just to be sure this ain't negative.
+	settings.PuruPuru.Intensity = abs(settings.PuruPuru.Intensity);
+	settings.PuruPuru.Length = abs(settings.PuruPuru.Length);
+}
+
+void saveConfig()
+{	
+	host.ConfigSaveInt(L"Xmaple", L"PuruPuru.UseRealFrequency", settings.PuruPuru.UseRealFreq);
 }
