@@ -173,6 +173,21 @@ void FASTCALL vramLockCB (vram_block* block,u32 addr)
 #include <vector>
 using std::vector;
 
+extern volatile bool render_restart;
+
+void EXPORT_CALL handler_Vsync (u32 id,void* win,void* puser)
+{
+	if (settings.Video.VSync)
+		settings.Video.VSync=0;
+	else
+		settings.Video.VSync=1;
+
+	emu.SetMenuItemStyle(id,settings.Video.VSync?MIS_Checked:0,MIS_Checked);
+	
+	SaveSettings();
+	render_restart=true;
+}
+
 void EXPORT_CALL handler_ShowFps(u32 id,void* win,void* puser)
 {
 	if (settings.OSD.ShowFPS)
@@ -214,7 +229,7 @@ void handler_TexCacheMode(int  mode)
 	settings.Emulation.TexCacheMode=mode;
 	SaveSettings();
 }
-extern volatile bool render_restart;
+
 void handler_ZBufferMode(int  mode)
 {
 	settings.Emulation.ZBufferMode=mode;
@@ -352,6 +367,7 @@ s32 FASTCALL Load(emu_info* emu_inf)
 
 	menu_TCM.SetValue(settings.Emulation.TexCacheMode);
 
+	emu.AddMenuItem(emu.RootMenu,-1,L"Vsync",handler_Vsync,settings.Video.VSync);
 	emu.AddMenuItem(emu.RootMenu,-1,L"Show Fps",handler_ShowFps,settings.OSD.ShowFPS);
 
 	AddSeperator(emu.RootMenu);
