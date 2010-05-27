@@ -761,7 +761,7 @@ s32 FASTCALL Load(emu_info* emu)
 	
 	#ifdef _HAS_LGLCD_
 
-	printf("drkMapleDevices: Compiled With Optional Logitech G Series Keyboard Support\n");
+	printf("nullDC Maple Devices: Compiled With Optional Logitech G Series Keyboard Support\n");
 		gA0 = gB0 = gC0 = gD0 = lgLcdInit();
 		HandleError(gA0, _T("lgLcdInit"));
 		HandleError(gB0, _T("lgLcdInit"));
@@ -3463,7 +3463,11 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	MMD(L"nullDC Controller [WinHook,NET] (" _T(__DATE__) L")",MDTF_Hotplug|MDTF_Sub0|MDTF_Sub1);
 
 	//2
-	MSD(L"nullDC VMU (" _T(__DATE__) L")",MDTF_Hotplug);
+	#ifdef _HAS_LGLCD_
+		MSD(L"nullDC VMU For Logitech G-15 Keyboards (" _T(__DATE__) L")",MDTF_Hotplug);
+	#else
+		MSD(L"nullDC VMU (" _T(__DATE__) L")",MDTF_Hotplug);
+	#endif
 
 	//3
 	MMD(L"nullDC Keyboard [WinHook] (" _T(__DATE__) L")",MDTF_Hotplug);
