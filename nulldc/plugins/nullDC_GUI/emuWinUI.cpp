@@ -804,9 +804,9 @@ u32 gui_fullscreen_mid;
 u32 rec_cpp_mid;
 u32 rec_enb_mid;
 u32 rec_ufpu_mid;
-u32 ct_menu[3];
-u32 sr_menu[2];
-u32 bf_menu[3];
+u32 ct_menu[4];
+u32 sr_menu[3];
+u32 bf_menu[4];
 
 
 void UpdateMenus()
