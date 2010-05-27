@@ -64,17 +64,17 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\WorkDir\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)WorkDir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\WorkDir\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)WorkDir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release-NoTrace|Win32'">$(SolutionDir)\WorkDir\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release-NoTrace|Win32'">$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release-NoTrace|Win32'">$(SolutionDir)WorkDir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release-NoTrace|Win32'">$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release-NoTrace|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">$(SolutionDir)\WorkDir\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">$(SolutionDir)\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">$(SolutionDir)WorkDir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">true</LinkIncremental>
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'" />
@@ -91,6 +91,13 @@
     <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
     <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">$(SolutionDir)WorkDir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">$(SolutionDir)obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release-NoTrace|Win32'">$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">$(ProjectName)_$(Platform)_$(Configuration)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <BuildLog>
@@ -113,26 +120,16 @@
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
-    <PreLinkEvent>
-      <Message>Copying Libs</Message>
-      <Command>mkdir "$(SolutionDir)deps\"
-copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
-</Command>
-    </PreLinkEvent>
     <Link>
       <AdditionalDependencies>winmm.lib;wsock32.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)\WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
+      <OutputFile>$(SolutionDir)WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>
-      <Message>Copying Dlls</Message>
-      <Command>copy "$(SolutionDir)deps\*.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <BuildLog>
@@ -150,17 +147,11 @@ copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <PreLinkEvent>
-      <Message>Copying Libs</Message>
-      <Command>mkdir "$(SolutionDir)deps\"
-copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
-</Command>
-    </PreLinkEvent>
     <Link>
       <AdditionalDependencies>winmm.lib;wsock32.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)\WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
+      <OutputFile>$(SolutionDir)WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -168,10 +159,6 @@ copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>
-      <Message>Copying Dlls</Message>
-      <Command>copy "$(SolutionDir)deps\*.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release-NoTrace|Win32'">
     <BuildLog>
@@ -206,15 +193,9 @@ copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
-    <PreLinkEvent>
-      <Message>Copying Libs</Message>
-      <Command>mkdir "$(SolutionDir)deps\"
-copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
-</Command>
-    </PreLinkEvent>
     <Link>
       <AdditionalDependencies>winmm.lib;wsock32.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)\WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
+      <OutputFile>$(SolutionDir)WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
@@ -224,10 +205,6 @@ copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>
-      <Message>Copying Dlls</Message>
-      <Command>copy "$(SolutionDir)deps\*.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_R|Win32'">
     <BuildLog>
@@ -250,26 +227,22 @@ copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
       <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
-    <PreLinkEvent>
-      <Message>Copying Libs</Message>
-      <Command>mkdir "$(SolutionDir)deps\"
-copy "$(SolutionDir)..\emitter\bins\emitter_$(Platform).*" "$(SolutionDir)deps\"
-</Command>
-    </PreLinkEvent>
     <Link>
       <AdditionalDependencies>winmm.lib;wsock32.lib;comctl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <OutputFile>$(SolutionDir)\WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
+      <OutputFile>$(SolutionDir)WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
-    <PostBuildEvent>
-      <Message>Copying Dlls</Message>
-      <Command>copy "$(SolutionDir)deps\*.dll" "$(OutDir)"</Command>
-    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">
+    <Link>
+      <OutputFile>$(SolutionDir)WorkDir\$(ProjectName)_$(Platform)_$(Configuration).exe</OutputFile>
+      <SubSystem>Windows</SubSystem>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\emitter\emitter.vcxproj">
