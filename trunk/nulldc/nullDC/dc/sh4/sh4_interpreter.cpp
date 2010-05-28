@@ -557,16 +557,15 @@ int __fastcall UpdateSystem()
 }
 u32 dmatmp1;
 u32 dmatmp2;
-u32 dmatmp3;
-u32 dmatmp4;
 u32 OldDmaId;
 
 void __fastcall DmaTime(u32 NewDmaId)
 {
-	//IRQ slots are here, Takes about 10 cycles to raise each interrupt :)
-	OldDmaId=dmatmp4;
-	dmatmp4=dmatmp3;
-	dmatmp3=dmatmp2;
+	// IRQ wait slots are here. This is a hack. ~Psy.
+	// Up until now, more than 3 and less than 2 wait slots break stuff.
+	// Currently using 2 wait slots.
+
+	OldDmaId=dmatmp2;
 	dmatmp2=dmatmp1;
 	dmatmp1=NewDmaId;
 
