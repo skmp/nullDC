@@ -559,22 +559,12 @@ u32 dmatmp1;
 u32 dmatmp2;
 u32 dmatmp3;
 u32 dmatmp4;
-u32 dmatmp5;
-u32 dmatmp6;
-u32 dmatmp7;
-u32 dmatmp8;
-u32 dmatmp9;
 u32 OldDmaId;
 
 void __fastcall DmaTime(u32 NewDmaId)
 {
 	//IRQ slots are here, Takes about 10 cycles to raise each interrupt :)
-	OldDmaId=dmatmp9;
-	dmatmp9=dmatmp8;
-	dmatmp8=dmatmp7;
-	dmatmp7=dmatmp6;
-	dmatmp6=dmatmp5;
-	dmatmp5=dmatmp4;
+	OldDmaId=dmatmp4;
 	dmatmp4=dmatmp3;
 	dmatmp3=dmatmp2;
 	dmatmp2=dmatmp1;
