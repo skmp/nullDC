@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="arm7">
+      <UniqueIdentifier>{0968b9a6-1e62-46d9-985a-003c83248df7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mem">
+      <UniqueIdentifier>{321d10c9-5653-4392-9fd1-6257bc8e1b1b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>plugin</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="vbaARM.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="arm7.cpp">
+      <Filter>arm7</Filter>
+    </ClCompile>
+    <ClCompile Include="mem.cpp">
+      <Filter>mem</Filter>
+    </ClCompile>
+    <ClCompile Include="aica.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="vbaARM.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="arm-new.h">
+      <Filter>arm7</Filter>
+    </ClInclude>
+    <ClInclude Include="arm7.h">
+      <Filter>arm7</Filter>
+    </ClInclude>
+    <ClInclude Include="mem.h">
+      <Filter>mem</Filter>
+    </ClInclude>
+    <ClInclude Include="aica.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+</Project>

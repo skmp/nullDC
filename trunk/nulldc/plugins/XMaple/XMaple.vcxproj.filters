@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="nullDC stuff">
+      <UniqueIdentifier>{6a3e1085-394a-479b-93cf-9c3ca9d17514}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Input Backends">
+      <UniqueIdentifier>{e5c30eaf-75bf-47e5-8350-2fb88d7cd721}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Devices">
+      <UniqueIdentifier>{89e17b6d-f939-423b-8769-b62daccc9567}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Devices\FT0">
+      <UniqueIdentifier>{b1b538b2-e49f-4fc9-8661-f9796e56e4d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Devices\FT8">
+      <UniqueIdentifier>{919119e4-389c-42b2-865b-0bd53d64b811}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Devices\FT4">
+      <UniqueIdentifier>{d2d48658-a66b-4e05-b324-c9aeb574f888}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>nullDC stuff</Filter>
+    </None>
+    <None Include="readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="DInputBackend.cpp">
+      <Filter>Input Backends</Filter>
+    </ClCompile>
+    <ClCompile Include="XInputBackend.cpp">
+      <Filter>Input Backends</Filter>
+    </ClCompile>
+    <ClCompile Include="ArcadeStick.cpp">
+      <Filter>Devices\FT0</Filter>
+    </ClCompile>
+    <ClCompile Include="FT0.cpp">
+      <Filter>Devices\FT0</Filter>
+    </ClCompile>
+    <ClCompile Include="StandardController.cpp">
+      <Filter>Devices\FT0</Filter>
+    </ClCompile>
+    <ClCompile Include="Twinstick.cpp">
+      <Filter>Devices\FT0</Filter>
+    </ClCompile>
+    <ClCompile Include="FT8.cpp">
+      <Filter>Devices\FT8</Filter>
+    </ClCompile>
+    <ClCompile Include="Maxi.cpp">
+      <Filter>Devices\FT8</Filter>
+    </ClCompile>
+    <ClCompile Include="DreameyeMic.cpp">
+      <Filter>Devices\FT4</Filter>
+    </ClCompile>
+    <ClCompile Include="FT4.cpp">
+      <Filter>Devices\FT4</Filter>
+    </ClCompile>
+    <ClCompile Include="Mic.cpp">
+      <Filter>Devices\FT4</Filter>
+    </ClCompile>
+    <ClCompile Include="VIBRATIONFUNCTION.cpp" />
+    <ClCompile Include="XMaple.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DInputBackend.h">
+      <Filter>Input Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="XInputBackend.h">
+      <Filter>Input Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="MapleInterface.h">
+      <Filter>Devices</Filter>
+    </ClInclude>
+    <ClInclude Include="ArcadeStick.h">
+      <Filter>Devices\FT0</Filter>
+    </ClInclude>
+    <ClInclude Include="FT0.h">
+      <Filter>Devices\FT0</Filter>
+    </ClInclude>
+    <ClInclude Include="StandardController.h">
+      <Filter>Devices\FT0</Filter>
+    </ClInclude>
+    <ClInclude Include="Twinstick.h">
+      <Filter>Devices\FT0</Filter>
+    </ClInclude>
+    <ClInclude Include="FT8.h">
+      <Filter>Devices\FT8</Filter>
+    </ClInclude>
+    <ClInclude Include="Maxi.h">
+      <Filter>Devices\FT8</Filter>
+    </ClInclude>
+    <ClInclude Include="DreameyeMic.h">
+      <Filter>Devices\FT4</Filter>
+    </ClInclude>
+    <ClInclude Include="FT4.h">
+      <Filter>Devices\FT4</Filter>
+    </ClInclude>
+    <ClInclude Include="Mic.h">
+      <Filter>Devices\FT4</Filter>
+    </ClInclude>
+    <ClInclude Include="XMaple.h" />
+  </ItemGroup>
+</Project>

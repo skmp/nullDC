@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{1cae6203-32e6-47d6-a768-0020ec83da72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui">
+      <UniqueIdentifier>{86fb9e26-76e7-4988-b98d-e46351fed63e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="export.def">
+      <Filter>plugin</Filter>
+    </None>
+    <None Include="icon3.ico" />
+    <None Include="ndc_icon.ico" />
+    <None Include="nulldc640_bluebg-opt96.jpeg" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="nullDC_GUI.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="CPicture.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="CtrlDisAsmView.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="CtrlMemView.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="emuWinUI.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="hwbrk.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="screenshot.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+    <ClCompile Include="SH4DbgInterface.cpp">
+      <Filter>gui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="nullDC_GUI.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="CPicture.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="emuWinUI.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="hwbrk.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="screenshot.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Script1.rc">
+      <Filter>gui</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuildStep Include="CtrlDisAsmView.h">
+      <Filter>gui</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="CtrlMemView.h">
+      <Filter>gui</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="DebugInterface.h">
+      <Filter>gui</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="icon2.ico">
+      <Filter>gui</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="resource.h">
+      <Filter>gui</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="SH4DbgInterface.h">
+      <Filter>gui</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="Symbols.h">
+      <Filter>gui</Filter>
+    </CustomBuildStep>
+  </ItemGroup>
+</Project>

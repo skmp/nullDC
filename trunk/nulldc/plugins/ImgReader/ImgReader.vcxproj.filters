@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{ca949804-6614-485a-a5d5-8fdaf7f56fd5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Drivers">
+      <UniqueIdentifier>{1bb1e6c8-aa62-4348-8e76-e21f87657818}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{d07a0dca-0a95-4f57-bc9c-a34803e70a82}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>plugin</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ImgReader.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="cdi.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="common.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="ioctl.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="iso9660.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="mds.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="mds_reader.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="ui.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ImgReader.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="cdi.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="common.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="gd_driver.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="ioctl.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="iso9660.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="mds.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="mds_reader.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="pfctoc.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="SCSIDEFS.H">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ui.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="UI.rc">
+      <Filter>UI</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
