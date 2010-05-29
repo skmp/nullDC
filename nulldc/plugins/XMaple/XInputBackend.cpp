@@ -185,133 +185,198 @@ void VibrationThread(void* _status)
 
 	EmulatedDevices::FT8::UVibConfig* config = &status->config;	
 
-	float xIntensity;
-	u32 timeLength;
-	u16 intensity;
-	u16 intensityStep;	
-	u8 fm;
-
-	bool hasDirection;	
+	int timeLength = settings.PuruPuru.Length;		
+	int intensity;
+	int intensityX;
+	int intensityStep = 9362;	
+	int fm;	
+	
+	int directionOld = 0;
+	int directionNew = 0; 
+	int direction;
 
 	while (true)
-	{
+	{	
+		direction = config->Mpow - config->Ppow;		
 		
-		timeLength = settings.PuruPuru.Length;
-		intensity = 0;
+		// intensity is 0 when there's no direction == autostop.
+		intensity = abs(direction) * intensityStep;
 
-		hasDirection = (config->Mpow || config->Ppow);
-		
-#ifdef _DEBUG
-		if (hasDirection)
-			printf("CNT: %i, Mpow: %i, Ppow: %i | INC: %i, EXH: %i, INH: %i\n", 
-				config->CNT, config->Mpow, config->Ppow, config->INC, config->EXH, config->INH);
-#endif
-		
-		if ( config->CNT && hasDirection )
-		{							
-			if ( config->Mpow > config->Ppow )
-				intensity = (u16)((config->Mpow+1) * 8192 - 1);
-			else
-				intensity = (u16)((config->Ppow+1) * 8192 - 1);
-
-			xIntensity = intensity * (settings.PuruPuru.Intensity / 100.0f);
-			if(xIntensity > 65535) intensity = 65535;
-			else intensity = (int)xIntensity;			
+		if ( intensity )		
+		{
+			directionOld = directionNew;
+			directionNew = direction;					
+								
+			// Impact when motor changes direction.
+			if ( directionNew * directionOld < 0 )
+			{				
+				intensityX = (intensity * settings.PuruPuru.Length) / 100;
+				if ( intensityX > 65535 ) intensityX = 65535;
+				
+				vib.wRightMotorSpeed = intensityX;
+				vib.wLeftMotorSpeed  = intensityX;
 			
-			// Convergence/Divergence
-			if ( config->INC && (config->INH || config->EXH) )
-			{						
-				timeLength = (timeLength + 50 * (config->INC)) / config->INC; // Takes longer
-				
-				if ( config->INH ) // Diminish			
-					intensityStep = (intensity - 8191) / config->INC;							
-				else 		
-					intensityStep = (65535 - intensity) / config->INC;																				
-				
-				for(int i = config->INC; i > 0; i--)
-				{
-					if (settings.PuruPuru.UseRealFreq)
-					{
-						// Left = low freq, right = high freq
-						fm = status->srcSettings.FM1 - status->srcSettings.FM0;
+				XInputSetState(status->currentXPad, &vib);
+				Sleep(timeLength);
+			}
 		
-						if ( config->Freq > (u8)((fm/4) * 3 ))		// top 1/4
-							vib.wRightMotorSpeed = intensity;
-						else if ( config->Freq < (u8)(fm/3) )	// low 1/3
-							vib.wLeftMotorSpeed = intensity;	
+			// CNT == 1 ? Means NOT continuous. >_<
+
+			if ( !config->CNT )
+			{																		
+				
+				// Convergence/Divergence
+				while ( !config->CNT && intensity )
+				{				
+					// Update intensity
+					intensity = abs(direction) * intensityStep;
+					
+					// Check again for direction recoil
+					if ( intensity )		
+					{
+						directionOld = directionNew;
+						directionNew = direction;
+
+						if ( directionNew * directionOld < 0 )
+						{				
+							intensityX = (intensity * settings.PuruPuru.Length) / 100;
+							if ( intensityX > 65535 ) intensityX = 65535;
+							
+							vib.wRightMotorSpeed = intensityX;
+							vib.wLeftMotorSpeed  = intensityX;
+			
+							XInputSetState(status->currentXPad, &vib);
+							Sleep(timeLength);
+						}					
+					} 
+									
+					intensityX = (intensity * settings.PuruPuru.Length) / 100;
+					if ( intensityX > 65535 ) intensityX = 65535;
+					
+					// Real Frequency
+					if (settings.PuruPuru.UseRealFreq)
+					{												
+						// Left = low freq, right = high freq			
+						fm = (status->srcSettings.FM1 + status->srcSettings.FM0)/2; // Get middle.
+						
+						if ( config->Freq > (u8)((fm*3)/2) )	// Top 1/4
+						{
+							vib.wRightMotorSpeed = intensityX;
+							vib.wLeftMotorSpeed  /= 2;
+						}
+						else if ( config->Freq < (u8)((fm*2)/3) )	// Low 1/3
+						{
+							vib.wRightMotorSpeed /= 2;	
+							vib.wLeftMotorSpeed  = intensityX;	
+						}
 						else
 						{
-							vib.wRightMotorSpeed = intensity;
-							vib.wLeftMotorSpeed = intensity;
-						}
+							vib.wRightMotorSpeed = intensityX;
+							vib.wLeftMotorSpeed  = intensityX;
+						}						
 					}
 					else
 					{
-						vib.wRightMotorSpeed = intensity;
-						vib.wLeftMotorSpeed = intensity;
+						vib.wRightMotorSpeed = intensityX;
+						vib.wLeftMotorSpeed  = intensityX;
 					}
-
+					
 					XInputSetState(status->currentXPad, &vib);
-
-					// Must be done last
+					Sleep(timeLength);
 				
-					if ( config->INH ) // Diminish
-						intensity -= intensityStep;
-					else 
-						intensity += intensityStep;
+					if ( config->INH ) // Increase
+						intensity += intensityStep * config->INC / 2;
+					else if ( config->EXH ) // Decrease
+						intensity -= intensityStep * config->INC / 2;
 
-					Sleep(timeLength); 
-				}	
-				
-				config->CNT = config->INC = config->Mpow = config->Ppow = 0;
+					// Safety check
+					if ( intensity < 0 ) intensity = 0;
+					else if ( intensity > 65534 ) intensity = 65534;
 
-				continue; // End of Convergence/Divergence
-			}
+					//// Rumble again before next loop.
 
-			 config->CNT = config->Mpow = config->Ppow = 0;
-		} 
-		else if ( hasDirection )
-		{		
-			if ( config->Mpow > config->Ppow )
-				intensity = (u16)((config->Mpow+1) * 8192 - 1); 			
-			else			
-				intensity = (u16)((config->Ppow+1) * 8192 - 1);
+					intensityX = (intensity * settings.PuruPuru.Length) / 100;
+					if ( intensityX > 65535 ) intensityX = 65535;
 
-			xIntensity = intensity * (settings.PuruPuru.Intensity / 100.0f);
-			if(xIntensity > 65535) intensity = 65535;
-			else intensity = (int)xIntensity;
-
-			config->Mpow = config->Ppow = 0;
-		}
-		else
-		{
-			intensity = 0;		
-			timeLength = 10;
-		}
-			
-		if (intensity && settings.PuruPuru.UseRealFreq)
-		{
-			// Left = low freq, right = high freq
-			fm = status->srcSettings.FM1 - status->srcSettings.FM0;
+					if (settings.PuruPuru.UseRealFreq)
+					{												
+						// Left = low freq, right = high freq			
+						fm = (status->srcSettings.FM1 + status->srcSettings.FM0)/2; // Get middle.			
 		
-			if ( config->Freq > (u8)((fm/4) * 3 ))		// top 1/4
-				vib.wRightMotorSpeed = intensity;
-			else if ( config->Freq < (u8)(fm/3) )	// low 1/3
-				vib.wLeftMotorSpeed = intensity;	
-			else
+						if ( config->Freq > (u8)((fm*3)/2) )	// Top 1/4
+						{
+							vib.wRightMotorSpeed = intensityX;
+							vib.wLeftMotorSpeed  /= 2;
+						}
+						else if ( config->Freq < (u8)((fm*2)/3) )	// Low 1/3
+						{
+							vib.wRightMotorSpeed /= 2;	
+							vib.wLeftMotorSpeed  = intensityX;	
+						}
+						else
+						{
+							vib.wRightMotorSpeed = intensityX;
+							vib.wLeftMotorSpeed  = intensityX;
+						}						
+					}
+					else
+					{
+						vib.wRightMotorSpeed = intensityX;
+						vib.wLeftMotorSpeed  = intensityX;
+					}
+					
+					XInputSetState(status->currentXPad, &vib);
+					Sleep(timeLength);
+																			
+				} // End of Convergence/Divergence
+
+			
+			}
+			else // Single Pulse Mode
 			{
-				vib.wRightMotorSpeed = intensity;
-				vib.wLeftMotorSpeed = intensity;
+				intensityX = (intensity * settings.PuruPuru.Length) / 100;
+				if ( intensityX > 65535 ) intensityX = 65535;
+								
+				// Real Frequency
+				if (settings.PuruPuru.UseRealFreq)
+				{
+					// Left = low freq, right = high freq			
+					fm = (status->srcSettings.FM1 + status->srcSettings.FM0)/2; // Get middle.			
+		
+					if ( config->Freq > (u8)((fm*3)/2) )	// Top 1/4
+					{
+						vib.wRightMotorSpeed = intensityX;
+						vib.wLeftMotorSpeed  /= 2;
+					}
+					else if ( config->Freq < (u8)((fm*2)/3) )	// Low 1/3
+					{
+						vib.wRightMotorSpeed /= 2;	
+						vib.wLeftMotorSpeed  = intensityX;	
+					}
+					else
+					{
+						vib.wRightMotorSpeed = intensityX;
+						vib.wLeftMotorSpeed  = intensityX;
+					}
+				}
+				else
+				{
+					vib.wRightMotorSpeed = intensityX;
+					vib.wLeftMotorSpeed = intensityX;
+				}
+	
+				XInputSetState(status->currentXPad, &vib);
+				Sleep(timeLength);
 			}
 		}
-		else
+		else 
 		{
+			// Stop any rumble.
 			vib.wRightMotorSpeed = intensity;
 			vib.wLeftMotorSpeed = intensity;
+			XInputSetState(status->currentXPad, &vib);
+			Sleep(10);
 		}
-	
-		XInputSetState(status->currentXPad, &vib);
-		Sleep(timeLength);
 
 	} //while(true)
 
