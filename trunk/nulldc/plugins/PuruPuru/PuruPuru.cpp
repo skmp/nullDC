@@ -47,7 +47,7 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	// Set plugin info
 	info->InterfaceVersion = PLUGIN_I_F_VERSION;
 	info->common.InterfaceVersion = MAPLE_PLUGIN_I_F_VERSION;
-	wcscpy(info->common.Name, L"PuruPuru input plugin v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
+	wcscpy_s(info->common.Name, L"PuruPuru input plugin v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
 	
 	// Assign callback functions
 	info->common.Load = Load;
@@ -60,7 +60,7 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	info->maple.Destroy = Destroy;
 
 	// 1 maple device
-	wcscpy(info->maple.devices[0].Name, L"PuruPuru input plugin v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
+	wcscpy_s(info->maple.devices[0].Name, L"PuruPuru input plugin v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
 	// Main device (Like controller, lightgun and such)
 	info->maple.devices[0].Type = MDT_Main;
 	// Can have 2 subdevices (a dc controller has 2 subdevice ports for vmus / etc)
@@ -80,9 +80,29 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 // Notes: Called when plugin is loaded by the emu, the param has some handy functions so i make a copy of it ;).
 s32 FASTCALL Load(emu_info* emu)
 {	
-	wprintf(L"PuruPuru -> Load\n");
+
+	wprintf(L"PuruPuru -> Load\n");	
 
 	memcpy(&host, emu, sizeof(host));
+
+	if(SDL_Init(SDL_INIT_JOYSTICK ) < 0)
+	{		
+		MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL!", MB_ICONERROR);		
+		return rv_error;
+	}
+	else
+	{
+		int joys = Search_Devices();
+		if ( !joys ) wprintf(L"PuruPuru: No SDL Joystick Found!");
+
+
+	}
+
+	// All devices disabled unless connected later.
+	joysticks[0].enabled = 0;
+	joysticks[1].enabled = 0;
+	joysticks[2].enabled = 0;
+	joysticks[3].enabled = 0;
 	
 	return rv_ok;
 }
@@ -93,6 +113,10 @@ s32 FASTCALL Load(emu_info* emu)
 void FASTCALL Unload()
 {
 	wprintf(L"PuruPuru -> Unload\n");
+
+	SDL_Quit();
+
+	delete [] joyinfo;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -114,6 +138,9 @@ void FASTCALL Unload()
 s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 rootmenu)
 {
 	wprintf(L"PuruPuru -> CreateMain\n");
+
+	// Enable pad on port.
+	joysticks[(inst->port >> 6)].enabled = 1;
 
 	if (id!=0)
 		return rv_error;
@@ -157,16 +184,10 @@ s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
 	// Init input lib, this can also be done in Create*;
 	wprintf(L"PuruPuru -> Init\n");
 	emulator_running = TRUE;
-		
-	if(SDL_Init(SDL_INIT_JOYSTICK ) < 0)
-	{		
-		MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL!", MB_ICONERROR);		
-		return rv_error;
-	}
 
 	LoadConfig();	// Load joystick mapping
 	
-	u32 port = ((maple_device_instance*)data)->port >> 6;
+	u32 port = ((maple_device_instance*)data)->port >> 6;	
 
 	if(joysticks[port].enabled)
 		joystate[port].joy = SDL_JoystickOpen(joysticks[port].ID);
@@ -183,21 +204,11 @@ s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
 // Called only if Init() was called ;)
 void FASTCALL Term(void* data, u32 id)
 {
-	u32 port = ((maple_device_instance*)data)->port >> 6;
+	wprintf(L"PuruPuru -> Term\n");
 
-	if(joysticks[port].enabled)
-	{
-		if(joystate[port].joy)
-			SDL_JoystickClose(joystate[port].joy);
-	}
-	
-	SDL_Quit();
-
-	delete [] joyinfo;
 	emulator_running = FALSE;
 
-	//kill whatever you did on Init()
-	wprintf(L"PuruPuru -> Term\n");
+	//kill whatever you did on Init()	
 }
 
 // Free memory (quit emulator)?
@@ -209,6 +220,13 @@ void FASTCALL Destroy(void* data, u32 id)
 {
 	//Free any memory allocted (if any)
 	wprintf(L"PuruPuru -> Destroy\n");
+
+	// Disable on Hot-Unplug
+	u32 port = ((maple_device_instance*)data)->port >> 6;
+	
+	joysticks[port].enabled = 0;
+	
+	if(joystate[port].joy != NULL) SDL_JoystickClose(joystate[port].joy);	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -333,30 +351,18 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 			//Controller condition info
 			// Set button
 			u16 kcode[4]={0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF};
-			if (joystate[port].buttons[CTL_A_BUTTON])	kcode[port] ^= key_CONT_A;
-			if (joystate[port].buttons[CTL_B_BUTTON])	kcode[port] ^= key_CONT_B;
-			if (joystate[port].buttons[CTL_X_BUTTON])	kcode[port] ^= key_CONT_X;
-			if (joystate[port].buttons[CTL_Y_BUTTON])	kcode[port] ^= key_CONT_Y;			
-			if (joystate[port].buttons[CTL_START])		kcode[port] ^= key_CONT_START;
 
-			if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK)
-			{
-				if(joystate[port].dpad == SDL_HAT_LEFTUP	|| joystate[port].dpad == SDL_HAT_UP	|| joystate[port].dpad == SDL_HAT_RIGHTUP )		kcode[port] ^= key_CONT_DPAD_UP;
-				if(joystate[port].dpad == SDL_HAT_LEFTUP	|| joystate[port].dpad == SDL_HAT_LEFT	|| joystate[port].dpad == SDL_HAT_LEFTDOWN )	kcode[port] ^= key_CONT_DPAD_LEFT;
-				if(joystate[port].dpad == SDL_HAT_LEFTDOWN	|| joystate[port].dpad == SDL_HAT_DOWN	|| joystate[port].dpad == SDL_HAT_RIGHTDOWN )	kcode[port] ^= key_CONT_DPAD_DOWN;
-				if(joystate[port].dpad == SDL_HAT_RIGHTUP	|| joystate[port].dpad == SDL_HAT_RIGHT	|| joystate[port].dpad == SDL_HAT_RIGHTDOWN )	kcode[port] ^= key_CONT_DPAD_RIGHT;
-			}
-			else
-			{
-				if(joystate[port].dpad2[CTL_D_PAD_UP])
-					kcode[port] ^= key_CONT_DPAD_UP;
-				if(joystate[port].dpad2[CTL_D_PAD_DOWN])
-					kcode[port] ^= key_CONT_DPAD_DOWN;
-				if(joystate[port].dpad2[CTL_D_PAD_LEFT])
-					kcode[port] ^= key_CONT_DPAD_LEFT;
-				if(joystate[port].dpad2[CTL_D_PAD_RIGHT])
-					kcode[port] ^= key_CONT_DPAD_RIGHT;
-			}
+			if( joystate[port].buttons[CTL_A_BUTTON] )	kcode[port] ^= key_CONT_A;
+			if( joystate[port].buttons[CTL_B_BUTTON] )	kcode[port] ^= key_CONT_B;
+			if( joystate[port].buttons[CTL_X_BUTTON] )	kcode[port] ^= key_CONT_X;
+			if( joystate[port].buttons[CTL_Y_BUTTON] )	kcode[port] ^= key_CONT_Y;			
+			if( joystate[port].buttons[CTL_START]    )	kcode[port] ^= key_CONT_START;
+												
+			if( joystate[port].dpad[CTL_D_PAD_UP]    )	kcode[port] ^= key_CONT_DPAD_UP;
+			if( joystate[port].dpad[CTL_D_PAD_DOWN]  )	kcode[port] ^= key_CONT_DPAD_DOWN;			
+			if( joystate[port].dpad[CTL_D_PAD_LEFT]  )	kcode[port] ^= key_CONT_DPAD_LEFT;			
+			if( joystate[port].dpad[CTL_D_PAD_RIGHT] )	kcode[port] ^= key_CONT_DPAD_RIGHT;		
+			
 			w16(kcode[port] | 0xF901); //0xF901 -> buttons that are allways up on a dc
 			
 			// Set shoulder buttons (analog)
@@ -399,8 +405,8 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 			// The value returned by SDL_JoystickGetAxis is a signed integer (-32768 to 32767)
 			// The value used for the gamecube controller is an unsigned char (0 to 255)
 			
-			float main_stick_x = joystate[port].axis[CTL_MAIN_X];
-			float main_stick_y = joystate[port].axis[CTL_MAIN_Y];						
+			float main_stick_x = (float)joystate[port].axis[CTL_MAIN_X];
+			float main_stick_y = (float)joystate[port].axis[CTL_MAIN_Y];						
 			
 			float radius = sqrt(main_stick_x*main_stick_x + main_stick_y*main_stick_y);
 
@@ -446,30 +452,33 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 
 void GetJoyState(int controller)
 {
-	SDL_JoystickUpdate();
-
-	joystate[controller].axis[CTL_MAIN_X] = SDL_JoystickGetAxis(joystate[controller].joy, joysticks[controller].axis[CTL_MAIN_X]);
-	joystate[controller].axis[CTL_MAIN_Y] = SDL_JoystickGetAxis(joystate[controller].joy, joysticks[controller].axis[CTL_MAIN_Y]);
-
-	joystate[controller].buttons[CTL_L_SHOULDER] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_L_SHOULDER]);
-	joystate[controller].buttons[CTL_R_SHOULDER] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_R_SHOULDER]);
-	joystate[controller].buttons[CTL_A_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_A_BUTTON]);
-	joystate[controller].buttons[CTL_B_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_B_BUTTON]);
-	joystate[controller].buttons[CTL_X_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_X_BUTTON]);
-	joystate[controller].buttons[CTL_Y_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_Y_BUTTON]);	
-	joystate[controller].buttons[CTL_START] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_START]);
-
-	joystate[controller].halfpress = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].halfpress);
-
-	if(joysticks[controller].controllertype == CTL_TYPE_JOYSTICK)
-		joystate[controller].dpad = SDL_JoystickGetHat(joystate[controller].joy, joysticks[controller].dpad);
-	else
+	if (joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_SDL)
 	{
-		joystate[controller].dpad2[CTL_D_PAD_UP] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].dpad2[CTL_D_PAD_UP]);
-		joystate[controller].dpad2[CTL_D_PAD_DOWN] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].dpad2[CTL_D_PAD_DOWN]);
-		joystate[controller].dpad2[CTL_D_PAD_LEFT] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].dpad2[CTL_D_PAD_LEFT]);
-		joystate[controller].dpad2[CTL_D_PAD_RIGHT] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].dpad2[CTL_D_PAD_RIGHT]);
-	}
+		
+		SDL_JoystickUpdate();
+
+		joystate[controller].axis[CTL_MAIN_X] = SDL_JoystickGetAxis(joystate[controller].joy, joysticks[controller].axis[CTL_MAIN_X]);
+		joystate[controller].axis[CTL_MAIN_Y] = SDL_JoystickGetAxis(joystate[controller].joy, joysticks[controller].axis[CTL_MAIN_Y]);
+
+		joystate[controller].buttons[CTL_L_SHOULDER] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_L_SHOULDER]);
+		joystate[controller].buttons[CTL_R_SHOULDER] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_R_SHOULDER]);
+		joystate[controller].buttons[CTL_A_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_A_BUTTON]);
+		joystate[controller].buttons[CTL_B_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_B_BUTTON]);
+		joystate[controller].buttons[CTL_X_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_X_BUTTON]);
+		joystate[controller].buttons[CTL_Y_BUTTON] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_Y_BUTTON]);	
+		joystate[controller].buttons[CTL_START] = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].buttons[CTL_START]);
+
+		joystate[controller].halfpress = SDL_JoystickGetButton(joystate[controller].joy, joysticks[controller].halfpress);
+
+		int currentHat = SDL_JoystickGetHat(joystate[controller].joy, 0);
+
+		joystate[controller].dpad[CTL_D_PAD_UP]		= (joysticks[controller].dpad[CTL_D_PAD_UP]    & currentHat) == joysticks[controller].dpad[CTL_D_PAD_UP]    ? 1:0;
+		joystate[controller].dpad[CTL_D_PAD_DOWN]	= (joysticks[controller].dpad[CTL_D_PAD_DOWN]  & currentHat) == joysticks[controller].dpad[CTL_D_PAD_DOWN]  ? 1:0;
+		joystate[controller].dpad[CTL_D_PAD_LEFT]	= (joysticks[controller].dpad[CTL_D_PAD_LEFT]  & currentHat) == joysticks[controller].dpad[CTL_D_PAD_LEFT]  ? 1:0;
+		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= (joysticks[controller].dpad[CTL_D_PAD_RIGHT] & currentHat) == joysticks[controller].dpad[CTL_D_PAD_RIGHT] ? 1:0;
+
+	}	
+
 }
 
 // ConfigMenuCallback
@@ -485,18 +494,13 @@ void EXPORT_CALL ConfigMenuCallback(u32 id, void* w, void* p)
 
 	current_port = ((maple_device_instance*)p)->port >> 6;
 
-	if(SDL_Init(SDL_INIT_JOYSTICK ) < 0)
-	{
-		MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL!", MB_ICONERROR);
-		//wprintf(L"PuruPuru -> Could not initialize SDL! (%s)\n", SDL_GetError());
-		return;
-	}
-
 	LoadConfig();	// load settings
+
 	if(OpenConfig(PuruPuru_hInst, (HWND)w))
 	{
 		SaveConfig();
 	}
+
 	LoadConfig();	// reload settings	
 }
 
@@ -515,15 +519,13 @@ void SaveConfig()
 		host.ConfigSaveInt(SectionName, L"b_button", joysticks[port].buttons[CTL_B_BUTTON]);
 		host.ConfigSaveInt(SectionName, L"x_button", joysticks[port].buttons[CTL_X_BUTTON]);
 		host.ConfigSaveInt(SectionName, L"y_button", joysticks[port].buttons[CTL_Y_BUTTON]);
-		host.ConfigSaveInt(SectionName, L"start_button", joysticks[port].buttons[CTL_START]);
-		host.ConfigSaveInt(SectionName, L"dpad", joysticks[port].dpad);	
-		host.ConfigSaveInt(SectionName, L"dpad_up", joysticks[port].dpad2[CTL_D_PAD_UP]);
-		host.ConfigSaveInt(SectionName, L"dpad_down", joysticks[port].dpad2[CTL_D_PAD_DOWN]);
-		host.ConfigSaveInt(SectionName, L"dpad_left", joysticks[port].dpad2[CTL_D_PAD_LEFT]);
-		host.ConfigSaveInt(SectionName, L"dpad_right", joysticks[port].dpad2[CTL_D_PAD_RIGHT]);
+		host.ConfigSaveInt(SectionName, L"start_button", joysticks[port].buttons[CTL_START]);		
+		host.ConfigSaveInt(SectionName, L"dpad_up", joysticks[port].dpad[CTL_D_PAD_UP]);
+		host.ConfigSaveInt(SectionName, L"dpad_down", joysticks[port].dpad[CTL_D_PAD_DOWN]);
+		host.ConfigSaveInt(SectionName, L"dpad_left", joysticks[port].dpad[CTL_D_PAD_LEFT]);
+		host.ConfigSaveInt(SectionName, L"dpad_right", joysticks[port].dpad[CTL_D_PAD_RIGHT]);
 		host.ConfigSaveInt(SectionName, L"main_x", joysticks[port].axis[CTL_MAIN_X]);
-		host.ConfigSaveInt(SectionName, L"main_y", joysticks[port].axis[CTL_MAIN_Y]);
-		host.ConfigSaveInt(SectionName, L"enabled", joysticks[port].enabled);
+		host.ConfigSaveInt(SectionName, L"main_y", joysticks[port].axis[CTL_MAIN_Y]);		
 		host.ConfigSaveInt(SectionName, L"deadzone", joysticks[port].deadzone);
 		host.ConfigSaveInt(SectionName, L"halfpress", joysticks[port].halfpress);
 		host.ConfigSaveInt(SectionName, L"joy_id", joysticks[port].ID);
@@ -541,23 +543,21 @@ void LoadConfig()
 	{		
 		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
 					
-		joysticks[port].buttons[CTL_L_SHOULDER] = host.ConfigLoadInt(SectionName, L"l_shoulder", 4);
-		joysticks[port].buttons[CTL_R_SHOULDER] = host.ConfigLoadInt(SectionName, L"r_shoulder", 5);
-		joysticks[port].buttons[CTL_A_BUTTON] = host.ConfigLoadInt(SectionName, L"a_button",  0);
-		joysticks[port].buttons[CTL_B_BUTTON] = host.ConfigLoadInt(SectionName, L"b_button", 1);
-		joysticks[port].buttons[CTL_X_BUTTON] = host.ConfigLoadInt(SectionName, L"x_button", 3);
-		joysticks[port].buttons[CTL_Y_BUTTON] = host.ConfigLoadInt(SectionName, L"y_button", 2);
-		joysticks[port].buttons[CTL_START] = host.ConfigLoadInt(SectionName, L"start_button", 9);
-		joysticks[port].dpad = host.ConfigLoadInt(SectionName, L"dpad", 0);	
-		joysticks[port].dpad2[CTL_D_PAD_UP] = host.ConfigLoadInt(SectionName, L"dpad_up", 0);
-		joysticks[port].dpad2[CTL_D_PAD_DOWN] = host.ConfigLoadInt(SectionName, L"dpad_down", 0);
-		joysticks[port].dpad2[CTL_D_PAD_LEFT] = host.ConfigLoadInt(SectionName, L"dpad_left", 0);
-		joysticks[port].dpad2[CTL_D_PAD_RIGHT] = host.ConfigLoadInt(SectionName, L"dpad_right", 0);
-		joysticks[port].axis[CTL_MAIN_X] = host.ConfigLoadInt(SectionName, L"main_x", 0);
-		joysticks[port].axis[CTL_MAIN_Y] = host.ConfigLoadInt(SectionName, L"main_y", 1);
-		joysticks[port].enabled = host.ConfigLoadInt(SectionName, L"enabled", 1);
-		joysticks[port].deadzone = host.ConfigLoadInt(SectionName, L"deadzone", 9);
-		joysticks[port].halfpress = host.ConfigLoadInt(SectionName, L"halfpress", 6);
+		joysticks[port].buttons[CTL_L_SHOULDER] = host.ConfigLoadInt(SectionName, L"l_shoulder", -1);
+		joysticks[port].buttons[CTL_R_SHOULDER] = host.ConfigLoadInt(SectionName, L"r_shoulder", -1);
+		joysticks[port].buttons[CTL_A_BUTTON] = host.ConfigLoadInt(SectionName, L"a_button",  -1);
+		joysticks[port].buttons[CTL_B_BUTTON] = host.ConfigLoadInt(SectionName, L"b_button", -1);
+		joysticks[port].buttons[CTL_X_BUTTON] = host.ConfigLoadInt(SectionName, L"x_button", -1);
+		joysticks[port].buttons[CTL_Y_BUTTON] = host.ConfigLoadInt(SectionName, L"y_button", -1);
+		joysticks[port].buttons[CTL_START] = host.ConfigLoadInt(SectionName, L"start_button", -1);		
+		joysticks[port].dpad[CTL_D_PAD_UP] = host.ConfigLoadInt(SectionName, L"dpad_up", -1);
+		joysticks[port].dpad[CTL_D_PAD_DOWN] = host.ConfigLoadInt(SectionName, L"dpad_down", -1);
+		joysticks[port].dpad[CTL_D_PAD_LEFT] = host.ConfigLoadInt(SectionName, L"dpad_left", -1);
+		joysticks[port].dpad[CTL_D_PAD_RIGHT] = host.ConfigLoadInt(SectionName, L"dpad_right", -1);
+		joysticks[port].axis[CTL_MAIN_X] = host.ConfigLoadInt(SectionName, L"main_x", -1);
+		joysticks[port].axis[CTL_MAIN_Y] = host.ConfigLoadInt(SectionName, L"main_y", -1);		
+		joysticks[port].deadzone = host.ConfigLoadInt(SectionName, L"deadzone", 24);
+		joysticks[port].halfpress = host.ConfigLoadInt(SectionName, L"halfpress", -1);
 		joysticks[port].ID = host.ConfigLoadInt(SectionName, L"joy_id", 0);
 		joysticks[port].controllertype = host.ConfigLoadInt(SectionName, L"controllertype", 0);
 		joysticks[port].eventnum = host.ConfigLoadInt(SectionName, L"eventnum", 0);
@@ -566,9 +566,27 @@ void LoadConfig()
 
 // Search attached devices
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
+static wchar_t *AnsiToWide(const char *src)
+{
+	int len;
+	wchar_t *dest;	
+
+	len = (int)(strlen(src) + 1);
+	// copy
+	dest = (wchar_t*)malloc(len*sizeof(wchar_t));
+	if (dest) 
+		mbstowcs(dest, src, len);
+
+	return dest;
+}
+
+
 int Search_Devices()
 {
 	int numjoy = SDL_NumJoysticks();
+
+	wprintf(L"PuruPuru: %i joystics detected.\n", numjoy);
 
 	if(numjoy == 0)
 	{				
@@ -593,9 +611,9 @@ int Search_Devices()
 		joyinfo[i].NumAxes		= SDL_JoystickNumAxes(joyinfo[i].joy);
 		joyinfo[i].NumButtons	= SDL_JoystickNumButtons(joyinfo[i].joy);
 		joyinfo[i].NumBalls		= SDL_JoystickNumBalls(joyinfo[i].joy);
-		joyinfo[i].NumHats		= SDL_JoystickNumHats(joyinfo[i].joy);
-		joyinfo[i].Name			= SDL_JoystickName(i);
-  			
+		joyinfo[i].NumHats		= SDL_JoystickNumHats(joyinfo[i].joy);	
+		joyinfo[i].Name			= AnsiToWide( SDL_JoystickName(i) );
+		
 		// Close if opened
 		if(SDL_JoystickOpened(i))
 			SDL_JoystickClose(joyinfo[i].joy);

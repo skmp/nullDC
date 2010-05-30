@@ -34,19 +34,17 @@
 // ¯¯¯¯¯¯¯¯¯¯
 
 struct CONTROLLER_STATE{	// DC PAD INFO/STATE
-	int buttons[7];			// Amount of buttons (A B X Y L-Trigger R-Trigger Start) might need to change the triggers buttons
-	int dpad;				// 1 HAT (8 directions + neutral)
-	int dpad2[4];			// d-pad using buttons
-	int axis[2];			// 1 Axis (Main)
-	int halfpress;			// ...
+	int buttons[7];			// Amount of buttons (A B X Y L-Trigger R-Trigger Start) might need to change the triggers buttons	
+	int dpad[4];			// d-pad using buttons
+	int axis[2];			// 2 Axis (Main)
+	int halfpress;			// ...	
 	SDL_Joystick *joy;		// SDL joystick device
 };
 
 struct CONTROLLER_MAPPING{	// GC PAD MAPPING
-	int buttons[7];			// Amount of buttons (A B X Y L-Trigger R-Trigger Start) might need to change the triggers buttons
-	int dpad;				// 1 HAT (8 directions + neutral)
-	int dpad2[4];			// d-pad using buttons
-	int axis[2];			// 1 Axis (Main)
+	int buttons[7];			// Amount of buttons (A B X Y L-Trigger R-Trigger Start) might need to change the triggers buttons	
+	int dpad[4];			// d-pad using buttons
+	int axis[2];			// 2 Axis (Main)
 	int enabled;			// Pad attached?
 	int deadzone;			// Deadzone... what else?
 	int halfpress;			// Halfpress... you know, like not fully pressed ;)...
@@ -60,7 +58,7 @@ struct CONTROLLER_INFO{		// CONNECTED WINDOWS DEVICES INFO
 	int NumButtons;			// Amount of Buttons
 	int NumBalls;			// Amount of Balls
 	int NumHats;			// Amount of Hats (POV)
-	const char *Name;		// Joypad/stickname	
+	const wchar *Name;		// Joypad/stickname		
 	int ID;					// SDL joystick device ID
 	SDL_Joystick *joy;		// SDL joystick device
 };
@@ -92,9 +90,8 @@ enum
 
 enum
 {
-	CTL_TYPE_JOYSTICK = 0,
-	CTL_TYPE_JOYSTICK_NO_HAT,
-	CTL_TYPE_JOYSTICK_XBOX360,
+	CTL_TYPE_JOYSTICK_SDL = 0,	
+	CTL_TYPE_JOYSTICK_XINPUT,
 	CTL_TYPE_KEYBOARD
 };
 
