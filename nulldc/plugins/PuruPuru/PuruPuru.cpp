@@ -494,9 +494,9 @@ void EXPORT_CALL ConfigMenuCallback(u32 id, void* w, void* p)
 
 	current_port = ((maple_device_instance*)p)->port >> 6;
 
-	LoadConfig();	// load settings
+	LoadConfig();	// load settings	
 
-	if(OpenConfig(PuruPuru_hInst, (HWND)w))
+	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG), (HWND)w, OpenConfig) )
 	{
 		SaveConfig();
 	}

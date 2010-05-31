@@ -12,6 +12,7 @@
 #include <math.h>
 
 emu_info host;
+int g_ShowVMU;
 
 #define _WIN32_WINNT 0x500
 #include <windowsx.h>
@@ -321,7 +322,7 @@ struct VMU_info
 		BYTE data[192];
 		WORD bitmap[48*32];
 //		BITMAPINFO bmi;
-		bool visible;
+//		bool visible;
 	} lcd;
 };
 BITMAPINFO vmu_bmi;
@@ -1834,7 +1835,7 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 							static bool old_coin=false;
 							if((old_coin==false) && (keycode&NAOMI_COIN_KEY))
 								coin1++;
-							old_coin=keycode&NAOMI_COIN_KEY;
+							old_coin = (keycode&NAOMI_COIN_KEY) ? true:false;
 
 							buffer_out_b[0x11+0]=0x00;
 							buffer_out_b[0x11+1]=0x8E;	//Valid data check
@@ -2837,9 +2838,8 @@ u32 FASTCALL VmuDMA(void* device_instance,u32 Command,u32* buffer_in,u32 buffer_
 			{
 				memcpy(dev->lcd.data,&buffer_in[2],192);
 				//Update lcd window
-				if (!dev->lcd.visible)
-				{
-					dev->lcd.visible=true;
+				if (g_ShowVMU)
+				{					
 					ShowWindow(dev->lcd.handle,SHOW_OPENNOACTIVATE);
 				}
 				//if(LCDBitmap)
@@ -2969,10 +2969,25 @@ u32 FASTCALL VmuDMA(void* device_instance,u32 Command,u32* buffer_in,u32 buffer_
 	}
 
 }
+
 void EXPORT_CALL vmu_showwindow(u32 id,void* w,void* p)
 {
-	ShowWindow((HWND)p,SHOW_OPENNOACTIVATE);
+	if (g_ShowVMU) 
+	{
+		ShowWindow((HWND)p,SW_HIDE);
+		g_ShowVMU=0;
+	}
+	else 
+	{				
+		ShowWindow((HWND)p,SHOW_OPENNOACTIVATE);
+		g_ShowVMU=1;
+	}
+
+	host.SetMenuItemStyle(id,g_ShowVMU?MIS_Checked:0,MIS_Checked);
+	
+	SaveSettings();	
 }
+
 void EXPORT_CALL config_keys(u32 id,void* w,void* p)
 {
 	maple_device_instance* mdd=(maple_device_instance*)p;
@@ -3067,8 +3082,9 @@ s32 FASTCALL CreateSub(maple_subdevice_instance* inst,u32 id,u32 flags,u32 rootm
 {
 	wchar wtemp[512];
 	swprintf(wtemp,L"VMU :vmu_data_port%02X.bin",inst->port);
-	host.AddMenuItem(rootmenu,-1,wtemp,0,0);
-	u32 mitem=host.AddMenuItem(rootmenu,-1,L"Show VMU",vmu_showwindow,0);
+	host.AddMenuItem(rootmenu,-1,wtemp,0,0);	
+
+	u32 mitem = host.AddMenuItem(rootmenu,-1,L"Show VMU",vmu_showwindow,g_ShowVMU);
 	
 	inst->data=malloc(sizeof(VMU_info));
 	sprintf(((VMU_info*)inst->data)->file,"vmu_data_port%02X.bin",inst->port);
@@ -3083,8 +3099,6 @@ s32 FASTCALL CreateSub(maple_subdevice_instance* inst,u32 id,u32 flags,u32 rootm
 	}
 	inst->dma=VmuDMA;
 	VMU_info* dev=(VMU_info* )inst->data;
-	dev->lcd.visible=false;
-
 
 	dev->lcd.handle=CreateDialogParam(hInstance,MAKEINTRESOURCE(IDD_LCD),0,VMULCDProc,(LPARAM)dev);
 
@@ -3498,6 +3512,8 @@ void LoadSettings()
 	wcstombs(server_addr,temp,sizeof(temp));
 	host.ConfigLoadStr(L"ndc_hookjoy",L"server_port",temp,L"11122");
 	wcstombs(server_port,temp,sizeof(temp));
+
+	g_ShowVMU = host.ConfigLoadInt(L"VMU",L"ShowVMU",1);
 }
 
 void SaveSettings()
@@ -3517,4 +3533,6 @@ void SaveSettings()
 	host.ConfigSaveStr(L"ndc_hookjoy",L"server_addr",temp);
 	mbstowcs(temp,server_port,sizeof(temp));
 	host.ConfigSaveStr(L"ndc_hookjoy",L"server_port",temp);
+
+	host.ConfigSaveInt(L"VMU",L"ShowVMU",g_ShowVMU);
 }
