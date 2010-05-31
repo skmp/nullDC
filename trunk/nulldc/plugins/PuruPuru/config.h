@@ -22,12 +22,7 @@
 // Config dialog functions
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
-int OpenConfig(HINSTANCE hInst, HWND _hParent);
-BOOL ControllerTab(HWND hDlg, UINT message, UINT wParam, LONG lParam, int controller);
-BOOL APIENTRY ControllerTab1(HWND hDlg, UINT message, UINT wParam, LONG lParam);
-BOOL APIENTRY ControllerTab2(HWND hDlg, UINT message, UINT wParam, LONG lParam);
-BOOL APIENTRY ControllerTab3(HWND hDlg, UINT message, UINT wParam, LONG lParam);
-BOOL APIENTRY ControllerTab4(HWND hDlg, UINT message, UINT wParam, LONG lParam);
+INT_PTR CALLBACK OpenConfig( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 bool GetButtons(HWND hDlg, int buttonid, int controller);
 bool GetHats(HWND hDlg, int buttonid, int controller);
@@ -42,4 +37,5 @@ int GetButton(HWND hDlg, int item);
 void SetButton(HWND hDlg, int item, int value);
 
 void OpenAbout(HINSTANCE abouthInstance, HWND _hParent);
+
 BOOL CALLBACK AboutDlg(HWND abouthWnd, UINT message, WPARAM wParam, LPARAM lParam);

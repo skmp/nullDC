@@ -2,15 +2,16 @@
 // Microsoft Visual C++ generated include file.
 // Used by PuruPuru.rc
 //
-#define IDD_CONFIG_ON                   101
-#define IDD_CONFIG_OFF	                102
+#define IDD_CONFIG	                    101
 #define IDB_BITMAP1                     103
-#define IDB_BITMAP2                     104
+#define IDB_BITMAP_ON                   104
 #define IDD_ABOUT                       105
-#define IDB_BITMAP3                     106
+#define IDB_BITMAP_OFF                  106
 #define IDB_BITMAP4                     107
+#define IDC_PORTTAB                     108
+#define IDC_CONFIG_OFF                  200
+#define IDC_CONFIG_ON                   201
 #define IDC_JOYNAME                     1001
-#define IDC_JOYATTACH                   1002
 #define IDC_SHOULDERL                   1010
 #define IDC_SHOULDERR                   1011
 #define IDC_A                           1012

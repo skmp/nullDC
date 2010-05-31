@@ -35,236 +35,170 @@ static const wchar* ControllerType[] =
 // Config dialog functions
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
-
-// NOT pretty... 
-int tabOrder( int tab )
+INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
-	tab = tab - current_port;
-	if (tab < 0) tab = 4 + tab;
-
-	return tab;
-}
-
-
-int OpenConfig(HINSTANCE hInst, HWND _hParent)
-{
-	//config_hInst = hInst;
-	//config_HWND = _hParent;
-	
-	PROPSHEETPAGE psp[4];
-    PROPSHEETHEADER psh;
-
-    psp[tabOrder(0)].dwSize = sizeof(PROPSHEETPAGE);
-    psp[tabOrder(0)].dwFlags = PSP_USETITLE;
-    psp[tabOrder(0)].hInstance = hInst;
-    psp[tabOrder(0)].pszTemplate = MAKEINTRESOURCE( joysticks[0].enabled? IDD_CONFIG_ON: IDD_CONFIG_OFF );
-    psp[tabOrder(0)].pszIcon = NULL;
-    psp[tabOrder(0)].pfnDlgProc = (DLGPROC)ControllerTab1;
-    psp[tabOrder(0)].pszTitle = current_port == 0? L"->Controller 1<-" : L"Controller 1"; 
-    psp[tabOrder(0)].lParam = 0;	
-
-    psp[tabOrder(1)].dwSize = sizeof(PROPSHEETPAGE);
-    psp[tabOrder(1)].dwFlags = PSP_USETITLE;
-    psp[tabOrder(1)].hInstance = hInst;
-    psp[tabOrder(1)].pszTemplate = MAKEINTRESOURCE( joysticks[1].enabled? IDD_CONFIG_ON: IDD_CONFIG_OFF );
-    psp[tabOrder(1)].pszIcon = NULL;
-    psp[tabOrder(1)].pfnDlgProc = (DLGPROC)ControllerTab2;
-    psp[tabOrder(1)].pszTitle = current_port == 1? L"->Controller 2<-" : L"Controller 2"; 
-    psp[tabOrder(1)].lParam = 0;
-    
-	psp[tabOrder(2)].dwSize = sizeof(PROPSHEETPAGE);
-    psp[tabOrder(2)].dwFlags = PSP_USETITLE;
-    psp[tabOrder(2)].hInstance = hInst;
-    psp[tabOrder(2)].pszTemplate = MAKEINTRESOURCE( joysticks[2].enabled? IDD_CONFIG_ON: IDD_CONFIG_OFF );
-    psp[tabOrder(2)].pszIcon = NULL;
-    psp[tabOrder(2)].pfnDlgProc = (DLGPROC)ControllerTab3;
-    psp[tabOrder(2)].pszTitle = current_port == 2? L"->Controller 3<-" : L"Controller 3"; 
-    psp[tabOrder(2)].lParam = 0;
-
-	psp[tabOrder(3)].dwSize = sizeof(PROPSHEETPAGE);
-    psp[tabOrder(3)].dwFlags = PSP_USETITLE;
-    psp[tabOrder(3)].hInstance = hInst;
-    psp[tabOrder(3)].pszTemplate = MAKEINTRESOURCE( joysticks[3].enabled? IDD_CONFIG_ON: IDD_CONFIG_OFF );
-    psp[tabOrder(3)].pszIcon = NULL;
-    psp[tabOrder(3)].pfnDlgProc = (DLGPROC)ControllerTab4;
-    psp[tabOrder(3)].pszTitle = current_port == 3? L"->Controller 4<-" : L"Controller 4"; 
-    psp[tabOrder(3)].lParam = 0;
-
-    psh.dwSize = sizeof(PROPSHEETHEADER);
-    psh.dwFlags = PSH_PROPSHEETPAGE | PSH_NOAPPLYNOW | PSH_NOCONTEXTHELP;	
-    psh.hwndParent = _hParent;
-    psh.hInstance = hInst;
-    psh.pszIcon = NULL;
-    #ifndef _DEBUG
-		psh.pszCaption = L"Configure: PuruPuru v" _T(INPUT_VERSION) L" Input Plugin";
-	#else
-		psh.pszCaption = L"Configure: PuruPuru v" _T(INPUT_VERSION) L" (Debug) Input Plugin";		
-	#endif
-    psh.nPages = sizeof(psp) / sizeof(PROPSHEETPAGE);
-    psh.ppsp = (LPCPROPSHEETPAGE) &psp;
-	
-	return (int)(PropertySheet(&psh));
-}
-
-// Create Tab
-// ¯¯¯¯¯¯¯¯¯¯
-
-BOOL APIENTRY ControllerTab1(HWND hDlg, UINT message, UINT wParam, LONG lParam)
-{
-	return ControllerTab(hDlg, message, wParam, lParam, 0);	
-}
-
-BOOL APIENTRY ControllerTab2(HWND hDlg, UINT message, UINT wParam, LONG lParam)
-{
-	return ControllerTab(hDlg, message, wParam, lParam, 1);	
-}
-
-BOOL APIENTRY ControllerTab3(HWND hDlg, UINT message, UINT wParam, LONG lParam)
-{
-	return ControllerTab(hDlg, message, wParam, lParam, 2);	
-}
-
-BOOL APIENTRY ControllerTab4(HWND hDlg, UINT message, UINT wParam, LONG lParam)
-{
-	return ControllerTab(hDlg, message, wParam, lParam, 3);	
-}
-
-// Create Controller Tab
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-
-BOOL ControllerTab(HWND hDlg, UINT message, UINT wParam, LONG lParam, int controller)
-{						
-
-	switch (message)
+	switch( uMsg )
 	{
-		case WM_INITDIALOG:
+	case WM_INITDIALOG:
 
-			// Prevent user from changing the joystick while emulation is running			
-			// Is used automatically now, so disable and just show.
-			Button_Enable(GetDlgItem(hDlg, IDC_JOYATTACH), FALSE);									
+		TCITEM tci; 
+		tci.mask = TCIF_TEXT | TCIF_IMAGE;
+		tci.iImage = -1; 
+		tci.pszText = L"Controller 1"; 
+		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 0, &tci); 
+		tci.pszText = L"Controller 2"; 
+		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 1, &tci); 
+		tci.pszText = L"Controller 3"; 
+		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 2, &tci); 
+		tci.pszText = L"Controller 4"; 
+		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 3, &tci); 
 
-			//if(emulator_running)
-			if(emulator_running)
-			{
-				ComboBox_Enable(GetDlgItem(hDlg, IDC_JOYNAME), FALSE);
-				ComboBox_Enable(GetDlgItem(hDlg, IDC_CONTROLTYPE), FALSE);				
-			}
-			else
-			{
-				ComboBox_Enable(GetDlgItem(hDlg, IDC_JOYNAME), TRUE);				
-				ComboBox_Enable(GetDlgItem(hDlg, IDC_CONTROLTYPE), TRUE);				
-			}
+		TabCtrl_SetCurSel(GetDlgItem(hDlg,IDC_PORTTAB),current_port);							
+
+		//if(emulator_running)
+		if(emulator_running)
+		{
+			ComboBox_Enable(GetDlgItem(hDlg, IDC_JOYNAME), FALSE);
+			ComboBox_Enable(GetDlgItem(hDlg, IDC_CONTROLTYPE), FALSE);				
+		}
+		else
+		{
+			ComboBox_Enable(GetDlgItem(hDlg, IDC_JOYNAME), TRUE);				
+			ComboBox_Enable(GetDlgItem(hDlg, IDC_CONTROLTYPE), TRUE);				
+		}
 			
 			
-			// Search for devices and add the to the device list
-			if( SDL_NumJoysticks() > 0 )
+		// Search for devices and add the to the device list
+		if( SDL_NumJoysticks() > 0 )
+		{
+			HWND CB = GetDlgItem(hDlg, IDC_JOYNAME);
+
+			for(int x = 0; x < SDL_NumJoysticks(); x++)
+			{					
+				SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)joyinfo[x].Name);					
+			}
+				
+			CB = GetDlgItem(hDlg, IDC_CONTROLTYPE);				
+			SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_JOYSTICK_SDL]);				
+			//SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_JOYSTICK_XINPUT]);
+			//SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_KEYBOARD]);
+				
+			wchar buffer[8];				
+			CB = GetDlgItem(hDlg, IDC_DEADZONE);
+			SendMessage(CB, CB_RESETCONTENT, 0, 0);
+			for(int x = 1; x <= 100; x++)
+			{				
+				wsprintf(buffer, L"%d %%", x);
+				SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)buffer);				
+			}
+
+			SetControllerAll(hDlg, current_port);
+			return TRUE;
+		}
+		else
+		{
+			HWND CB = GetDlgItem(hDlg, IDC_JOYNAME);				
+			SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)L"No Joystick detected!");
+			SendMessage(CB, CB_SETCURSEL, 0, 0);
+			return FALSE;
+		}			
+	break;
+
+	case WM_NOTIFY:
+		{
+			if ( ((LPNMHDR)lParam)->idFrom==IDC_PORTTAB && ((LPNMHDR)lParam)->code == TCN_SELCHANGE  )
 			{
-				HWND CB = GetDlgItem(hDlg, IDC_JOYNAME);
-
-				for(int x = 0; x < SDL_NumJoysticks(); x++)
-				{					
-					SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)joyinfo[x].Name);					
-				}
-				
-				CB = GetDlgItem(hDlg, IDC_CONTROLTYPE);				
-				SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_JOYSTICK_SDL]);				
-				//SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_JOYSTICK_XINPUT]);
-				//SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_KEYBOARD]);
-				
-				wchar buffer[8];				
-				CB = GetDlgItem(hDlg, IDC_DEADZONE);
-				SendMessage(CB, CB_RESETCONTENT, 0, 0);
-				for(int x = 1; x <= 100; x++)
-				{				
-					wsprintf(buffer, L"%d %%", x);
-					SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)buffer);				
-				}
-
-				SetControllerAll(hDlg, controller);
+				current_port = TabCtrl_GetCurSel(GetDlgItem(hDlg,IDC_PORTTAB));
+				SetControllerAll(hDlg, current_port);				
+			}
+			
+			return true;
+		}
+	case WM_COMMAND:
+		switch (LOWORD(wParam))
+		{
+			
+			case IDOK:
+			{
+				GetControllerAll(hDlg, current_port);
+				EndDialog(hDlg, LOWORD(wParam));
 				return TRUE;
 			}
-			else
+			
+			case IDC_JOYNAME:
 			{
-				HWND CB = GetDlgItem(hDlg, IDC_JOYNAME);				
-				SendMessage(CB, CB_ADDSTRING, 0, (LPARAM)L"No Joystick detected!");
-				SendMessage(CB, CB_SETCURSEL, 0, 0);
-				return FALSE;
-			}			
-		break;
+				// Selected a different joystick
+				if(HIWORD(wParam) == CBN_SELCHANGE)
+				{
+					joysticks[current_port].ID = (int)SendMessage(GetDlgItem(hDlg, IDC_JOYNAME), CB_GETCURSEL, 0, 0);						
+				}
+				return TRUE;
+			}
+			break;
 
-		case WM_COMMAND:
-			switch (LOWORD(wParam))
+			case IDC_CONTROLTYPE:
 			{
-				case IDC_JOYNAME:
+				// Selected a different joystick
+				if(HIWORD(wParam) == CBN_SELCHANGE)
 				{
-					// Selected a different joystick
-					if(HIWORD(wParam) == CBN_SELCHANGE)
-					{
-						joysticks[controller].ID = (int)SendMessage(GetDlgItem(hDlg, IDC_JOYNAME), CB_GETCURSEL, 0, 0);						
-					}
-					return TRUE;
+					joysticks[current_port].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0);					
+					UpdateVisibleItems(hDlg, joysticks[current_port].controllertype);
 				}
-				break;
+				return TRUE;
+			}
+			break;
+				
+			case IDC_SHOULDERL:
+			case IDC_SHOULDERR:
+			case IDC_A:
+			case IDC_B:
+			case IDC_X:
+			case IDC_Y:				
+			case IDC_START:
+			case IDC_HALFPRESS:								
+			{
+				GetButtons(hDlg, LOWORD(wParam), current_port);
+				return TRUE;
+			}
+			break;
+				
+			case IDC_DPAD_UP:
+			case IDC_DPAD_DOWN:
+			case IDC_DPAD_LEFT:
+			case IDC_DPAD_RIGHT:
+			{
+				GetHats(hDlg, LOWORD(wParam), current_port);
+				return TRUE;
+			}
+			break;
+				
+			case IDC_MX:
+			case IDC_MY:
+			{
+				GetAxis(hDlg, LOWORD(wParam), current_port);
+				return TRUE;
+			}
+			break;
 
-				case IDC_CONTROLTYPE:
-				{
-					// Selected a different joystick
-					if(HIWORD(wParam) == CBN_SELCHANGE)
-					{
-						joysticks[controller].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0);
-						UpdateVisibleItems(hDlg, joysticks[controller].controllertype);
-					}
-					return TRUE;
-				}
-				break;
-				
-				case IDC_SHOULDERL:
-				case IDC_SHOULDERR:
-				case IDC_A:
-				case IDC_B:
-				case IDC_X:
-				case IDC_Y:				
-				case IDC_START:
-				case IDC_HALFPRESS:								
-				{
-					GetButtons(hDlg, LOWORD(wParam), controller);
-					return TRUE;
-				}
-				break;
-				
-				case IDC_DPAD_UP:
-				case IDC_DPAD_DOWN:
-				case IDC_DPAD_LEFT:
-				case IDC_DPAD_RIGHT:
-				{
-					GetHats(hDlg, LOWORD(wParam), controller);
-					return TRUE;
-				}
-				break;
-				
-				case IDC_MX:
-				case IDC_MY:
-				{
-					GetAxis(hDlg, LOWORD(wParam), controller);
-					return TRUE;
-				}
-				break;
+			case IDABOUT:
+			{
+				// yay an about box ;p
+				OpenAbout(PuruPuru_hInst, hDlg);
+				return TRUE;
+			}
+			break;
+		}			
+	break;
+					
+	case WM_CLOSE:
+	case WM_DESTROY:						
+		KillTimer(hDlg,0);
+		EndDialog(hDlg,0);
+	return true;
 
-				case IDABOUT:
-				{
-					// yay an about box ;p
-					OpenAbout(PuruPuru_hInst, hDlg);
-					return TRUE;
-				}
-				break;
-			}			
-		break;
-				
-		case WM_DESTROY:			
-			GetControllerAll(hDlg, controller);
-		break;
+	default: break;
 	}	
-	return FALSE;	
+	return FALSE;
 }
 
 // Wait for button press
@@ -486,21 +420,7 @@ void UpdateVisibleItems(HWND hDlg, int controllertype)
 	{
 		ComboBox_Enable(GetDlgItem(hDlg, IDC_JOYNAME), FALSE);		
 	}
-	else
-	{
-		// ComboBox_Enable(GetDlgItem(hDlg, IDC_JOYNAME), TRUE);
 
-		ShowWindow(GetDlgItem(hDlg, IDTEXT_DPAD_DOWN), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDTEXT_DPAD_LEFT), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDTEXT_DPAD_RIGHT), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_DPAD_DOWN), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_DPAD_LEFT), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_DPAD_RIGHT), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_DPAD_TEXT1), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_DPAD_TEXT2), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_DPAD_TEXT3), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_DPAD_TEXT4), TRUE);
-	}
 }
 
 // Set dialog items
@@ -508,6 +428,17 @@ void UpdateVisibleItems(HWND hDlg, int controllertype)
 void SetControllerAll(HWND hDlg, int controller)
 {	
 	SendMessage(GetDlgItem(hDlg, IDC_JOYNAME), CB_SETCURSEL, joysticks[controller].ID, 0);
+
+	if( joysticks[controller].enabled )
+	{
+		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), TRUE);
+		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), FALSE);
+	}
+	else
+	{
+		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), FALSE);
+		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), TRUE);
+	}
 
 	SetButton(hDlg, IDTEXT_SHOULDERL, joysticks[controller].buttons[CTL_L_SHOULDER]);
 	SetButton(hDlg, IDTEXT_SHOULDERR, joysticks[controller].buttons[CTL_R_SHOULDER]);
@@ -521,9 +452,7 @@ void SetControllerAll(HWND hDlg, int controller)
 	SetButton(hDlg, IDTEXT_HALFPRESS, joysticks[controller].halfpress);
 	
 	SetButton(hDlg, IDTEXT_MX, joysticks[controller].axis[CTL_MAIN_X]);
-	SetButton(hDlg, IDTEXT_MY, joysticks[controller].axis[CTL_MAIN_Y]);
-
-	SendDlgItemMessage(hDlg, IDC_JOYATTACH, BM_SETCHECK, joysticks[controller].enabled, 0);
+	SetButton(hDlg, IDTEXT_MY, joysticks[controller].axis[CTL_MAIN_Y]);	
 
 	SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_SETCURSEL, joysticks[controller].controllertype, 0);	
 	SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_SETCURSEL, joysticks[controller].deadzone, 0);	
