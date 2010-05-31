@@ -188,6 +188,18 @@ void EXPORT_CALL handler_Vsync (u32 id,void* win,void* puser)
 	render_restart=true;
 }
 
+void EXPORT_CALL handler_ShowStats(u32 id,void* win,void* puser)
+{
+	if (settings.OSD.ShowStats)
+		settings.OSD.ShowStats=0;
+	else
+		settings.OSD.ShowStats=1;
+
+	emu.SetMenuItemStyle(id,settings.OSD.ShowStats?MIS_Checked:0,MIS_Checked);
+	
+	SaveSettings();
+}
+
 void EXPORT_CALL handler_ShowFps(u32 id,void* win,void* puser)
 {
 	if (settings.OSD.ShowFPS)
@@ -292,7 +304,7 @@ void CreateSortMenu()
 //called when plugin is used by emu (you should do first time init here)
 s32 FASTCALL Load(emu_info* emu_inf)
 {
-	wchar temp[512];
+	// wchar temp[512]; // Unreferenced
 	memcpy(&emu,emu_inf,sizeof(emu));
 	emu.ConfigLoadStr(L"emu",L"shortname",emu_name,0);
 	
@@ -367,8 +379,11 @@ s32 FASTCALL Load(emu_info* emu_inf)
 
 	menu_TCM.SetValue(settings.Emulation.TexCacheMode);
 
+	AddSeperator(emu.RootMenu);
+	
 	emu.AddMenuItem(emu.RootMenu,-1,L"Vsync",handler_Vsync,settings.Video.VSync);
 	emu.AddMenuItem(emu.RootMenu,-1,L"Show Fps",handler_ShowFps,settings.OSD.ShowFPS);
+	emu.AddMenuItem(emu.RootMenu,-1,L"Show Stats",handler_ShowStats,settings.OSD.ShowStats);
 
 	AddSeperator(emu.RootMenu);
 	
