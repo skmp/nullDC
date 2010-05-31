@@ -1,5 +1,5 @@
-﻿#include "drkpvr.h"
-#define _WIN32_WINNT 0x0500
+﻿#define _WIN32_WINNT 0x0500
+#include "drkpvr.h"
 #if _DEBUG
 #define D3D_DEBUG_INFO
 #endif
@@ -127,6 +127,11 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 	
 	u32 FrameNumber=0;
 	u32 fb_FrameNumber=0;
+
+	u32 frameStart = 0;
+	u32 frameRate = 0;
+	DWORD timer, timeStart = GetTickCount();
+
 	wchar fps_text[512];
 	float res_scale[4]={0,0,320,-240};
 	float fb_scale[2]={1,1};
@@ -1987,26 +1992,6 @@ __error_out:
 		//printf("%d Render calls\n",sorttemp.size());
 		sorttemp.clear();
 	}
-	//
-	void DrawFPS()
-	{
-		// Create a colour for the text
-		D3DCOLOR fontColor = D3DCOLOR_ARGB(255,0x18,0xFF,0);  
-
-		// Create a rectangle to indicate where on the screen it should be drawn
-		RECT rct;
-		GetClientRect((HWND)emu.GetRenderTarget(),&rct);
-		//rct.left=0;
-		//rct.right=640;
-		rct.top=10;
-		rct.bottom=rct.top+30;
-
-		//font->
-		// Draw some text
-		//i need to set a new PS/FP state here .. meh ...
-		font->DrawText(NULL, fps_text, -1, &rct, DT_CENTER , fontColor );
-		//DrawText(
-	}
 
 	void DrawOSD()
 	{
@@ -2034,7 +2019,34 @@ __error_out:
 		
 		if (settings.OSD.ShowFPS)
 		{
-			DrawFPS();
+			// Create a rectangle to indicate where on the screen it should be drawn						
+			
+			timer = GetTickCount() - timeStart;
+			
+			if ( timer > 250 )
+			{				
+				timeStart = GetTickCount();
+
+				frameRate = (u32)((FrameNumber - frameStart) * 1000.0f / timer);
+				frameStart = FrameNumber;			
+			}
+			
+			// frameRate
+
+			wsprintf(fps_text, L"%i", frameRate);
+			
+			RECT rct;
+
+			rct.left=10;
+			rct.right=64;
+			rct.top=10;
+			rct.bottom=rct.top+30;
+			
+
+			//font->
+			// Draw some text
+			//i need to set a new PS/FP state here .. meh ... 
+			font->DrawText(NULL, fps_text, -1, &rct, DT_LEFT, D3DCOLOR_ARGB(150,0x00,0xFF,0x00) );
 		}
 		if (settings.OSD.ShowStats)
 		{
@@ -2045,16 +2057,17 @@ __error_out:
 			wsprintf(text,
 				L"Config : %s;%s" L"\n"
 				L"Texture Cache : %d textures" L"\n",cpath_vs[UseSVP],cpath_ps[UseFixedFunction],TexCache.textures);
+			
 			RECT rct;
-			rct.left=2;
+			rct.left=10;
 			rct.right=780;
-			rct.top=30;
+			rct.top=40;
 			rct.bottom=rct.top+300;
 
 			//font->
 			// Draw some text
 			//i need to set a new PS/FP state here .. meh ...
-			font->DrawText(NULL, text, -1, &rct, 0, D3DCOLOR_ARGB(255,0x38,0x4F,0x88)  );
+			font->DrawText(NULL, text, -1, &rct, DT_LEFT, D3DCOLOR_ARGB(150,0x00,0x00,0xFF)  );
 		}
 	}
 	//
@@ -2338,7 +2351,7 @@ __error_out:
 
 			dev->SetVertexShaderConstantF(2,current_scalef,1);
 
-			float res_align_offs[4]={ (-1.0/fb_surf_desc.Width)-1.0,(1.0/fb_surf_desc.Height)+1.0 };
+			float res_align_offs[4]={ (-1.0f/fb_surf_desc.Width)-1.0f,(1.0f/fb_surf_desc.Height)+1.0f };
 			dev->SetVertexShaderConstantF(4,res_align_offs,1);
 
 
@@ -2678,8 +2691,8 @@ __error_out:
 			if (win_height*win_width>1024000)
 			{
 				float rz=sqrtf(1024000.0f/(win_height*win_width));
-				win_height*=rz;
-				win_width*=rz;
+				win_height = (int)(win_height * rz);
+				win_width = (int)(win_width * rz);
 			}
 			break;
 		
@@ -2689,8 +2702,8 @@ __error_out:
 			break;
 		
 		case 3: //Half pixels
-			win_height/=sqrtf(2);
-			win_width/=sqrtf(2);
+			win_height = (int)(win_height / sqrtf(2));
+			win_width = (int)(win_width/ sqrtf(2));
 			break;
 
 		case 4: //Quarter pixels
@@ -2743,7 +2756,7 @@ __error_out:
 		render_restart=false;
 		d3d_do_restart=false;
 		d3d9 = Direct3DCreate9(D3D_SDK_VERSION);
-		char temp[2][30];
+		// char temp[2][30]; // Unreferenced
 		memset(&ppar,0,sizeof(ppar));
 
 		LoadSettings();
@@ -2922,7 +2935,9 @@ nl:
 		//*NOTE* we still have the critical section in here ..
 		d3d_init_done=false;
 		LeaveCriticalSection(&d3d_lock);
-
+		
+		// IntelliSense complained... now it should SEE the definition.
+		#define safe_release(d) {if (d) {(d->Release()==0);d=0;}}
 		
 		safe_release(Composition.vs);
 		safe_release(Composition.ps_DrawFB);
