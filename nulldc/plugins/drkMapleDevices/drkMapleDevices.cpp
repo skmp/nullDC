@@ -12,9 +12,9 @@
 #include <math.h>
 
 emu_info host;
-int g_ShowVMU;
 
 #define _WIN32_WINNT 0x500
+
 #include <windowsx.h>
 #include <winsock2.h>
 #include <windows.h>
@@ -177,6 +177,7 @@ struct _joypad_settings_entry
 	wchar* name;
 };
 #define D(x) x ,_T( #x)
+
 #ifdef BUILD_NAOMI
 _joypad_settings_entry joypad_settings_K[] = 
 {
@@ -291,7 +292,7 @@ u8 kb_shift          ; //shift keys pressed (bitmask)	//1
 u8 kb_led            ; //leds currently lit			//1
 u8 kb_key[6]={0}     ; //normal keys pressed			//6
 u8 kb_used=0;
-char kb_map[256];
+wchar kb_map[256];
 
 #ifdef _HAS_LGLCD_
 
@@ -338,7 +339,7 @@ void kb_down(u8 kc)
 	}
 	if (kc==VK_SHIFT)
 		kb_shift|=0x02 | 0x20; //both shifts ;p
-	kc=kb_map[kc & 0xFF];
+	kc=(u8)(kb_map[kc & 0xFF]);
 	if (kc==0)
 		return;
 	if (kb_used<6)
@@ -356,7 +357,7 @@ void kb_up(u8 kc)
 {
 	if (kc==VK_SHIFT)
 		kb_shift&=~(0x02 | 0x20); //both shifts ;p
-	kc=kb_map[kc & 0xFF];
+	kc=(u8)(kb_map[kc & 0xFF]);
 	if (kc==0)
 		return;
 	if (kb_used>0)
@@ -368,54 +369,85 @@ void kb_up(u8 kc)
 				kb_used--;
 				for (int j=i;j<5;j++)
 					kb_key[j]=kb_key[j+1];
-				kb_key[6]=0;
+				//kb_key[6]=0; // 7th member of 6 sized array... ?
 			}
 		}
 	}
 }
 typedef INT_PTR CALLBACK dlgp( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+
+// Event variables
 dlgp* oldptr=0;
 s32 old_pos_x=0;
 s32 old_pos_y=0;
+
+int g_ShowVMU;
+bool mouseCapture = false;
+int mouseSensitivity;
+
 INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
 	switch(uMsg)
 	{
-	case WM_MBUTTONDOWN:
-	case WM_MBUTTONUP:
 
-		if (wParam & MK_LBUTTON)
-			mo_buttons&=~mo_Left;
-		else
-			mo_buttons|=mo_Left;
+	// Mouse Buttons Down
+	case WM_LBUTTONDOWN: mo_buttons &= ~mo_Left; break;	
+	case WM_MBUTTONDOWN: mo_buttons &= ~mo_Middle; break;
+	case WM_RBUTTONDOWN: mo_buttons &= ~mo_Right; break;
 
-		if (wParam & MK_MBUTTON)
-			mo_buttons&=~mo_Middle;
-		else
-			mo_buttons|=mo_Middle;
+	// Buttons Buttons UP
+	case WM_LBUTTONUP: mo_buttons |= mo_Left; break;
+	case WM_MBUTTONUP: mo_buttons |= mo_Middle; break;
+	case WM_RBUTTONUP: mo_buttons |= mo_Right; break;
 
-		if (wParam & MK_RBUTTON)
-			mo_buttons&=~mo_Right;
-		else
-			mo_buttons|=mo_Right;
-
-		break;
 	case WM_MOUSEMOVE:
-		mo_x_delta+= GET_X_LPARAM(lParam)-old_pos_x ;
-		mo_y_delta+= GET_Y_LPARAM(lParam) -old_pos_y ;
+		{									
+			s32 curr_pos_x, curr_pos_y;		
 
-		old_pos_x=GET_X_LPARAM(lParam);
-		old_pos_y=GET_Y_LPARAM(lParam);
-		break;
-	case WM_MOUSEWHEEL:
-		{
-		s32 diff=GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA;
-		diff*=10;
-		mo_wheel_delta+=diff;
+			// Lets center the mouse in the middle, to have deltas all the time.							
+			if(mouseCapture) 
+			{							
+				POINT Cursor;
+				RECT Window;
+				GetWindowRect(hWnd, &Window);		
+
+				curr_pos_x = (Window.left+Window.right)/2;
+				curr_pos_y = (Window.top+Window.bottom)/2;
+
+				GetCursorPos(&Cursor);						
+
+				mo_x_delta += ((Cursor.x - curr_pos_x) * mouseSensitivity)/100;
+				mo_y_delta += ((Cursor.y - curr_pos_y) * mouseSensitivity)/100;					
+									
+				SetCursorPos(curr_pos_x,curr_pos_y);				
+			}
+			else
+			{
+				curr_pos_x = GET_X_LPARAM(lParam);
+				curr_pos_y = GET_Y_LPARAM(lParam);
+
+				mo_x_delta += curr_pos_x - old_pos_x;
+				mo_y_delta += curr_pos_y - old_pos_y;			
+
+				old_pos_x = curr_pos_x;
+				old_pos_y = curr_pos_y;
+			}
+
 		}
 		break;
+
+	case WM_MOUSEWHEEL: 
+		
+		// Inverted.
+		mo_wheel_delta -= GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA;
+		break;
+
 	case WM_KEYDOWN:
+
+		if(wParam == VK_F12) mouseCapture = !mouseCapture;
+
 		kb_down(wParam);
+
 		for (int port=0;port<4;port++)
 		{
 			for (int i=0;joypad_settings_K[i].name;i++)
@@ -458,6 +490,7 @@ INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 	case WM_KEYUP:
 		kb_up(wParam & 0xFF);
+
 		for (int port=0;port<4;port++)
 		{
 			for (int i=0;joypad_settings_K[i].name;i++)
@@ -691,7 +724,7 @@ INT_PTR CALLBACK ConfigKeysDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			{
 				waiting_key=false;
 
-				swprintf(temp,L"Updated Key Mapping,%d",VK_down);
+				swprintf_s(temp,sizeof(temp),L"Updated Key Mapping,%d",VK_down);
 				Static_SetText(GetDlgItem(hWnd,IDC_STATUS),temp);
 				joypad_settings[current_port][edited_key].KC=VK_down;
 				SaveSettings();
@@ -714,12 +747,12 @@ INT_PTR CALLBACK ConfigKeysDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				waiting_key=false;
 				waiting_key_timer=6;
 
-				swprintf(temp,L"Timed out while waiting for new key",waiting_key_timer/kbratio);
+				swprintf_s(temp,sizeof(temp),L"Timed out while waiting for new key",waiting_key_timer/kbratio);
 				Static_SetText(GetDlgItem(hWnd,IDC_STATUS),temp);
 			}
 			else
 			{
-				swprintf(temp,L"Waiting for key ...%d\n",waiting_key_timer/kbratio);
+				swprintf_s(temp,sizeof(temp),L"Waiting for key ...%d\n",waiting_key_timer/kbratio);
 				Static_SetText(GetDlgItem(hWnd,IDC_STATUS),temp);
 			}
 		}
@@ -836,51 +869,56 @@ void Init_kb_map()
 		//01 Too many keys pressed error 
 		//02-03 Not used(?) 
 		//04-1D Letter keys A-Z (in alphabetic order) 
-		for (int i=0x4;i<=0x1D;i++)
-			kb_map['A'+i-4]=i;
+		for (int i=0x4;i<=0x1D;i++)  kb_map['A'+i-4]=i;
 		//1E-27 Number keys 1-0 
-		for (int i=0x1E;i<=0x27;i++)
-			kb_map['1'+i-0x1E]=i;
-		kb_map['0']=0x27;
-		sk(1F,'\'');
+		for (int i=0x1E;i<=0x27;i++) kb_map['1'+i-0x1E]=i;
+		kb_map['0']=0x27;		
 		//28 Enter 
-		sk(28,'\r');
+		sk(28,VK_RETURN);
 		//29 Esc 
 		sk(29,VK_ESCAPE);
 		//2A Backspace 
-		sk(2A,'\b');
+		sk(2A,VK_BACK);
 		//2B Tab 
 		sk(2B,VK_TAB);
 		//2C Space 
 		sk(2C,VK_SPACE);
-		//2D-2E "-" and "^" (the 2 keys right of the numbers) 
-		//sk(28,VK_SUBTRACT);
-		sk(2d,VK_SUBTRACT);
+		//2D-2E "-" and "^" (the 2 keys right of the numbers) 		
+		sk(2D,VK_OEM_MINUS);
+		sk(2E,VK_OEM_PLUS);
 		//2F-30 "@" and "[" (the 2 keys right of P) 
-		sk(2F,';');
-		sk(30,'[');
+		sk(2F,VK_OEM_4);
+		sk(30,VK_OEM_6);
 		//31 Not used 
+		//sk(31,VK_OEM_3); // \ (US) also 64
 		//32-34 "]", ";" and ":" (the 3 keys right of L) 
-		sk(32,']');
-		sk(33,';');
-		sk(34,':');
+		sk(32,VK_OEM_5);
+		sk(33,VK_OEM_1); // :; (US)
+		sk(34,VK_OEM_7); // "' (US)
 		//35 hankaku/zenkaku / kanji (top left) 
+		sk(35,VK_OEM_3); // `~ (US)
 		//36-38 ",", "." and "/" (the 3 keys right of M) 
-		sk(36,0xbc);
-		sk(37,0xbc+2);
-		sk(38,0xbc+3);
+		sk(36,VK_OEM_COMMA);
+		sk(37,VK_OEM_PERIOD);
+		sk(38,VK_OEM_2);
 		//39 Caps Lock 
+		sk(39,VK_CAPITAL);
 		//3A-45 Function keys F1-F12 
-		for (int i=0;i<12;i++)
-			kb_map[VK_F1+i]=0x3A+i;
+		for (int i=0;i<12;i++) kb_map[VK_F1+i]=0x3A+i;
 		//46-4E Control keys above cursor keys 
-		//4F Cursor right
-		sk(4F,VK_RIGHT);
-		//50 Cursor left 
-		sk(50,VK_LEFT);
-		//51 Cursor down 
-		sk(51,VK_DOWN);
-		//52 Cursor up 
+		sk(46,VK_SNAPSHOT);
+		sk(47,VK_SCROLL);
+		sk(48,VK_PAUSE);
+		sk(49,VK_INSERT);
+		sk(4A,VK_HOME);
+		sk(4B,VK_PRIOR);
+		sk(4C,VK_DELETE);
+		sk(4D,VK_END);
+		sk(4E,VK_NEXT);
+		//4F-52 Cursors
+		sk(4F,VK_RIGHT);		
+		sk(50,VK_LEFT);		
+		sk(51,VK_DOWN);		
 		sk(52,VK_UP);
 		//53 Num Lock (Numeric keypad) 
 		sk(53,VK_NUMLOCK);
@@ -896,20 +934,20 @@ void Init_kb_map()
 		sk(58,VK_EXECUTE);	//enter ??
 		//59-62 Number keys 1-0 (Numeric keypad) 
 		sk(59,VK_NUMPAD1);
-		sk(59+1,VK_NUMPAD2);
-		sk(59+2,VK_NUMPAD3);
-		sk(59+3,VK_NUMPAD4);
-		sk(59+4,VK_NUMPAD5);
-		sk(59+5,VK_NUMPAD6);
-		sk(59+6,VK_NUMPAD7);
-		sk(59+7,VK_NUMPAD8);
-		sk(59+8,VK_NUMPAD9);
-		sk(59+9,VK_NUMPAD0);
+		sk(5A,VK_NUMPAD2);
+		sk(5B,VK_NUMPAD3);
+		sk(5C,VK_NUMPAD4);
+		sk(5D,VK_NUMPAD5);
+		sk(5E,VK_NUMPAD6);
+		sk(5F,VK_NUMPAD7);
+		sk(60,VK_NUMPAD8);
+		sk(61,VK_NUMPAD9);
+		sk(62,VK_NUMPAD0);
 		//63 "." (Numeric keypad) 
-		sk(59+9,'.');
+		sk(63,VK_DECIMAL);
 		//64 "\" (right of left Shift) 
-		sk(64,'\\');
-		//65 S3 key 
+		sk(64,VK_OEM_5);
+		//65 S3 key 				
 		//66-86 Not used 
 		//8C-FF Not used 
 }
@@ -925,7 +963,7 @@ u8 GetBtFromSgn(s8 val);
 u32 FASTCALL KbdDMA(void* device_instance,u32 Command,u32* buffer_in,u32 buffer_in_len,u32* buffer_out,u32& buffer_out_len)
 {
 	//printf("ControllerDMA Called 0x%X;Command %d\n",device_instance->port,Command);
-//void testJoy_GotData(u32 header1,u32 header2,u32*data,u32 datalen)
+	//void testJoy_GotData(u32 header1,u32 header2,u32*data,u32 datalen)
 	u8*buffer_out_b=(u8*)buffer_out;
 
 	switch (Command)
@@ -1018,7 +1056,7 @@ u32 FASTCALL KbdDMA(void* device_instance,u32 Command,u32* buffer_in,u32 buffer_
 
 		default:
 			printf("unknown MAPLE COMMAND %d\n",Command);
-			break;
+			return 7;
 	}
 }
 
@@ -1510,11 +1548,12 @@ u32 FASTCALL MouseDMA(void* device_instance,u32 Command,u32* buffer_in,u32 buffe
 
 			mo_x_delta=0;
 			mo_y_delta=0;
+			mo_wheel_delta = 0;
 			return 8;
 
 		default:
 			printf("unknown MAPLE COMMAND %d\n",Command);
-			break;
+			return 7;
 	}
 }
 struct _NaomiState
@@ -2215,7 +2254,7 @@ int Init_netplay()
 	joy_init t;
 	strcpy(t.Name,"nullDC hookjoy plugin");
 	t.port=local_port;
-	t.Version=DC_MakeVersion(1,1,0,0);
+	t.Version=DC_MakeVersion(1,1,0);
     // Send an initial buffer
     iResult = send( ConnectSocket, (char*)&t, (int)sizeof(t), 0 );
     if (iResult == SOCKET_ERROR) {
@@ -2429,7 +2468,7 @@ u32 FASTCALL ControllerDMA_net(void* device_instance,u32 Command,u32* buffer_in,
 
 		default:
 			printf("unknown MAPLE COMMAND %d\n",Command);
-			break;
+			return 7;
 	}
 }
 
@@ -2548,7 +2587,7 @@ u32 FASTCALL ControllerDMA_nul(void* device_instance,u32 Command,u32* buffer_in,
 
 		default:
 			printf("unknown MAPLE COMMAND %d\n",Command);
-			break;
+			return 7;
 	}
 }
 
@@ -3004,7 +3043,7 @@ s32 FASTCALL CreateMain(maple_device_instance* inst,u32 id,u32 flags,u32 rootmen
 	wchar temp[512];
 	if (id<=1)
 	{
-		swprintf(temp,L"Config keys for Player %d",(inst->port>>6)+1);
+		swprintf(temp,sizeof(temp),L"Config keys for Player %d",(inst->port>>6)+1);
 		u32 ckid=host.AddMenuItem(rootmenu,-1,temp,config_keys,0);
 		MenuItem mi;
 		mi.PUser=inst;
@@ -3017,27 +3056,27 @@ s32 FASTCALL CreateMain(maple_device_instance* inst,u32 id,u32 flags,u32 rootmen
 #else
 		inst->dma=ControllerDMA;
 #endif
-		swprintf(temp,L"Controller[winhook] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp),L"Controller[winhook] : 0x%02X",inst->port);
 	}
 	else if (id==1)
 	{
 		inst->dma=ControllerDMA_net;
-		swprintf(temp,L"Controller[winhook,net] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp),L"Controller[winhook,net] : 0x%02X",inst->port);
 	}
 	else if (id==3)
 	{
 		inst->dma=KbdDMA;
-		swprintf(temp,L"Keyboard : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp),L"Keyboard : 0x%02X",inst->port);
 	}
 	else if (id==4)
 	{
 		inst->dma=ControllerDMA_nul;
-		swprintf(temp,L"Controller [no input] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp),L"Controller [no input] : 0x%02X",inst->port);
 	}
 	else if (id==5)
 	{
 		inst->dma=MouseDMA;
-		swprintf(temp,L"Mouse [winhook] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp),L"Mouse [winhook] : 0x%02X",inst->port);
 	}
 	host.AddMenuItem(rootmenu,-1,temp,0,0);
 /*
@@ -3081,7 +3120,7 @@ s32 FASTCALL CreateMain(maple_device_instance* inst,u32 id,u32 flags,u32 rootmen
 s32 FASTCALL CreateSub(maple_subdevice_instance* inst,u32 id,u32 flags,u32 rootmenu)
 {
 	wchar wtemp[512];
-	swprintf(wtemp,L"VMU :vmu_data_port%02X.bin",inst->port);
+	swprintf_s(wtemp,sizeof(wtemp),L"VMU :vmu_data_port%02X.bin",inst->port);
 	host.AddMenuItem(rootmenu,-1,wtemp,0,0);	
 
 	u32 mitem = host.AddMenuItem(rootmenu,-1,L"Show VMU",vmu_showwindow,g_ShowVMU);
@@ -3137,7 +3176,7 @@ s32 FASTCALL CreateSub(maple_subdevice_instance* inst,u32 id,u32 flags,u32 rootm
 	if (lastPosY>4)
 		lastPosY=0;
 	wchar windowtext[512];
-	swprintf(windowtext,L"nullDC VMU %c%d",'A'+(inst->port>>6),(int)(log10f(inst->port&31)/log10f(2)));
+	swprintf_s(windowtext,sizeof(windowtext),L"nullDC VMU %c%d",'A'+(inst->port>>6),(int)(log10f((float)(inst->port&31))/log10f(2.0f)));
 	SetWindowText(dev->lcd.handle,windowtext);
 	EnableWindow(dev->lcd.handle,TRUE);
 
@@ -3502,7 +3541,7 @@ void LoadSettings()
 		for (int i=0;joypad_settings_K[i].name;i++)
 		{
 			wchar temp[512];
-			swprintf(temp,L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
+			swprintf_s(temp,sizeof(temp),L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
 			joypad_settings[port][i].KC=host.ConfigLoadInt(L"ndc_hookjoy",temp,joypad_settings_K[i].KC);
 		}
 	}
@@ -3513,7 +3552,8 @@ void LoadSettings()
 	host.ConfigLoadStr(L"ndc_hookjoy",L"server_port",temp,L"11122");
 	wcstombs(server_port,temp,sizeof(temp));
 
-	g_ShowVMU = host.ConfigLoadInt(L"VMU",L"ShowVMU",1);
+	g_ShowVMU = host.ConfigLoadInt(L"drkMaple",L"VMU.Show",1);
+	mouseSensitivity = host.ConfigLoadInt(L"drkMaple",L"Mouse.Sensitivity",100);
 }
 
 void SaveSettings()
@@ -3523,7 +3563,7 @@ void SaveSettings()
 		for (int i=0;joypad_settings_K[i].name;i++)
 		{
 			wchar temp[512];
-			swprintf(temp,L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
+			swprintf_s(temp,sizeof(temp),L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
 			host.ConfigSaveInt(L"ndc_hookjoy",temp,joypad_settings[port][i].KC);
 		}
 	}
@@ -3534,5 +3574,5 @@ void SaveSettings()
 	mbstowcs(temp,server_port,sizeof(temp));
 	host.ConfigSaveStr(L"ndc_hookjoy",L"server_port",temp);
 
-	host.ConfigSaveInt(L"VMU",L"ShowVMU",g_ShowVMU);
+	host.ConfigSaveInt(L"drkMaple",L"ShowVMU",g_ShowVMU);
 }

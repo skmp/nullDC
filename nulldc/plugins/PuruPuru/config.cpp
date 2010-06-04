@@ -44,13 +44,13 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 		TCITEM tci; 
 		tci.mask = TCIF_TEXT | TCIF_IMAGE;
 		tci.iImage = -1; 
-		tci.pszText = L"Controller 1"; 
+		tci.pszText = current_port == 0 ? L"->Controller 1<-" : L"Controller 1"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 0, &tci); 
-		tci.pszText = L"Controller 2"; 
+		tci.pszText = current_port == 1 ? L"->Controller 2<-" : L"Controller 2"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 1, &tci); 
-		tci.pszText = L"Controller 3"; 
+		tci.pszText = current_port == 2 ? L"->Controller 3<-" : L"Controller 3"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 2, &tci); 
-		tci.pszText = L"Controller 4"; 
+		tci.pszText = current_port == 3 ? L"->Controller 4<-" : L"Controller 4"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 3, &tci); 
 
 		TabCtrl_SetCurSel(GetDlgItem(hDlg,IDC_PORTTAB),current_port);							
