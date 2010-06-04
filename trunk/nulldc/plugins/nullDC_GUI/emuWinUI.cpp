@@ -983,6 +983,8 @@ HMENU GetHMenu()
 
 s32 mouse_hidden=2;
 bool mouse_visible=true;
+bool mouseCapture = false;
+
 void SetMouseState(HWND hWnd,bool visible)
 {
 	if (visible==mouse_visible)
@@ -1175,7 +1177,7 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 			oldY=yPos;
 			//printf("Mouse move %d,%d,%d\n",mouse_hidden,oldX,oldY);
 			mouse_hidden++;
-			if (mouse_hidden>=30)
+			if (!mouseCapture && mouse_hidden>=30)
 			{
 				mouse_hidden=30;
 
@@ -1227,6 +1229,20 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		break;
 	case WM_KEYDOWN:
 		{
+			if(wParam == VK_F12)
+			{
+				if (!mouseCapture)
+				{
+					ShowCursor(false);
+					mouseCapture = true;
+				}
+				else
+				{
+					ShowCursor(true);
+					mouseCapture = false;
+				}
+			}
+			
 			int val = (int)wParam;
 			switch(val)
 			{
@@ -1861,7 +1877,7 @@ INT_PTR CALLBACK ProfilerProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPara
 			strcatf(text,L"%.2f MB src size, %.2f ratio\r\n",ndcpi.Dynarec.CodeGen.SrcCodeSize/1024.0f/1024.0f,ndcpi.Dynarec.CodeGen.CodeSize/(float)ndcpi.Dynarec.CodeGen.SrcCodeSize);
 			strcatf(text,L"%.2f MB size, %d blocks, %.1f B avg size\r\n",ndcpi.Dynarec.CodeGen.CodeSize/1024.0f/1024.0f,ndcpi.Dynarec.CodeGen.TotalBlocks,
 														ndcpi.Dynarec.CodeGen.CodeSize/(float)ndcpi.Dynarec.CodeGen.TotalBlocks);
-			strcatf(text,L"%.3f ms compile time, %.3f Ïs/block, %.3f MB/s\r\n",(float)ndcpi.Dynarec.CodeGen.TotalCompileTime/1000.f,ndcpi.Dynarec.CodeGen.TotalCompileTime/(float)ndcpi.Dynarec.CodeGen.TotalBlocks,
+			strcatf(text,L"%.3f ms compile time, %.3f ÅE/block, %.3f MB/s\r\n",(float)ndcpi.Dynarec.CodeGen.TotalCompileTime/1000.f,ndcpi.Dynarec.CodeGen.TotalCompileTime/(float)ndcpi.Dynarec.CodeGen.TotalBlocks,
 																				ndcpi.Dynarec.CodeGen.SrcCodeSize/(float)ndcpi.Dynarec.CodeGen.TotalCompileTime);
 			
 			strcatf(text,L"%d Manual blocks , %d locked blocks , ratio %.2f%%\r\n",ndcpi.Dynarec.CodeGen.ManualBlocks,ndcpi.Dynarec.CodeGen.LockedBlocks,
