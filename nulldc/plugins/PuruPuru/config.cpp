@@ -155,27 +155,17 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 			case IDC_X:
 			case IDC_Y:				
 			case IDC_START:
-			case IDC_HALFPRESS:								
-			{
-				GetButtons(hDlg, LOWORD(wParam), current_port);
-				return TRUE;
-			}
-			break;
-				
+			case IDC_HALFPRESS:												
 			case IDC_DPAD_UP:
 			case IDC_DPAD_DOWN:
 			case IDC_DPAD_LEFT:
 			case IDC_DPAD_RIGHT:
+			case IDC_MX_L:
+			case IDC_MX_R:
+			case IDC_MY_U:
+			case IDC_MY_D:
 			{
-				GetHats(hDlg, LOWORD(wParam), current_port);
-				return TRUE;
-			}
-			break;
-				
-			case IDC_MX:
-			case IDC_MY:
-			{
-				GetAxis(hDlg, LOWORD(wParam), current_port);
+				GetInputSDL(hDlg, LOWORD(wParam), current_port);
 				return TRUE;
 			}
 			break;
@@ -201,9 +191,9 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 	return FALSE;
 }
 
-// Wait for button press
+// Wait for button/hat press
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-bool GetButtons(HWND hDlg, int buttonid, int controller)
+bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 {
 	buttonid += 1000;
 		
@@ -211,7 +201,16 @@ bool GetButtons(HWND hDlg, int buttonid, int controller)
 	joy=SDL_JoystickOpen(joysticks[controller].ID);
 
 	wchar format[128];
+
 	int buttons = SDL_JoystickNumButtons(joy);
+	int hats = SDL_JoystickNumHats(joy);
+	int axes = SDL_JoystickNumAxes(joy);
+	Sint16 value;
+
+	bool HAT = false;
+	bool AXIS = false;
+	bool plus = false;
+
 	bool waiting = true;
 	bool succeed = false;
 	int pressed = 0;
@@ -225,6 +224,8 @@ bool GetButtons(HWND hDlg, int buttonid, int controller)
 	while(waiting)
 	{			
 		SDL_JoystickUpdate();
+		
+		// BUTTONS
 		for(int b = 0; b < buttons; b++)
 		{			
 			if(SDL_JoystickGetButton(joy, b))
@@ -236,57 +237,7 @@ bool GetButtons(HWND hDlg, int buttonid, int controller)
 			}			
 		}
 
-		counter1++;
-		if(counter1==100)
-		{
-			counter1=0;
-			counter2--;
-			
-			wsprintf(format, L"[%d]", counter2);
-			SetDlgItemText(hDlg, buttonid, format);
-
-			if(counter2<0)
-				waiting = false;
-		}	
-		Sleep(10);
-	}
-
-	if(succeed)
-		wsprintf(format, L"%d", pressed);
-	else
-		wsprintf(format, L"-1", pressed);
-	SetDlgItemText(hDlg, buttonid, format);
-
-	if(SDL_JoystickOpened(joysticks[controller].ID))
-		SDL_JoystickClose(joy);
-
-	return true;
-}
-
-// Wait for D-Pad
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-bool GetHats(HWND hDlg, int buttonid, int controller)
-{
-	buttonid += 1000;
-
-	SDL_Joystick *joy;
-	joy=SDL_JoystickOpen(joysticks[controller].ID);
-
-	wchar format[128];
-	int hats = SDL_JoystickNumHats(joy);
-	bool waiting = true;
-	bool succeed = false;
-	int pressed = 0;
-
-	int counter1 = 0;
-	int counter2 = 10;
-	
-	wsprintf(format, L"[%d]", counter2);
-	SetDlgItemText(hDlg, buttonid, format);
-
-	while(waiting)
-	{			
-		SDL_JoystickUpdate();
+		// HATS
 		for(int b = 0; b < hats; b++)
 		{			
 			switch (SDL_JoystickGetHat(joy, b))
@@ -296,6 +247,7 @@ bool GetHats(HWND hDlg, int buttonid, int controller)
 						pressed = SDL_HAT_LEFT;	
 						waiting = false;
 						succeed = true;
+						HAT = true;
 						break;
 					}
 				case SDL_HAT_RIGHT:
@@ -303,6 +255,7 @@ bool GetHats(HWND hDlg, int buttonid, int controller)
 						pressed = SDL_HAT_RIGHT;	
 						waiting = false;
 						succeed = true;
+						HAT = true;
 						break;
 					}
 				case SDL_HAT_UP:
@@ -310,6 +263,7 @@ bool GetHats(HWND hDlg, int buttonid, int controller)
 						pressed = SDL_HAT_UP;	
 						waiting = false;
 						succeed = true;
+						HAT = true;
 						break;
 					}
 				case SDL_HAT_DOWN:
@@ -317,9 +271,33 @@ bool GetHats(HWND hDlg, int buttonid, int controller)
 						pressed = SDL_HAT_DOWN;	
 						waiting = false;
 						succeed = true;
+						HAT = true;
 						break;
 					}
 			}
+
+		// AXIS
+		for(int b = 0; b < axes; b++)
+		{		
+			value = SDL_JoystickGetAxis(joy, b);
+			if(value > 10000)
+			{
+				pressed = b;	
+				plus = true;
+				waiting = false;
+				succeed = true;
+				AXIS = true;
+				break;
+			}
+			else if ( value < -10000 )
+			{
+				pressed = b;	
+				waiting = false;
+				succeed = true;
+				AXIS = true;
+				break;
+			}
+		}
 
 		}
 
@@ -337,73 +315,19 @@ bool GetHats(HWND hDlg, int buttonid, int controller)
 		}	
 		Sleep(10);
 	}
-
-	if(succeed)
-		wsprintf(format, L"%d", pressed);
-	else
-		wsprintf(format, L"-1", pressed);
-	SetDlgItemText(hDlg, buttonid, format);
-
-	if(SDL_JoystickOpened(joysticks[controller].ID))
-		SDL_JoystickClose(joy);
-
-	return true;
-}
-
-// Wait for Analog
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-bool GetAxis(HWND hDlg, int buttonid, int controller)
-{
-	buttonid += 1000;
-
-	SDL_Joystick *joy;
-	joy=SDL_JoystickOpen(joysticks[controller].ID);
-
-	wchar format[128];
-	int axes = SDL_JoystickNumAxes(joy);
-	bool waiting = true;
-	bool succeed = false;
-	int pressed = 0;
-	Sint16 value;
-	
-	int counter1 = 0;
-	int counter2 = 10;
-	
-	wsprintf(format, L"[%d]", counter2);
-	SetDlgItemText(hDlg, buttonid, format);
-
-	while(waiting)
-	{		
-		SDL_JoystickUpdate();
-		for(int b = 0; b < axes; b++)
-		{		
-			value = SDL_JoystickGetAxis(joy, b);
-			if(value < -10000 || value > 10000)
-			{
-				pressed = b;	
-				waiting = false;
-				succeed = true;
-				break;
-			}			
-		}	
-
-		counter1++;
-		if(counter1==100)
-		{
-			counter1=0;
-			counter2--;
 			
-			wsprintf(format, L"[%d]", counter2);
-			SetDlgItemText(hDlg, buttonid, format);
-
-			if(counter2<0)
-				waiting = false;
-		}	
-		Sleep(10);
-	}
-
 	if(succeed)
-		wsprintf(format, L"%d", pressed);
+	{
+		if(HAT) wsprintf(format, L"H%d", pressed);
+		else if (AXIS)
+		{
+			if(plus)
+				wsprintf(format, L"A%d+", pressed);
+			else
+				wsprintf(format, L"A%d-", pressed);
+		}
+		else    wsprintf(format, L"B%d", pressed);
+	}
 	else
 		wsprintf(format, L"-1", pressed);
 	SetDlgItemText(hDlg, buttonid, format);
@@ -440,29 +364,31 @@ void SetControllerAll(HWND hDlg, int controller)
 		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), TRUE);
 	}
 
-	SetButton(hDlg, IDTEXT_SHOULDERL, joysticks[controller].buttons[CTL_L_SHOULDER]);
-	SetButton(hDlg, IDTEXT_SHOULDERR, joysticks[controller].buttons[CTL_R_SHOULDER]);
-	SetButton(hDlg, IDTEXT_A, joysticks[controller].buttons[CTL_A_BUTTON]);
-	SetButton(hDlg, IDTEXT_B, joysticks[controller].buttons[CTL_B_BUTTON]);
-	SetButton(hDlg, IDTEXT_X, joysticks[controller].buttons[CTL_X_BUTTON]);
-	SetButton(hDlg, IDTEXT_Y, joysticks[controller].buttons[CTL_Y_BUTTON]);
+	SetButton(hDlg, IDTEXT_SHOULDERL,	joysticks[controller].control[MAP_LT]);
+	SetButton(hDlg, IDTEXT_SHOULDERR,	joysticks[controller].control[MAP_RT]);
+	SetButton(hDlg, IDTEXT_A,			joysticks[controller].control[MAP_A]);
+	SetButton(hDlg, IDTEXT_B,			joysticks[controller].control[MAP_B]);
+	SetButton(hDlg, IDTEXT_X,			joysticks[controller].control[MAP_X]);
+	SetButton(hDlg, IDTEXT_Y,			joysticks[controller].control[MAP_Y]);
 
-	SetButton(hDlg, IDTEXT_START, joysticks[controller].buttons[CTL_START]);
+	SetButton(hDlg, IDTEXT_START,		joysticks[controller].control[MAP_START]);
 	
-	SetButton(hDlg, IDTEXT_HALFPRESS, joysticks[controller].halfpress);
+	SetButton(hDlg, IDTEXT_HALFPRESS,	joysticks[controller].control[MAP_HALF]);
 	
-	SetButton(hDlg, IDTEXT_MX, joysticks[controller].axis[CTL_MAIN_X]);
-	SetButton(hDlg, IDTEXT_MY, joysticks[controller].axis[CTL_MAIN_Y]);	
+	SetButton(hDlg, IDTEXT_MX_L,		joysticks[controller].control[MAP_A_XL]);
+	SetButton(hDlg, IDTEXT_MX_R,		joysticks[controller].control[MAP_A_XR]);
+	SetButton(hDlg, IDTEXT_MY_U,		joysticks[controller].control[MAP_A_YU]);	
+	SetButton(hDlg, IDTEXT_MY_D,		joysticks[controller].control[MAP_A_YD]);
 
 	SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_SETCURSEL, joysticks[controller].controllertype, 0);	
 	SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_SETCURSEL, joysticks[controller].deadzone, 0);	
 
 	UpdateVisibleItems(hDlg, joysticks[controller].controllertype);
 
-	SetButton(hDlg, IDTEXT_DPAD_UP, joysticks[controller].dpad[CTL_D_PAD_UP]);
-	SetButton(hDlg, IDTEXT_DPAD_DOWN, joysticks[controller].dpad[CTL_D_PAD_DOWN]);
-	SetButton(hDlg, IDTEXT_DPAD_LEFT, joysticks[controller].dpad[CTL_D_PAD_LEFT]);
-	SetButton(hDlg, IDTEXT_DPAD_RIGHT, joysticks[controller].dpad[CTL_D_PAD_RIGHT]);		
+	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].control[MAP_D_UP]);
+	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].control[MAP_D_DOWN]);
+	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].control[MAP_D_LEFT]);
+	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].control[MAP_D_RIGHT]);		
 }
 
 // Get dialog items
@@ -472,24 +398,26 @@ void GetControllerAll(HWND hDlg, int controller)
 	
 	joysticks[controller].ID = (int)SendMessage(GetDlgItem(hDlg, IDC_JOYNAME), CB_GETCURSEL, 0, 0); 
 
-	joysticks[controller].buttons[CTL_L_SHOULDER] = GetButton(hDlg, IDTEXT_SHOULDERL);
-	joysticks[controller].buttons[CTL_R_SHOULDER] = GetButton(hDlg, IDTEXT_SHOULDERR);
-	joysticks[controller].buttons[CTL_A_BUTTON] = GetButton(hDlg, IDTEXT_A);
-	joysticks[controller].buttons[CTL_B_BUTTON] = GetButton(hDlg, IDTEXT_B);
-	joysticks[controller].buttons[CTL_X_BUTTON] = GetButton(hDlg, IDTEXT_X);
-	joysticks[controller].buttons[CTL_Y_BUTTON] = GetButton(hDlg, IDTEXT_Y);
+	GetButton(hDlg, IDTEXT_SHOULDERL,	joysticks[controller].control[MAP_LT]);
+	GetButton(hDlg, IDTEXT_SHOULDERR,	joysticks[controller].control[MAP_RT]);
+	GetButton(hDlg, IDTEXT_A,			joysticks[controller].control[MAP_A]);
+	GetButton(hDlg, IDTEXT_B,			joysticks[controller].control[MAP_B]);
+	GetButton(hDlg, IDTEXT_X,			joysticks[controller].control[MAP_X]);
+	GetButton(hDlg, IDTEXT_Y,			joysticks[controller].control[MAP_Y]);
 
-	joysticks[controller].buttons[CTL_START] = GetButton(hDlg, IDTEXT_START);
+	GetButton(hDlg, IDTEXT_START,		joysticks[controller].control[MAP_START]);
 	
-	joysticks[controller].halfpress = GetButton(hDlg, IDTEXT_HALFPRESS);
+	GetButton(hDlg, IDTEXT_HALFPRESS,	joysticks[controller].control[MAP_HALF]);
 		
-	joysticks[controller].dpad[CTL_D_PAD_UP] = GetButton(hDlg, IDTEXT_DPAD_UP);
-	joysticks[controller].dpad[CTL_D_PAD_DOWN] = GetButton(hDlg, IDTEXT_DPAD_DOWN);
-	joysticks[controller].dpad[CTL_D_PAD_LEFT] = GetButton(hDlg, IDTEXT_DPAD_LEFT);
-	joysticks[controller].dpad[CTL_D_PAD_RIGHT] = GetButton(hDlg, IDTEXT_DPAD_RIGHT);	
+	GetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].control[MAP_D_UP]);
+	GetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].control[MAP_D_DOWN]);
+	GetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].control[MAP_D_LEFT]);
+	GetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].control[MAP_D_RIGHT]);	
 
-	joysticks[controller].axis[CTL_MAIN_X] = GetButton(hDlg, IDTEXT_MX);
-	joysticks[controller].axis[CTL_MAIN_Y] = GetButton(hDlg, IDTEXT_MY);
+	GetButton(hDlg, IDTEXT_MX_L,			joysticks[controller].control[MAP_A_XL]);
+	GetButton(hDlg, IDTEXT_MX_R,			joysticks[controller].control[MAP_A_XR]);
+	GetButton(hDlg, IDTEXT_MY_U,			joysticks[controller].control[MAP_A_YU]);
+	GetButton(hDlg, IDTEXT_MY_D,			joysticks[controller].control[MAP_A_YD]);
 	
 	joysticks[controller].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0); 
 	joysticks[controller].deadzone = (int)SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_GETCURSEL, 0, 0);
@@ -498,20 +426,16 @@ void GetControllerAll(HWND hDlg, int controller)
 
 // Get text from static text item
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-int GetButton(HWND hDlg, int item)
-{
-	wchar format[8];
-	GetDlgItemText(hDlg, item, format, sizeof(format));	
-	return _tstoi(format);	// wide atoi...	
+void GetButton(HWND hDlg, int item, wchar* Receiver)
+{	
+	GetDlgItemText(hDlg, item, Receiver, sizeof(Receiver));		
 }
 
 // Set text in static text item
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-void SetButton(HWND hDlg, int item, int value)
-{
-	wchar format[8];
-	wsprintf(format, _T("%d"), value);
-	SetDlgItemText(hDlg, item, format);
+void SetButton(HWND hDlg, int item, wchar* value)
+{	
+	SetDlgItemText(hDlg, item, value);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
