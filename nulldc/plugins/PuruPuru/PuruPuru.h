@@ -12,7 +12,7 @@
 #include <windows.h>
 #include <tchar.h>
 
-#include "plugin_header.h"
+#include "..\..\nullDC\plugins\plugin_header.h"
 #include "config.h"
 
 #include <SDL.h>
@@ -45,7 +45,7 @@ struct CONTROLLER_STATE		// DC PAD INFO/STATE
 
 struct CONTROLLER_MAPPING   // GC PAD MAPPING
 {	
-	wchar control[14][64];		// All of it, Axis are one and only one.
+	wchar control[16][64];		// All of it, Axis are one and only one.
 	int enabled;			// Pad attached?
 	int deadzone;			// Deadzone... what else?	
 	int ID;					// SDL joystick device ID

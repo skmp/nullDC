@@ -224,6 +224,29 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 	while(waiting)
 	{			
 		SDL_JoystickUpdate();
+
+		// AXIS
+		for(int b = 0; b < axes; b++)
+		{		
+			value = SDL_JoystickGetAxis(joy, b);
+			if(value > 10000)
+			{
+				pressed = b;	
+				plus = true;
+				waiting = false;
+				succeed = true;
+				AXIS = true;
+				break;
+			}
+			else if ( value < -10000 )
+			{
+				pressed = b;	
+				waiting = false;
+				succeed = true;
+				AXIS = true;
+				break;
+			}
+		}
 		
 		// BUTTONS
 		for(int b = 0; b < buttons; b++)
@@ -275,29 +298,6 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 						break;
 					}
 			}
-
-		// AXIS
-		for(int b = 0; b < axes; b++)
-		{		
-			value = SDL_JoystickGetAxis(joy, b);
-			if(value > 10000)
-			{
-				pressed = b;	
-				plus = true;
-				waiting = false;
-				succeed = true;
-				AXIS = true;
-				break;
-			}
-			else if ( value < -10000 )
-			{
-				pressed = b;	
-				waiting = false;
-				succeed = true;
-				AXIS = true;
-				break;
-			}
-		}
 
 		}
 

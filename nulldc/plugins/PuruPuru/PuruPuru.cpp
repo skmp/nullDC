@@ -466,9 +466,16 @@ int GetStateSDL (int port, int type, wchar* input )
 					{
 						int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
 						
-						if(plus && axis > 0)  return  axis;
-						else if   (axis < 0)  return -axis;
-						else				  return 0;						
+						if(plus)
+						{
+							if(axis > 0)  return  axis;						
+							else		  return 0;
+						}
+						else
+						{
+							if(axis < 0)  return -axis;						
+							else		  return 0;
+						}
 					}
 				case L'B':
 					{
