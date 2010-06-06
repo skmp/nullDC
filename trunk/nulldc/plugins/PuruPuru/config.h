@@ -24,17 +24,15 @@
 
 INT_PTR CALLBACK OpenConfig( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
-bool GetButtons(HWND hDlg, int buttonid, int controller);
-bool GetHats(HWND hDlg, int buttonid, int controller);
-bool GetAxis(HWND hDlg, int buttonid, int controller);
+bool GetInputSDL(HWND hDlg, int buttonid, int controller);
 
 void UpdateVisibleItems(HWND hDlg, int controllertype);
 
 void GetControllerAll(HWND hDlg, int controller);
 void SetControllerAll(HWND hDlg, int controller);
 
-int GetButton(HWND hDlg, int item);
-void SetButton(HWND hDlg, int item, int value);
+void GetButton(HWND hDlg, int item, wchar* Receiver);
+void SetButton(HWND hDlg, int item, wchar* value);
 
 void OpenAbout(HINSTANCE abouthInstance, HWND _hParent);
 

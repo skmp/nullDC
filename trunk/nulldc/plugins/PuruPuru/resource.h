@@ -2,7 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by PuruPuru.rc
 //
-#define IDD_CONFIG	                    101
+#define IDD_CONFIG                      101
 #define IDB_BITMAP1                     103
 #define IDB_BITMAP_ON                   104
 #define IDD_ABOUT                       105
@@ -20,8 +20,6 @@
 #define IDC_Y                           1015
 #define IDC_START                       1016
 #define IDC_DPAD_UP                     1017
-#define IDC_MX                          1018
-#define IDC_MY                          1019
 #define IDC_DEADZONE                    1020
 #define IDC_HALFPRESS                   1021
 #define IDC_ABOUT1                      1021
@@ -45,12 +43,22 @@
 #define IDTEXT_Y                        2015
 #define IDTEXT_START                    2016
 #define IDTEXT_DPAD_UP                  2017
-#define IDTEXT_MX                       2018
-#define IDTEXT_MY                       2019
 #define IDTEXT_HALFPRESS                2021
 #define IDTEXT_DPAD_DOWN                2022
 #define IDTEXT_DPAD_LEFT                2023
 #define IDTEXT_DPAD_RIGHT               2024
+
+
+#define IDC_MX_L                        3001
+#define IDC_MX_R                        3002
+#define IDC_MY_U                        3003
+#define IDC_MY_D                        3004
+
+#define IDTEXT_MX_L                     4001
+#define IDTEXT_MX_R                     4002
+#define IDTEXT_MY_U                     4003
+#define IDTEXT_MY_D                     4004
+
 
 // Next default values for new objects
 // 
