@@ -427,33 +427,24 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 	}
 }
 
+void GetKeyState(char* keys)
+{
+	 for (int k = 0; k < 256; k++)	 
+		 keys[k] = (char)(GetAsyncKeyState(k) >> 8);	 
+}
+
 // 22000 AXIS to BUTTON threshold.
 
 int GetStateSDL (int port, int type, wchar* input )
 {						
-	int num;
+	char key[256];
+	GetKeyState(key);			
+
+	int num = _wtoi(&input[1]); // wtoi Works a lot better than I thought.
 	bool plus = false;
 
-	if( input[0] == L'A' )
-	{
-		if ( sizeof(input) > 6 )
-		{			
-			num = _wtoi(&input[1])*10 + _wtoi(&input[2]);
-			plus = input[3] == L'+' ? true: false;
-		}
-		else
-		{
-			num = _wtoi(&input[1]);
-			plus = input[2] == L'+' ? true: false;
-		}
-	}
-	else
-	{
-		if ( sizeof(input) > 4 ) num = _wtoi(&input[1])*10 + _wtoi(&input[2]);
-		else num = _wtoi(&input[1]);
-	}
-	
-		
+	if(input[0] == 'A' && input[sizeof(input)/2] == '+') plus = true;	
+
 	int currentHat = SDL_JoystickGetHat(joystate[port].joy, 0);
 
 	switch(type)
@@ -488,6 +479,11 @@ int GetStateSDL (int port, int type, wchar* input )
 					{
 						if(num & currentHat) return 32767;
 						else				 return 0;	
+					}
+				case L'K':
+					{
+						if(key[num]) return 32767;
+						else		 return 0;
 					}
 				}				
 			}
@@ -526,6 +522,11 @@ int GetStateSDL (int port, int type, wchar* input )
 						if(num & currentHat) return 255;
 						else				 return 0;	
 					}
+				case L'K':
+					{
+						if(key[num]) return 255;
+						else		 return 0;
+					}
 				}
 			}				
 		case DIGITAL:	
@@ -552,7 +553,8 @@ int GetStateSDL (int port, int type, wchar* input )
 					{	
 						if(num & currentHat) return 1;
 						else				 return 0;						
-					}				
+					}
+				case L'K': return key[num];
 				}
 			}
 	}
@@ -561,7 +563,7 @@ int GetStateSDL (int port, int type, wchar* input )
 }
 
 void GetJoyState(int controller)
-{
+{	
 	
 	if (joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_SDL)
 	{
