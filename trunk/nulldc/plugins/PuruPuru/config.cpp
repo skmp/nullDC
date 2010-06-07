@@ -37,9 +37,14 @@ static const wchar* ControllerType[] =
 
 INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
+	int Beep = GetSystemMetrics( SPI_SETBEEP );
+	
 	switch( uMsg )
 	{
 	case WM_INITDIALOG:
+
+		// Disables the DING sound when using the keyboard...			
+		SystemParametersInfo( SPI_SETBEEP , FALSE , NULL , 0);
 
 		TCITEM tci; 
 		tci.mask = TCIF_TEXT | TCIF_IMAGE;
@@ -181,7 +186,11 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 	break;
 					
 	case WM_CLOSE:
-	case WM_DESTROY:						
+	case WM_DESTROY:	
+		
+		// Restore it.
+		SystemParametersInfo( SPI_SETBEEP , Beep , NULL , 0);
+		
 		KillTimer(hDlg,0);
 		EndDialog(hDlg,0);
 	return true;
@@ -193,8 +202,11 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 
 // Wait for button/hat press
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+
 bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 {
+	char key[256];
+	
 	buttonid += 1000;
 		
 	SDL_Joystick *joy;
@@ -207,6 +219,7 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 	int axes = SDL_JoystickNumAxes(joy);
 	Sint16 value;
 
+	bool KEY = false;
 	bool HAT = false;
 	bool AXIS = false;
 	bool plus = false;
@@ -224,6 +237,7 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 	while(waiting)
 	{			
 		SDL_JoystickUpdate();
+		GetKeyState(key);
 
 		// AXIS
 		for(int b = 0; b < axes; b++)
@@ -301,6 +315,18 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 
 		}
 
+		for(int k = 0; k < 256; k++)
+		{
+			if( key[k] )
+			{
+				pressed = k;
+				waiting = false;
+				succeed = true;
+				KEY = true;
+				break;
+			}
+		}
+
 		counter1++;
 		if(counter1==100)
 		{
@@ -319,6 +345,7 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 	if(succeed)
 	{
 		if(HAT) wsprintf(format, L"H%d", pressed);
+
 		else if (AXIS)
 		{
 			if(plus)
@@ -326,7 +353,12 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 			else
 				wsprintf(format, L"A%d-", pressed);
 		}
+		
+		else if (KEY) wsprintf(format, L"K%d", pressed);
+		
 		else    wsprintf(format, L"B%d", pressed);
+
+		
 	}
 	else
 		wsprintf(format, L"-1", pressed);
@@ -428,7 +460,7 @@ void GetControllerAll(HWND hDlg, int controller)
 // ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 void GetButton(HWND hDlg, int item, wchar* Receiver)
 {	
-	GetDlgItemText(hDlg, item, Receiver, sizeof(Receiver));		
+	GetDlgItemText(hDlg, item, Receiver, 8);	
 }
 
 // Set text in static text item
