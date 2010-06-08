@@ -25,6 +25,8 @@
 INT_PTR CALLBACK OpenConfig( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
 bool GetInputSDL(HWND hDlg, int buttonid, int controller);
+bool GetInputXInput(HWND hDlg, int buttonid, int controller);
+bool GetInputKey(HWND hDlg, int buttonid, int controller);
 
 void UpdateVisibleItems(HWND hDlg, int controllertype);
 

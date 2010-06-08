@@ -19,7 +19,7 @@ namespace XInput
 
 static void ScaleStickValues(unsigned char* outx, unsigned char* outy, short inx, short iny)
 {
-	const float kDeadZone = (float)settings.Controller.Deadzone;
+	const float kDeadZone = (float)settings.Controller.Deadzone * 327.68f;
 	const int	center 	  = 0x80;
 
 	float magnitude = sqrtf( (float)inx*inx + (float)iny*iny );		
@@ -27,7 +27,7 @@ static void ScaleStickValues(unsigned char* outx, unsigned char* outy, short inx
 	float x = inx / magnitude;
 	float y = iny / magnitude;
 
-	if (magnitude < kDeadZone * 327.68f)
+	if (magnitude < kDeadZone)
 		magnitude = 0;
 	else
 	{

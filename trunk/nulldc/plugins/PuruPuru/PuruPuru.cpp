@@ -21,9 +21,13 @@ emu_info host;
 u32 current_port = 0;
 bool emulator_running  = FALSE;
 
+bool canSDL		= false;
+bool canXInput  = false;
+
 CONTROLLER_STATE joystate[4];
 CONTROLLER_MAPPING joysticks[4];
-CONTROLLER_INFO	*joyinfo = 0;
+CONTROLLER_INFO_SDL		*joyinfo = 0;
+CONTROLLER_INFO_XINPUT	 xoyinfo[4];
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // DllMain 
@@ -433,12 +437,504 @@ void GetKeyState(char* keys)
 		 keys[k] = (char)(GetAsyncKeyState(k) >> 8);	 
 }
 
+int GetStateKey (int port, int type, wchar* input )
+{
+	char key[256];
+	GetKeyState(key);			
+
+	int num = _wtoi(&input[1]);		
+
+	if(input[0] == L'K')
+	{
+		switch(type)
+		{
+			case AXIS:
+				{					
+					if(key[num]) return 32767;
+					else		 return 0;													
+				}
+			case TRIGGER:
+				{													
+					if(key[num]) return 255;
+					else		 return 0;				
+				}				
+			case DIGITAL: return key[num];				
+		}
+	}
+
+	return 0;
+}
+
+int GetStateXInput (int port, int type, wchar* input )
+{
+	char key[256];
+	GetKeyState(key);		
+
+	XInputGetState( joysticks[port].ID, &xoyinfo[port].state );
+	port = joysticks[port].ID;	
+
+	int num = _wtoi(&input[1]);
+
+	switch(type)
+	{
+		case AXIS:
+			{
+				if(input[0] == L'L' && input[1] == L'X' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+					if(axis > 0) return  axis;
+					else		 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'X' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+					if(axis < 0) return  -axis;
+					else		 return   0;
+				}
+				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+					if(axis > 0) return  axis;
+					else		 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+					if(axis < 0) return  -axis;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+					if(axis > 0) return  axis;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+					if(axis < 0) return  -axis;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+					if(axis > 0) return  axis;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+					if(axis < 0) return  -axis;
+					else		 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'T')
+				{
+					return xoyinfo[port].state.Gamepad.bLeftTrigger * 128;
+				}
+				else if(input[0] == L'R' && input[1] == L'T')
+				{
+					return xoyinfo[port].state.Gamepad.bRightTrigger * 128;
+				}
+				else if(input[0] == L'U' && input[1] == L'P')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'D' && input[1] == L'O' && input[2] == 'W')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'E' && input[2] == 'F')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'I' && input[2] == 'G')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'S' && input[1] == L'T' && input[2] == 'A')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'B' && input[1] == L'A' && input[2] == 'C')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'S')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'S')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'B')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'B')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'A')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'B')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'X')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'Y')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)
+						return 32767;
+					else
+						return 0;
+				}
+				else if(input[0] == L'K')
+					{
+						if(key[num]) return 32767;
+						else		 return 0;
+					}
+						
+			}
+		case TRIGGER:
+			{
+				if(input[0] == L'L' && input[1] == L'X' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+					if(axis > 0) return  axis/128;
+					else		 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'X' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+					if(axis < 0) return  -axis/128;
+					else		 return   0;
+				}
+				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+					if(axis > 0) return  axis/128;
+					else		 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+					if(axis < 0) return  -axis/128;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+					if(axis > 0) return  axis/128;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+					if(axis < 0) return  -axis/128;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+					if(axis > 0) return  axis/128;
+					else		 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+					if(axis < 0) return  -axis/128;
+					else		 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'T')
+				{
+					return xoyinfo[port].state.Gamepad.bLeftTrigger;
+				}
+				else if(input[0] == L'R' && input[1] == L'T')
+				{
+					return xoyinfo[port].state.Gamepad.bRightTrigger;
+				}
+				else if(input[0] == L'U' && input[1] == L'P')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'D' && input[1] == L'O' && input[2] == 'W')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'E' && input[2] == 'F')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'I' && input[2] == 'G')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'S' && input[1] == L'T' && input[2] == 'A')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'B' && input[1] == L'A' && input[2] == 'C')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'S')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'S')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'B')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'B')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'A')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'B')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'X')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'Y')
+				{
+					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)
+						return 255;
+					else
+						return 0;
+				}
+				else if(input[0] == L'K')
+					{
+						if(key[num]) return 255;
+						else		 return 0;
+					}
+						
+			}				
+		case DIGITAL:	
+			{				
+				if(input[0] == L'L' && input[1] == L'X' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+					if(axis > 22000) return  1;
+					else			 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'X' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+					if(axis < -22000) return  1;
+					else		 	 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+					if(axis > 22000) return  1;
+					else			 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+					if(axis < -22000) return  1;
+					else			 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+					if(axis > 22000) return  1;
+					else			 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+					if(axis < -22000) return  1;
+					else			 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '+')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+					if(axis > 22000) return  1;
+					else			 return	 0;
+				}
+				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '-')
+				{
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+					if(axis < -22000) return  1;
+					else			 return	 0;
+				}
+				else if(input[0] == L'L' && input[1] == L'T')
+				{
+					if(xoyinfo[port].state.Gamepad.bLeftTrigger > 100) 
+						return 1;
+					else
+						return 0;										
+				}
+				else if(input[0] == L'R' && input[1] == L'T')
+				{
+					if(xoyinfo[port].state.Gamepad.bRightTrigger > 100)
+						return 1;
+					else
+						return 0;
+				}
+				else if(input[0] == L'U' && input[1] == L'P')  
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP);			
+				else if(input[0] == L'D' && input[1] == L'O' && input[2] == 'W')
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN);				
+				else if(input[0] == L'L' && input[1] == L'E' && input[2] == 'F')
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT);				
+				else if(input[0] == L'R' && input[1] == L'I' && input[2] == 'G')
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);				
+				else if(input[0] == L'S' && input[1] == L'T' && input[2] == 'A')
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START);								
+				else if(input[0] == L'B' && input[1] == L'A' && input[2] == 'C')
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK);
+
+				else if(input[0] == L'L' && input[1] == L'S')
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB);				
+				else if(input[0] == L'R' && input[1] == L'S')   
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);
+				else if(input[0] == L'L' && input[1] == L'B')   
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
+				else if(input[0] == L'R' && input[1] == L'B')
+					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);				
+
+				else if(input[0] == L'A') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A);				
+				else if(input[0] == L'B') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B);				
+				else if(input[0] == L'X') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X);				
+				else if(input[0] == L'Y') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y);				
+				else if(input[0] == L'K') return key[num];		
+				
+						
+			}
+	}
+
+	return 0;
+}
+
+
 // 22000 AXIS to BUTTON threshold.
 
 int GetStateSDL (int port, int type, wchar* input )
 {						
 	char key[256];
-	GetKeyState(key);			
+	GetKeyState(key);	
+
+	port = joysticks[port].ID;
 
 	int num = _wtoi(&input[1]); // wtoi Works a lot better than I thought.
 	bool plus = false;
@@ -564,10 +1060,8 @@ int GetStateSDL (int port, int type, wchar* input )
 
 void GetJoyState(int controller)
 {	
-	
-	if (joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_SDL)
-	{
-		
+	if(joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_SDL)
+	{	
 		SDL_JoystickUpdate();
 
 		joystate[controller].axis[CTL_MAIN_X] = 0;
@@ -603,6 +1097,80 @@ void GetJoyState(int controller)
 		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
 		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
 		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );
+	}
+	else if(joysticks[controller].controllertype ==  CTL_TYPE_JOYSTICK_XINPUT)
+	{
+		XInputGetState( controller, &xoyinfo[controller].state );
+
+		joystate[controller].axis[CTL_MAIN_X] = 0;
+		joystate[controller].axis[CTL_MAIN_Y] = 0;
+
+		joystate[controller].axis[CTL_MAIN_X] -= GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_XL] );
+		joystate[controller].axis[CTL_MAIN_X] += GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_XR] );				
+		
+		joystate[controller].axis[CTL_MAIN_Y] -= GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_YU] );		
+		joystate[controller].axis[CTL_MAIN_Y] += GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_YD] );		
+
+		joystate[controller].halfpress = GetStateXInput( controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
+
+		joystate[controller].trigger[CTL_L_SHOULDER] = GetStateXInput( controller, TRIGGER, joysticks[controller].control[MAP_LT] );
+		joystate[controller].trigger[CTL_R_SHOULDER] = GetStateXInput( controller, TRIGGER, joysticks[controller].control[MAP_RT] );
+		
+		if ( joystate[controller].halfpress ) 
+		{
+			joystate[controller].trigger[CTL_L_SHOULDER] /= 2;
+			joystate[controller].trigger[CTL_R_SHOULDER] /= 2;
+
+			joystate[controller].axis[CTL_MAIN_X] /= 2;
+			joystate[controller].axis[CTL_MAIN_Y] /= 2;
+		}				
+				
+		joystate[controller].button[CTL_A_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_A] );
+		joystate[controller].button[CTL_B_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_B] );
+		joystate[controller].button[CTL_X_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_X] );
+		joystate[controller].button[CTL_Y_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_Y] );
+		joystate[controller].button[CTL_START]	    = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_START] );				
+
+		joystate[controller].dpad[CTL_D_PAD_UP]		= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_UP] );
+		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
+		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
+		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );
+	}
+	else if(joysticks[controller].controllertype == CTL_TYPE_KEYBOARD)
+	{			
+		joystate[controller].axis[CTL_MAIN_X] = 0;
+		joystate[controller].axis[CTL_MAIN_Y] = 0;
+
+		joystate[controller].axis[CTL_MAIN_X] -= GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_XL] );
+		joystate[controller].axis[CTL_MAIN_X] += GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_XR] );				
+		
+		joystate[controller].axis[CTL_MAIN_Y] -= GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_YU] );		
+		joystate[controller].axis[CTL_MAIN_Y] += GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_YD] );		
+
+		joystate[controller].halfpress = GetStateKey( controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
+
+		joystate[controller].trigger[CTL_L_SHOULDER] = GetStateKey( controller, TRIGGER, joysticks[controller].control[MAP_LT] );
+		joystate[controller].trigger[CTL_R_SHOULDER] = GetStateKey( controller, TRIGGER, joysticks[controller].control[MAP_RT] );
+		
+		if ( joystate[controller].halfpress ) 
+		{
+			joystate[controller].trigger[CTL_L_SHOULDER] /= 2;
+			joystate[controller].trigger[CTL_R_SHOULDER] /= 2;
+
+			joystate[controller].axis[CTL_MAIN_X] /= 2;
+			joystate[controller].axis[CTL_MAIN_Y] /= 2;
+		}				
+				
+		joystate[controller].button[CTL_A_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_A] );
+		joystate[controller].button[CTL_B_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_B] );
+		joystate[controller].button[CTL_X_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_X] );
+		joystate[controller].button[CTL_Y_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_Y] );
+		joystate[controller].button[CTL_START]	    = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_START] );				
+
+		joystate[controller].dpad[CTL_D_PAD_UP]		= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_UP] );
+		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
+		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
+		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );		
 	}
 	
 }
@@ -708,44 +1276,60 @@ void AnsiToWide(wchar* dest, const char *src)
 	mbstowcs_s(0, dest, len, src, len);
 }
 
-
 int Search_Devices()
-{
+{	
 	int numjoy = SDL_NumJoysticks();
 
 	wprintf(L"PuruPuru: %i joystics detected.\n", numjoy);
 
-	if(numjoy == 0)
-	{				
-		MessageBoxA(NULL, "No Joystick detected!", NULL,  MB_ICONWARNING);		
-		return 0;
-	}
+	if(numjoy > 0) 
+	{
+		canSDL = true;
 
-	if(joyinfo)
-	{
-		delete [] joyinfo;
-		joyinfo = new CONTROLLER_INFO [numjoy];
-	}
-	else
-	{
-		joyinfo = new CONTROLLER_INFO [numjoy];
-	}
+		if(joyinfo)
+		{
+			delete [] joyinfo;
+			joyinfo = new CONTROLLER_INFO_SDL [numjoy];
+		}
+		else
+		{
+			joyinfo = new CONTROLLER_INFO_SDL [numjoy];
+		}
 	
-	for(int i = 0; i < numjoy; i++ )
-	{
-		joyinfo[i].joy			= SDL_JoystickOpen(i);
-		joyinfo[i].ID			= i;
-		joyinfo[i].NumAxes		= SDL_JoystickNumAxes(joyinfo[i].joy);
-		joyinfo[i].NumButtons	= SDL_JoystickNumButtons(joyinfo[i].joy);
-		joyinfo[i].NumBalls		= SDL_JoystickNumBalls(joyinfo[i].joy);
-		joyinfo[i].NumHats		= SDL_JoystickNumHats(joyinfo[i].joy);	
+		for(int i = 0; i < numjoy; i++ )
+		{
+			joyinfo[i].joy			= SDL_JoystickOpen(i);
+			joyinfo[i].ID			= i;
+			joyinfo[i].NumAxes		= SDL_JoystickNumAxes(joyinfo[i].joy);
+			joyinfo[i].NumButtons	= SDL_JoystickNumButtons(joyinfo[i].joy);
+			joyinfo[i].NumBalls		= SDL_JoystickNumBalls(joyinfo[i].joy);
+			joyinfo[i].NumHats		= SDL_JoystickNumHats(joyinfo[i].joy);	
 
-		AnsiToWide( joyinfo[i].Name, SDL_JoystickName(i) );
+			AnsiToWide( joyinfo[i].Name, SDL_JoystickName(i) );
 		
-		// Close if opened
-		if(SDL_JoystickOpened(i))
-			SDL_JoystickClose(joyinfo[i].joy);
+			// Close if opened
+			if(SDL_JoystickOpened(i))
+				SDL_JoystickClose(joyinfo[i].joy);
+		}
 	}
+
+	ZeroMemory( xoyinfo, sizeof( CONTROLLER_INFO_XINPUT ) * 4 );
+
+	DWORD status;
+    canXInput = false;
+
+	for( int i = 0; i < 4; i++ )
+    {        
+        status = XInputGetState( i, &xoyinfo[i].state );
+
+        if( status == ERROR_SUCCESS )
+		{            
+			xoyinfo[i].connected = true;
+			canXInput = true;
+		}			
+        else
+            xoyinfo[i].connected = false;
+    }  	    	
 
 	return numjoy;
 }

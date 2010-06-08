@@ -18,6 +18,10 @@
 #include <SDL.h>
 #pragma comment(lib, "SDL.lib")
 
+#include <XInput.h>
+#pragma comment(lib, "Xinput.lib")
+
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // Define
 // ¯¯¯¯¯¯
@@ -48,12 +52,12 @@ struct CONTROLLER_MAPPING   // GC PAD MAPPING
 	wchar control[16][64];		// All of it, Axis are one and only one.
 	int enabled;			// Pad attached?
 	int deadzone;			// Deadzone... what else?	
-	int ID;					// SDL joystick device ID
+	int ID;					// Joystick device ID
 	int controllertype;		// Joystick, Joystick no hat or a keyboard (perhaps a mouse later)
 	int eventnum;			// Linux Event Number, Can't be found dynamically yet
 };
 
-struct CONTROLLER_INFO		// CONNECTED WINDOWS DEVICES INFO
+struct CONTROLLER_INFO_SDL	// CONNECTED WINDOWS DEVICES INFO
 {
 	int NumAxes;			// Amount of Axes
 	int NumButtons;			// Amount of Buttons
@@ -62,6 +66,12 @@ struct CONTROLLER_INFO		// CONNECTED WINDOWS DEVICES INFO
 	wchar Name[512];		// Joypad/stickname		
 	int ID;					// SDL joystick device ID
 	SDL_Joystick *joy;		// SDL joystick device
+};
+
+struct CONTROLLER_INFO_XINPUT
+{
+    XINPUT_STATE state;
+    bool connected;
 };
 
 // ENUMS
