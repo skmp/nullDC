@@ -11,7 +11,9 @@
 #define IDC_PORTTAB                     108
 #define IDC_CONFIG_OFF                  200
 #define IDC_CONFIG_ON                   201
-#define IDC_JOYNAME                     1001
+#define IDC_JOYNAME_SDL                 1001
+#define IDC_JOYNAME_XINPUT              1002
+#define IDC_JOYNAME_KEY					1003
 #define IDC_SHOULDERL                   1010
 #define IDC_SHOULDERR                   1011
 #define IDC_A                           1012
