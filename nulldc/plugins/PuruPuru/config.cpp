@@ -203,7 +203,13 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 				return TRUE;
 			}
 			break;
-				
+
+			case IDC_KEY:
+			{
+				joysticks[current_port].keys = IsDlgButtonChecked(hDlg, IDC_KEY) == BST_CHECKED? 1:0;
+			}
+			break;
+
 			case IDC_SHOULDERL:
 			case IDC_SHOULDERR:
 			case IDC_A:
@@ -442,18 +448,20 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 		}
 
 		// KEYBOARD
-
-		for(int k = 0; k < 256; k++)
+		if(joysticks[controller].keys)
 		{
-			if( key[k] )
+			for(int k = 0; k < 256; k++)
 			{
-				pressed = k;
-				waiting = false;
-				succeed = true;
+				if( key[k] )
+				{
+					pressed = k;
+					waiting = false;
+					succeed = true;
 
-				wsprintf(format, L"K%d", pressed);
+					wsprintf(format, L"K%d", pressed);
 
-				break;
+					break;
+				}
 			}
 		}
 
@@ -472,8 +480,7 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 		Sleep(10);
 	}
 			
-	if(!succeed)
-		wsprintf(format, L"-1", pressed);
+	if(!succeed) wsprintf(format, L"-1");
 
 	SetDlgItemText(hDlg, buttonid, format);	
 
@@ -648,15 +655,18 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 
 		}
 
-		for(int k = 0; k < 256; k++)
+		if(joysticks[controller].keys)
 		{
-			if( key[k] )
+			for(int k = 0; k < 256; k++)
 			{
-				pressed = k;
-				waiting = false;
-				succeed = true;
-				KEY = true;
-				break;
+				if( key[k] )
+				{
+					pressed = k;
+					waiting = false;
+					succeed = true;
+					KEY = true;
+					break;
+				}
 			}
 		}
 
@@ -710,18 +720,21 @@ void UpdateVisibleItems(HWND hDlg, int controllertype)
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), TRUE);
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), FALSE);
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), FALSE);
+		ShowWindow(GetDlgItem(hDlg, IDC_KEY), TRUE);
 	}
 	else if (controllertype == CTL_TYPE_JOYSTICK_XINPUT)
 	{		
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), TRUE);
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), FALSE);		
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), FALSE);
+		ShowWindow(GetDlgItem(hDlg, IDC_KEY), TRUE);
 	}
 	else
 	{
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), TRUE);
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), FALSE);
 		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), FALSE);			
+		ShowWindow(GetDlgItem(hDlg, IDC_KEY), FALSE);
 	}
 }
 
@@ -764,6 +777,9 @@ void SetControllerAll(HWND hDlg, int controller)
 
 	UpdateVisibleItems(hDlg, joysticks[controller].controllertype);
 
+	if(joysticks[controller].keys == 1) CheckDlgButton(hDlg,IDC_KEY, BST_CHECKED);
+	else CheckDlgButton(hDlg,IDC_KEY, BST_UNCHECKED);
+
 	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].control[MAP_D_UP]);
 	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].control[MAP_D_DOWN]);
 	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].control[MAP_D_LEFT]);
@@ -800,6 +816,7 @@ void GetControllerAll(HWND hDlg, int controller)
 	GetButton(hDlg, IDTEXT_MY_U,			joysticks[controller].control[MAP_A_YU]);
 	GetButton(hDlg, IDTEXT_MY_D,			joysticks[controller].control[MAP_A_YD]);
 	
+	joysticks[current_port].keys = IsDlgButtonChecked(hDlg, IDC_KEY) == BST_CHECKED? 1:0;
 	joysticks[controller].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0); 
 	joysticks[controller].deadzone = (int)SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_GETCURSEL, 0, 0);
 	
