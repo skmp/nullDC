@@ -423,25 +423,25 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 				} break;
 			case XINPUT_GAMEPAD_A:  
 				{
-					wsprintf(format, L"A");		
+					wsprintf(format, L"A.");		
 					succeed = true;
 					waiting = false;
 				} break;
 			case XINPUT_GAMEPAD_B:               
 				{
-					wsprintf(format, L"B");		
+					wsprintf(format, L"B.");		
 					succeed = true;
 					waiting = false;
 				} break;
 			case XINPUT_GAMEPAD_X:               
 				{
-					wsprintf(format, L"X");		
+					wsprintf(format, L"X.");		
 					succeed = true;
 					waiting = false;
 				} break;
 			case XINPUT_GAMEPAD_Y:               
 				{
-					wsprintf(format, L"Y");		
+					wsprintf(format, L"Y.");		
 					succeed = true;
 					waiting = false;
 				} break;

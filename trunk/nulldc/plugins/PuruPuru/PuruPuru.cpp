@@ -475,7 +475,7 @@ int GetStateXInput (int port, int type, wchar* input )
 
 	XInputGetState( joysticks[port].ID, &xoyinfo[port].state );
 	port = joysticks[port].ID;	
-
+	
 	int num = _wtoi(&input[1]);
 
 	switch(type)
@@ -616,28 +616,28 @@ int GetStateXInput (int port, int type, wchar* input )
 					else
 						return 0;
 				}
-				else if(input[0] == L'A')
+				else if(input[0] == L'A' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
 						return 32767;
 					else
 						return 0;
 				}
-				else if(input[0] == L'B')
+				else if(input[0] == L'B' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)
 						return 32767;
 					else
 						return 0;
 				}
-				else if(input[0] == L'X')
+				else if(input[0] == L'X' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)
 						return 32767;
 					else
 						return 0;
 				}
-				else if(input[0] == L'Y')
+				else if(input[0] == L'Y' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)
 						return 32767;
@@ -787,28 +787,28 @@ int GetStateXInput (int port, int type, wchar* input )
 					else
 						return 0;
 				}
-				else if(input[0] == L'A')
+				else if(input[0] == L'A' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
 						return 255;
 					else
 						return 0;
 				}
-				else if(input[0] == L'B')
+				else if(input[0] == L'B' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)
 						return 255;
 					else
 						return 0;
 				}
-				else if(input[0] == L'X')
+				else if(input[0] == L'X' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)
 						return 255;
 					else
 						return 0;
 				}
-				else if(input[0] == L'Y')
+				else if(input[0] == L'Y' && input[1] == '.')
 				{
 					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)
 						return 255;
@@ -916,10 +916,10 @@ int GetStateXInput (int port, int type, wchar* input )
 				else if(input[0] == L'R' && input[1] == L'B')
 					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);				
 
-				else if(input[0] == L'A') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A);				
-				else if(input[0] == L'B') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B);				
-				else if(input[0] == L'X') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X);				
-				else if(input[0] == L'Y') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y);				
+				else if(input[0] == L'A' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A);				
+				else if(input[0] == L'B' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B);				
+				else if(input[0] == L'X' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X);				
+				else if(input[0] == L'Y' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y);				
 				else if(input[0] == L'K') return key[num];		
 				
 						
@@ -1245,22 +1245,22 @@ void LoadConfig()
 		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
 
 					
-		host.ConfigLoadStr(SectionName, L"l_shoulder",		joysticks[port].control[MAP_LT],  L"B0");
-		host.ConfigLoadStr(SectionName, L"r_shoulder",		joysticks[port].control[MAP_RT],  L"B0");
-		host.ConfigLoadStr(SectionName, L"a_button",		joysticks[port].control[MAP_A],  L"B0");
-		host.ConfigLoadStr(SectionName, L"b_button",		joysticks[port].control[MAP_B],  L"B0");
-		host.ConfigLoadStr(SectionName, L"x_button",		joysticks[port].control[MAP_X],  L"B0");
-		host.ConfigLoadStr(SectionName, L"y_button",		joysticks[port].control[MAP_Y],  L"B0");
-		host.ConfigLoadStr(SectionName, L"start_button",	joysticks[port].control[MAP_START],  L"B0");		
-		host.ConfigLoadStr(SectionName, L"dpad_up",			joysticks[port].control[MAP_D_UP],  L"B0");
-		host.ConfigLoadStr(SectionName, L"dpad_down",		joysticks[port].control[MAP_D_DOWN],  L"B0");
-		host.ConfigLoadStr(SectionName, L"dpad_left",		joysticks[port].control[MAP_D_LEFT],  L"B0");
-		host.ConfigLoadStr(SectionName, L"dpad_right",		joysticks[port].control[MAP_D_RIGHT], L"B0");
-		host.ConfigLoadStr(SectionName, L"main_x_left",		joysticks[port].control[MAP_A_XL], L"B0");
-		host.ConfigLoadStr(SectionName, L"main_x_right",	joysticks[port].control[MAP_A_XR], L"B0");
-		host.ConfigLoadStr(SectionName, L"main_y_up",		joysticks[port].control[MAP_A_YU], L"B0");				
-		host.ConfigLoadStr(SectionName, L"main_y_down",		joysticks[port].control[MAP_A_YD], L"B0");				
-		host.ConfigLoadStr(SectionName, L"halfpress",		joysticks[port].control[MAP_HALF], L"B0");
+		host.ConfigLoadStr(SectionName, L"l_shoulder",		joysticks[port].control[MAP_LT],	  L"-1");
+		host.ConfigLoadStr(SectionName, L"r_shoulder",		joysticks[port].control[MAP_RT],	  L"-1");
+		host.ConfigLoadStr(SectionName, L"a_button",		joysticks[port].control[MAP_A],		  L"-1");
+		host.ConfigLoadStr(SectionName, L"b_button",		joysticks[port].control[MAP_B],		  L"-1");
+		host.ConfigLoadStr(SectionName, L"x_button",		joysticks[port].control[MAP_X],		  L"-1");
+		host.ConfigLoadStr(SectionName, L"y_button",		joysticks[port].control[MAP_Y],		  L"-1");
+		host.ConfigLoadStr(SectionName, L"start_button",	joysticks[port].control[MAP_START],   L"-1");		
+		host.ConfigLoadStr(SectionName, L"dpad_up",			joysticks[port].control[MAP_D_UP],	  L"-1");
+		host.ConfigLoadStr(SectionName, L"dpad_down",		joysticks[port].control[MAP_D_DOWN],  L"-1");
+		host.ConfigLoadStr(SectionName, L"dpad_left",		joysticks[port].control[MAP_D_LEFT],  L"-1");
+		host.ConfigLoadStr(SectionName, L"dpad_right",		joysticks[port].control[MAP_D_RIGHT], L"-1");
+		host.ConfigLoadStr(SectionName, L"main_x_left",		joysticks[port].control[MAP_A_XL],	  L"-1");
+		host.ConfigLoadStr(SectionName, L"main_x_right",	joysticks[port].control[MAP_A_XR],	  L"-1");
+		host.ConfigLoadStr(SectionName, L"main_y_up",		joysticks[port].control[MAP_A_YU],	  L"-1");				
+		host.ConfigLoadStr(SectionName, L"main_y_down",		joysticks[port].control[MAP_A_YD],	  L"-1");				
+		host.ConfigLoadStr(SectionName, L"halfpress",		joysticks[port].control[MAP_HALF],	  L"-1");
 		
 
 		joysticks[port].deadzone		= host.ConfigLoadInt(SectionName, L"deadzone",		24);
