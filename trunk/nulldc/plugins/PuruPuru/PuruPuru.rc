@@ -62,8 +62,8 @@ BEGIN
     LTEXT           "www.multigesture.net",IDC_STATIC,262,298,72,8
     GROUPBOX        "Controller:",IDC_STATIC,3,17,331,28
     COMBOBOX        IDC_JOYNAME_SDL,8,28,323,128,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-	COMBOBOX        IDC_JOYNAME_XINPUT,8,28,323,128,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-	COMBOBOX        IDC_JOYNAME_KEY,8,28,323,128,CBS_DROPDOWNLIST | WS_VSCROLL
+    COMBOBOX        IDC_JOYNAME_XINPUT,8,28,323,128,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_JOYNAME_KEY,8,28,323,128,CBS_DROPDOWNLIST | WS_VSCROLL
     CTEXT           "",IDTEXT_SHOULDERL,4,61,40,12,WS_BORDER
     PUSHBUTTON      "",IDC_SHOULDERL,47,62,15,10,0,WS_EX_STATICEDGE
     CTEXT           "",IDTEXT_MY_D,4,191,40,12,WS_BORDER
@@ -76,7 +76,7 @@ BEGIN
     PUSHBUTTON      "",IDC_HALFPRESS,151,272,15,10,0,WS_EX_STATICEDGE
     CTEXT           "",IDTEXT_START,178,255,40,12,WS_BORDER
     PUSHBUTTON      "",IDC_START,191,243,15,10,0,WS_EX_STATICEDGE
-    GROUPBOX        "Extra settings:",IDC_STATIC,68,244,103,43
+    GROUPBOX        "Extra settings:",IDC_STATIC,68,244,103,55
     LTEXT           "Deadzone",IDC_STATIC,72,258,33,8
     LTEXT           "Half press",IDC_STATIC,72,272,33,8
     COMBOBOX        IDC_DEADZONE,107,256,40,90,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
@@ -112,6 +112,7 @@ BEGIN
     CTEXT           "",IDTEXT_MY_U,4,166,40,12,WS_BORDER
     PUSHBUTTON      "",IDC_MY_U,48,168,15,10,0,WS_EX_STATICEDGE
     LTEXT           "Y-axis Down",IDC_STATIC,5,180,40,8
+    CONTROL         "Keyboard Input",IDC_KEY,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,72,287,91,10
 END
 
 IDD_ABOUT DIALOGEX 0, 0, 200, 225
@@ -130,6 +131,7 @@ BEGIN
     LTEXT           "BETA RELEASE",IDC_STATEI,9,207,59,9
 END
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Bitmap
@@ -139,6 +141,8 @@ IDB_BITMAP1             BITMAP                  "images\\full_dreamcast_controll
 IDB_BITMAP_ON           BITMAP                  "images\\ICON_ON.bmp"
 IDB_BITMAP_OFF          BITMAP                  "images\\ICON_OFF.bmp"
 IDB_BITMAP4             BITMAP                  "images\\purupurulogo.bmp"
+
+
 #endif    // Dutch (Netherlands) resources
 /////////////////////////////////////////////////////////////////////////////
 

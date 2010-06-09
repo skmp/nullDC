@@ -434,7 +434,10 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 void GetKeyState(char* keys)
 {
 	 for (int k = 0; k < 256; k++)	 
-		 keys[k] = (char)(GetAsyncKeyState(k) >> 8);	 
+		 keys[k] = (char)(GetAsyncKeyState(k) >> 8);	
+
+	 // Workaround for Lenovo
+	 if(keys[255]) keys[255] = 0;
 }
 
 int GetStateKey (int port, int type, wchar* input )
@@ -1225,6 +1228,7 @@ void SaveConfig()
 		host.ConfigSaveStr(SectionName, L"halfpress",		joysticks[port].control[MAP_HALF]);
 
 		host.ConfigSaveInt(SectionName, L"deadzone",		joysticks[port].deadzone);
+		host.ConfigSaveInt(SectionName, L"keyboard",		joysticks[port].keys);		
 		host.ConfigSaveInt(SectionName, L"joy_id",			joysticks[port].ID);
 		host.ConfigSaveInt(SectionName, L"controllertype",	joysticks[port].controllertype);
 		host.ConfigSaveInt(SectionName, L"eventnum",		joysticks[port].eventnum);
@@ -1260,6 +1264,7 @@ void LoadConfig()
 		
 
 		joysticks[port].deadzone		= host.ConfigLoadInt(SectionName, L"deadzone",		24);
+		joysticks[port].keys			= host.ConfigLoadInt(SectionName, L"keyboard",		 0);
 		joysticks[port].ID				= host.ConfigLoadInt(SectionName, L"joy_id",		 0);
 		joysticks[port].controllertype	= host.ConfigLoadInt(SectionName, L"controllertype", 0);
 		joysticks[port].eventnum		= host.ConfigLoadInt(SectionName, L"eventnum",		 0);

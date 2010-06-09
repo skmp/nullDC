@@ -51,7 +51,8 @@ struct CONTROLLER_MAPPING   // GC PAD MAPPING
 {	
 	wchar control[16][64];		// All of it, Axis are one and only one.
 	int enabled;			// Pad attached?
-	int deadzone;			// Deadzone... what else?	
+	int deadzone;			// Deadzone... what else?
+	int keys;
 	int ID;					// Joystick device ID
 	int controllertype;		// Joystick, Joystick no hat or a keyboard (perhaps a mouse later)
 	int eventnum;			// Linux Event Number, Can't be found dynamically yet

@@ -13,7 +13,7 @@
 #define IDC_CONFIG_ON                   201
 #define IDC_JOYNAME_SDL                 1001
 #define IDC_JOYNAME_XINPUT              1002
-#define IDC_JOYNAME_KEY					1003
+#define IDC_JOYNAME_KEY                 1003
 #define IDC_SHOULDERL                   1010
 #define IDC_SHOULDERR                   1011
 #define IDC_A                           1012
@@ -33,6 +33,7 @@
 #define IDC_CONTROLTYPE                 1025
 #define IDC_BUTTON1                     1026
 #define IDABOUT                         1026
+#define IDC_KEY                         1027
 #define IDC_DPAD_TEXT1                  1037
 #define IDC_DPAD_TEXT2                  1038
 #define IDC_DPAD_TEXT3                  1039
@@ -49,18 +50,14 @@
 #define IDTEXT_DPAD_DOWN                2022
 #define IDTEXT_DPAD_LEFT                2023
 #define IDTEXT_DPAD_RIGHT               2024
-
-
 #define IDC_MX_L                        3001
 #define IDC_MX_R                        3002
 #define IDC_MY_U                        3003
 #define IDC_MY_D                        3004
-
 #define IDTEXT_MX_L                     4001
 #define IDTEXT_MX_R                     4002
 #define IDTEXT_MY_U                     4003
 #define IDTEXT_MY_D                     4004
-
 
 // Next default values for new objects
 // 
@@ -68,7 +65,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        108
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1027
+#define _APS_NEXT_CONTROL_VALUE         1028
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
