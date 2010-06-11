@@ -655,59 +655,75 @@ int GetStateXInput (int port, int type, wchar* input )
 			{
 				if(input[0] == L'L' && input[1] == L'X' && input[2] == '+')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX/128;
 
-					if(axis > 0) return  axis/128;
+					if(axis > 255) axis = 255;
+
+					if(axis > 0) return  axis;
 					else		 return	 0;
 				}
 				else if(input[0] == L'L' && input[1] == L'X' && input[2] == '-')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX/128;
 
-					if(axis < 0) return  -axis/128;
+					if(axis < -255) axis = -255;
+
+					if(axis < 0) return  -axis;
 					else		 return   0;
 				}
 				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '+')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY/128;
 
-					if(axis > 0) return  axis/128;
+					if(axis > 255) axis = 255;
+
+					if(axis > 0) return  axis;
 					else		 return	 0;
 				}
 				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '-')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY/128;
 
-					if(axis < 0) return  -axis/128;
-					else		 return	 0;
+					if(axis < -255) axis = -255;
+
+					if(axis < 0) return  -axis;
+					else		 return   0;
 				}
 				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '+')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX/128;
 
-					if(axis > 0) return  axis/128;
+					if(axis > 255) axis = 255;
+
+					if(axis > 0) return  axis;
 					else		 return	 0;
 				}
 				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '-')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX/128;
 
-					if(axis < 0) return  -axis/128;
-					else		 return	 0;
+					if(axis < -255) axis = -255;
+
+					if(axis < 0) return  -axis;
+					else		 return   0;
 				}
 				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '+')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY/128;
 
-					if(axis > 0) return  axis/128;
+					if(axis > 255) axis = 255;
+
+					if(axis > 0) return  axis;
 					else		 return	 0;
 				}
 				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '-')
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY/128;
 
-					if(axis < 0) return  -axis/128;
-					else		 return	 0;
+					if(axis < -255) axis = -255;
+
+					if(axis < 0) return  -axis;
+					else		 return   0;
 				}
 				else if(input[0] == L'L' && input[1] == L'T')
 				{
@@ -993,16 +1009,20 @@ int GetStateSDL (int port, int type, wchar* input )
 				case L'A': 
 					{
 					
-						int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+						int axis = SDL_JoystickGetAxis(joystate[port].joy, num)/128;
 
 						if(plus)
 						{
-							if(axis > 0)  return  axis/128;						
+							if(axis > 255) axis = 255;							
+							
+							if(axis > 0)  return  axis;						
 							else				  return 0;
 						}
 						else
 						{
-							if(axis < 0)  return -axis/128;						
+							if(axis < -255) axis = -255;
+							
+							if(axis < 0)  return -axis;						
 							else				  return 0;
 						}
 						
