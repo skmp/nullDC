@@ -2425,8 +2425,8 @@ __error_out:
 					dev->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
 					verifyc(dev->SetRenderState(D3DRS_ZFUNC,D3DCMP_GREATER));
 					
-
-					verifyc(dev->SetPixelShader(ZPixelShader));
+					//TODO: Find out what ZPixelShader was supposed to be doing.
+					//verifyc(dev->SetPixelShader(ZPixelShader));
 					verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,TRUE));
 
 					//we WANT stencil to have all 1's here for bit 1
@@ -2527,7 +2527,8 @@ __error_out:
 				}
 				else if (settings.Emulation.ModVolMode==MVM_Volume)
 				{
-					verifyc(dev->SetPixelShader(ZPixelShader));
+					//TODO: Find out what ZPixelShader was supposed to be doing.
+					//verifyc(dev->SetPixelShader(ZPixelShader));
 					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
 					dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 					dev ->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA); 
