@@ -14,7 +14,6 @@
 #include "intc.h"
 #include "tmu.h"
 #include "dc/mem/sh4_mem.h"
-#include "dc/asic/asic.h"
 
 #include <time.h>
 #include <float.h>
@@ -181,8 +180,6 @@ i_exept_rp:
 
 		//Call update system (cycle cnt is fixed to 448)
 		call UpdateSystem;
-
-		call DmaTime;
 
 		//if cpu still on go for one more brust of opcodes :)
 		cmp  sh4_int_bCpuRun,0;
@@ -554,72 +551,4 @@ int __fastcall UpdateSystem()
 	UpdateTMU(448);
 	UpdatePvr(448);
 	return UpdateINTC();
-}
-u32 dmatmp1;
-u32 dmatmp2;
-u32 OldDmaId;
-
-void __fastcall DmaTime(u32 NewDmaId)
-{
-	// IRQ wait slots are here. This is a hack. ~Psy.
-	// Up until now, more than 3 and less than 2 wait slots break stuff.
-	// Currently using 2 wait slots.
-
-	OldDmaId=dmatmp2;
-	dmatmp2=dmatmp1;
-	dmatmp1=NewDmaId;
-
-	if (OldDmaId==EXT)
-	{
-		//printf("holly_EXT_DMA1\n");
-		asic_RaiseInterrupt(holly_EXT_DMA1);
-	}
-
-	else if (OldDmaId==CH2)
-	{
-		//printf("holly_CH2_DMA\n");
-		asic_RaiseInterrupt(holly_CH2_DMA);
-	}
-
-	else if (OldDmaId==GDR_CMD)
-	{
-		//printf("holly_GDROM_CMD\n");
-		asic_RaiseInterrupt(holly_GDROM_CMD);
-	}
-
-	else if (OldDmaId==GDR_DMA)
-	{
-		//printf("holly_GDROM_DMA\n");
-		asic_RaiseInterrupt(holly_GDROM_DMA);
-	}
-
-	else if (OldDmaId==MAPLE)
-	{
-		//printf("holly_MAPLE_DMA\n");
-		asic_RaiseInterrupt(holly_MAPLE_DMA);
-	}
-
-	else if (OldDmaId==YUV)
-	{
-		//printf("holly_YUV_DMA\n");
-		asic_RaiseInterrupt(holly_YUV_DMA);
-	}
-
-	else if (OldDmaId==PVR)
-	{
-		//printf("holly_PVR_DMA\n");
-		asic_RaiseInterrupt(holly_PVR_DMA);
-	}
-
-	else if (OldDmaId==PVR_SORT)
-	{
-		//printf("holly_PVR_SortDMA\n");
-		asic_RaiseInterrupt(holly_PVR_SortDMA);
-	}
-
-	else if (OldDmaId==SPU)
-	{
-		//printf("holly_SPU_DMA\n");
-		asic_RaiseInterrupt(holly_SPU_DMA);
-	}
 }

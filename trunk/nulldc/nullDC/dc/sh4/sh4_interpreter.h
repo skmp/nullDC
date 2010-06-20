@@ -48,18 +48,5 @@ void Sh4_int_SetRegister(Sh4RegType reg,u32 regdata);
 bool ExecuteDelayslot();
 bool ExecuteDelayslot_RTE();
 int  __fastcall UpdateSystem();
-void __fastcall DmaTime(u32 NewDmaId);
 
 
-enum NewDmaId
-{
-	EXT=1,
-	CH2=2,
-	GDR_CMD=3,
-	GDR_DMA=4,
-	MAPLE=5,
-	YUV=6,
-	PVR=7,
-	PVR_SORT=8,
-	SPU=9
-};

@@ -10,7 +10,6 @@
 #include "gui/base.h"
 #include "dc/sh4/intc.h"
 #include "dc/mem/_vmem.h"
-#include "dc/sh4/sh4_interpreter.h"
 
 //TODO : move code later to a plugin
 //TODO : Fix registers arrays , they must be smaller now doe to the way SB registers are handled
@@ -158,7 +157,7 @@ INLINE void YUV_ConvertMacroBlock()
 	{
 		YUV_init();
 		//TODO : Check if it's allrgiht to do it here?
-		DmaTime(YUV);
+		asic_RaiseInterrupt(holly_YUV_DMA);
 	}
 }
 void YUV_data(u32* data , u32 count)

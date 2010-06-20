@@ -13,7 +13,6 @@
 #include "dc/sh4/intc.h"
 #include "dc/sh4/sh4_registers.h"
 #include "dc/asic/asic.h"
-#include "dc/sh4/sh4_interpreter.h"
 
 enum gd_states
 {
@@ -147,16 +146,6 @@ u32 data_write_mode=0;
 	
 //end
 
-//This is a huge hack too, and should be replaced with proper sense emulation -- raz
-
-//Sense Combinations
-u32 sense20401=0; //Sense Key 6 / ASC 29 / ASCQ 0
-u32 sense62800=0; //Sense Key 6 / ASC 28 / ASCQ 0
-u32 sense62900=0; //Sense Key 6 / ASC 29 / ASCQ 0
-//End
-
-u32 BusyToken=0; // Busy Token -- this is such a hack psy <3 ~ raz
-
 void nilprintf(...){}
 
 #define printf_rm nilprintf
@@ -214,12 +203,7 @@ void FillReadBuffer()
 void gd_set_state(gd_states state)
 {
 	gd_states prev=gd_state;
-	
-	//*HACK*: avoid killing the current state if we aren't accepting a command at idle.
-	//Makes it possible to accept ATA_NOP without killing the pio state (needed for D2)
-	if (!(state==gds_procata && prev!=gds_waitcmd))
-		gd_state=state;
-
+	gd_state=state;
 	switch(state)
 	{
 		case gds_waitcmd:
@@ -273,7 +257,7 @@ void gd_set_state(gd_states state)
 			GDStatus.DRQ=1;
 			GDStatus.BSY=0;
 			//(4)	INTRQ is set, and a host interrupt is issued.
-			DmaTime(GDR_CMD);
+			asic_RaiseInterrupt(holly_GDROM_CMD);
 			/*
 			The number of bytes normally is the byte number in the register at the time of receiving 
 			the command, but it may also be the total of several devices handled by the buffer at that point.
@@ -331,7 +315,7 @@ void gd_set_state(gd_states state)
 			GDStatus.DRQ=0;
 			GDStatus.BSY=0;
 			//Make INTRQ valid
-			DmaTime(GDR_CMD);
+			asic_RaiseInterrupt(holly_GDROM_CMD);
 
 			//command finished !
 			gd_set_state(gds_waitcmd);
@@ -355,115 +339,45 @@ void gd_setdisc()
 	
 	switch(newd)
 	{
-	
-	case CdDA:
-		SecNumber.Status = GD_BUSY;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=1;
-		sense20401=1;
-		if (sense62800==0)
-			sense62900=1;
-		else if (sense62900==0)
-			sense62800=1;
-		break;
-	case CdRom:
-		SecNumber.Status = GD_BUSY;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=1;
-		sense20401=1;
-		if (sense62800==0)
-			sense62900=1;
-		else if (sense62900==0)
-			sense62800=1;
-		break;
-	case CdRom_XA:
-		SecNumber.Status = GD_BUSY;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=1;
-		sense20401=1;
-		if (sense62800==0)
-			sense62900=1;
-		else if (sense62900==0)
-			sense62800=1;
-		break;
-	case CdRom_Extra:
-		SecNumber.Status = GD_BUSY;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=1;
-		sense20401=1;
-		if (sense62800==0)
-			sense62900=1;
-		else if (sense62900==0)
-			sense62800=1;
-		break;
-	case CdRom_CDI:
-		SecNumber.Status = GD_BUSY;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=1;
-		sense20401=1;
-		if (sense62800==0)
-			sense62900=1;
-		else if (sense62900==0)
-			sense62800=1;
-		break;
-	case GdRom:
-		SecNumber.Status = GD_BUSY;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=1;
-		sense20401=1;
-		if (sense62800==0)
-			sense62900=1;
-		else if (sense62900==0)
-			sense62800=1;
-		break;
 	case NoDisk:
-		SecNumber.Status = GD_BUSY;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=2;
-		sense20401=1;
-		if (sense62800==0)
-			sense62900=1;
-		else if (sense62900==0)
-			sense62800=1;
+		SecNumber.Status = GD_NODISC;
+		//GDStatus.BSY=0;
+		//GDStatus.DRDY=1;
 		break;
 	case Open:
-		SecNumber.DiscFormat = 0;
-		SecNumber.DiscFormat = 0;
 		SecNumber.Status = GD_OPEN;
-		GDStatus.BSY=0;
-		GDStatus.DRDY=1;
-		BusyToken=0;
-		sense62800=1;
-		sense62900=0;
+		//GDStatus.BSY=0;
+		//GDStatus.DRDY=1;
 		break;
 	case Busy:
 		SecNumber.Status = GD_BUSY;
 		GDStatus.BSY=1;
 		GDStatus.DRDY=0;
-		BusyToken=0;
 		break;
+	default :
+		if (SecNumber.Status==GD_BUSY)
+			SecNumber.Status = GD_PAUSE;
+		else
+			SecNumber.Status = GD_STANDBY;
+		//GDStatus.BSY=0;
+		//GDStatus.DRDY=1;
+		break;
+	}
+	if (gd_disk_type==Busy && newd!=Busy)
+	{
+		GDStatus.BSY=0;
+		GDStatus.DRDY=1;
 	}
 
 	gd_disk_type=newd;
 
-	printf("BusyToken= %d\n",BusyToken);
-
+	SecNumber.DiscFormat=gd_disk_type>>4;
 }
 void gd_reset()
 {
 	//Reset the drive
 	gd_setdisc();
 	gd_set_state(gds_waitcmd);
-	sense20401=1;
-	sense62800=0;
-	sense62900=1;
 }
 u32 GetFAD(u8* data,bool msf)
 {
@@ -512,17 +426,8 @@ void gd_spi_pio_read_end(u32 len,gd_states next_state)
 void gd_process_ata_cmd()
 {
 	//Any ata cmd clears these bits , unless aborted/error :p
-	
-	if (GDStatus.CORR==1)
-	{
-		GDStatus.CORR=0;
-		GDStatus.CHECK=1;
-	}
-	else
-	{
-		GDStatus.CHECK=0;
-		Error.ABRT=0;
-	}
+	Error.ABRT=0;
+	GDStatus.CHECK=0;
 
 	switch(ata_cmd.command)
 	{
@@ -537,22 +442,14 @@ void gd_process_ata_cmd()
 
 		//this is all very hacky, i don't know if the abort is correct actually
 		//the above comment is from a wrong place in the docs ...
-
-		//*HACK*: since the internal gd_state doesn't take in acount
-		//the different gdrom block this avoids the PIO block state to be
-		//fucked up from a ATA_NOP
-		if (gd_state!=gds_pio_send_data)
-		{
-			Error.ABRT=1;
-			//Error.Sense=0x00; //fixme ?
-			GDStatus.CHECK=1;
-
-			gd_set_state(gds_waitcmd);
-		}
-
+		
+		Error.ABRT=1;
+		//Error.Sense=0x00; //fixme ?
 		GDStatus.BSY=0;
-		DmaTime(GDR_CMD);
+		GDStatus.CHECK=1;
 
+		asic_RaiseInterrupt(holly_GDROM_CMD);
+		gd_set_state(gds_waitcmd);
 		break;
 
 	case ATA_SOFT_RESET:
@@ -561,28 +458,16 @@ void gd_process_ata_cmd()
 			//DRV -> preserved -> wtf is it anyway ?
 			gd_reset();
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case ATA_EXEC_DIAG:
 		printf_ata("ATA_EXEC_DIAG\n");
 		printf("ATA_EXEC_DIAG -- not implemented\n");
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case ATA_SPI_PACKET:
 		printf_ata("ATA_SPI_PACKET\n");
 		gd_set_state(gds_waitpacket);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case ATA_IDENTIFY_DEV:
@@ -591,7 +476,6 @@ void gd_process_ata_cmd()
 
 		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
 		GDStatus.CORR=1;
-
 		break;
 
 	case ATA_SET_FEATURES:
@@ -606,20 +490,12 @@ void gd_process_ata_cmd()
 		GDStatus.DSC=0;
 		GDStatus.DF=0;
 		GDStatus.CHECK=0;
-		DmaTime(GDR_CMD);  //???
+		asic_RaiseInterrupt(holly_GDROM_CMD);  //???
 		gd_set_state(gds_waitcmd);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	default:
 		die("unknown ATA command..");
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 	};
 }
@@ -631,16 +507,7 @@ void gd_process_spi_cmd()
 		packet_cmd.data_8[0], packet_cmd.data_8[1], packet_cmd.data_8[2], packet_cmd.data_8[3], packet_cmd.data_8[4], packet_cmd.data_8[5],
 		packet_cmd.data_8[6], packet_cmd.data_8[7], packet_cmd.data_8[8], packet_cmd.data_8[9], packet_cmd.data_8[10], packet_cmd.data_8[11] );
 
-	if (GDStatus.CORR==1)
-	{
-		GDStatus.CORR=0;
-		GDStatus.CHECK=1;
-	}
-	else
-	{
-		GDStatus.CHECK=0;
-		Error.ABRT=0;
-	}
+	GDStatus.CHECK=0;
 
 	switch(packet_cmd.data_8[0])
 	{
@@ -650,16 +517,11 @@ void gd_process_spi_cmd()
 		GDStatus.CHECK=SecNumber.Status==GD_BUSY;	//drive is ready ;)
 
 		gd_set_state(gds_procpacketdone);
-
 		break;
 
 	case SPI_REQ_MODE:
 		printf_spicmd("SPI_REQ_MODE\n");
 		gd_spi_pio_end((u8*)&reply_11[packet_cmd.data_8[2]>>1],packet_cmd.data_8[4]);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 		/////////////////////////////////////////////////
@@ -697,10 +559,6 @@ void gd_process_spi_cmd()
 				gd_set_state(gds_readsector_pio);
 			}
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case SPI_GET_TOC:
@@ -714,10 +572,6 @@ void gd_process_spi_cmd()
 			 
 			gd_spi_pio_end((u8*)&toc_gd[0], (packet_cmd.data_8[4]) | (packet_cmd.data_8[3]<<8) );
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 		//mount/map drive ? some kind of reset/unlock ??
@@ -728,10 +582,6 @@ void gd_process_spi_cmd()
 		RaiseInterrupt(holly_GDROM_CMD);*/
 
 		gd_set_state(gds_procpacketdone);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 	case 0x71:
 		{
@@ -739,24 +589,19 @@ void gd_process_spi_cmd()
 			printf("SPI : unknown ? [0x71]\n");
 		extern u32 reply_71_sz;
 			
-				gd_spi_pio_end((u8*)&reply_71[0],reply_71_sz);//uCount
+			gd_spi_pio_end((u8*)&reply_71[0],reply_71_sz);//uCount
 
-// Command 71 triggers the GD-ROM authentication check.
-// If the GD-ROM authentication check fails then the drive state changes to stanby.
-// If the GD-ROM authentication check succeeds then the drive state changes to pause.
+// Command 71 seems to trigger some sort of authentication check(?).
+// According to the results of this check the drive state changes accordingly to either standby or pause.
 // So after we send the data we just check if the disc is a GD-ROM or another disc type and set the right state.
-// Only "problem" now is that we send the "right" data during the authentication check even if the disc is noa a GD-ROM.
-// Now all discs boot fine so do not touch. K? ~ Psy
+// Only "problem" now is that we send the "right" data during the check even if the disc is not a GD-ROM.
+// Now all discs boot fine so do not touch unless you have some knowledge on the subject. K? ~ Psy
 
 			if (libGDR.GetDiscType()==GdRom)
 				SecNumber.Status=GD_PAUSE;
 			else
 				SecNumber.Status=GD_STANDBY;
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 	case SPI_SET_MODE:
 		{
@@ -768,9 +613,6 @@ void gd_process_spi_cmd()
 			gd_spi_pio_read_end(Count,gds_process_set_mode);
 		}
 
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case SPI_CD_READ2:
@@ -778,10 +620,6 @@ void gd_process_spi_cmd()
 		printf("GDROM: Unhandled Sega SPI frame: SPI_CD_READ2\n");
 
 		gd_set_state(gds_procpacketdone);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 		
@@ -816,10 +654,6 @@ void gd_process_spi_cmd()
 			verify((packet_cmd.data_8[2]+packet_cmd.data_8[4])<11);
 			gd_spi_pio_end(&stat[packet_cmd.data_8[2]],packet_cmd.data_8[4]);
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case SPI_REQ_ERROR:
@@ -828,72 +662,14 @@ void gd_process_spi_cmd()
 		
 		u8 resp[10];
 		resp[0]=0xF0;
-		resp[1]=0x0;
-
-		if (sense20401==1)
-		{
-		resp[2]=0x2;//sense
-		}
-
-		else if (sense62800==1 || sense62900==1)
-		{
-		resp[2]=0x6;//sense
-		}
-
-		else
-		{
-		resp[2]=0x0;//sense
-		}
-		
-		resp[3]=0x0;
-		resp[4]=resp[5]=resp[6]=resp[7]=0x0; //Command Specific Information		
-
-		if (sense20401==1)
-		{
-		resp[8]=0x04;//Additional Sense Code
-		resp[9]=0x01;//Additional Sense Code Qualifier
-		sense20401=0;
-		printf("sense20401 error\n");
-		}
-
-		else if (sense62800==1)
-		{
-		resp[8]=0x28;//Additional Sense Code
-		resp[9]=0x0;//Additional Sense Code Qualifier
-		sense62800=0;
-		printf("sense62800 error\n");
-		}
-
-		else if (sense62900==1)
-		{
-		resp[8]=0x29;//Additional Sense Code
-		resp[9]=0x0;//Additional Sense Code Qualifier
-		sense62900=0;
-		printf("sense62900 error\n");
-		}
-
-		else
-		{
-		resp[8]=0x0;//Additional Sense Code
-		resp[9]=0x0;//Additional Sense Code Qualifier
-		printf("sense00000 error\n");
-		}
-
-		GDStatus.CHECK=1;
-		GDStatus.CORR=0;
+		resp[1]=0;
+		resp[2]= SecNumber.Status==GD_BUSY ? 2:0;//sense
+		resp[3]=0;
+		resp[4]=resp[5]=resp[6]=resp[7]=0; //Command Specific Information
+		resp[8]=0;//Additional Sense Code
+		resp[9]=0;//Additional Sense Code Qualifier
 
 		gd_spi_pio_end(resp,packet_cmd.data_8[4]);
-
-		if (sense20401==0 && sense62800==0 && sense62900==0)
-		{
-			if (BusyToken==2)
-				SecNumber.Status=GD_NODISC;
-			else if (BusyToken==1)
-				SecNumber.Status=GD_PAUSE;
-		BusyToken=0;
-		SecNumber.DiscFormat=gd_disk_type>>4;
-		}
-
 		break;
 
 	case SPI_REQ_SES:
@@ -903,10 +679,6 @@ void gd_process_spi_cmd()
 		libGDR.GetSessionInfo(ses_inf,packet_cmd.data_8[2]);
 		ses_inf[0]=SecNumber.Status;
 		gd_spi_pio_end((u8*)&ses_inf[0],packet_cmd.data_8[4]);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case SPI_CD_OPEN:
@@ -957,10 +729,6 @@ void gd_process_spi_cmd()
 
 			gd_set_state(gds_procpacketdone);
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case SPI_CD_SEEK:
@@ -1008,10 +776,6 @@ void gd_process_spi_cmd()
 
 			gd_set_state(gds_procpacketdone);
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case SPI_CD_SCAN:
@@ -1020,10 +784,6 @@ void gd_process_spi_cmd()
 		
 
 		gd_set_state(gds_procpacketdone);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	case SPI_GET_SCD:
@@ -1105,20 +865,12 @@ void gd_process_spi_cmd()
 
 			gd_spi_pio_end((u8*)&subc_info[0],sz);
 		}
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 
 	default:
 		printf("GDROM: Unhandled Sega SPI frame: %X\n", packet_cmd.data_8[0]);
 
 		gd_set_state(gds_procpacketdone);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
-
 		break;
 	}
 }
@@ -1355,7 +1107,7 @@ void UpdateGDRom()
 		//printf("Streamed GDMA end - %d bytes trasnfered\n",SB_GDLEND);
 		SB_GDST=0;//done
 		// The DMA end interrupt flag
-		DmaTime(GDR_DMA);
+		asic_RaiseInterrupt(holly_GDROM_DMA);
 	}
 	//Readed ALL sectors
 	if (read_params.remaining_sectors==0)

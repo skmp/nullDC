@@ -13,7 +13,6 @@
 #include "intc.h"
 #include "dc/asic/asic.h"
 #include "plugins/plugin_manager.h"
-#include "dc/sh4/sh4_interpreter.h"
 
 u32 DMAC_SAR[4];
 u32 DMAC_DAR[4];
@@ -129,7 +128,7 @@ void DMAC_Ch2St()
 
 	// The DMA end interrupt flag (SB_ISTNRM - bit 19: DTDE2INT) is set to "1."
 	//-> fixed , holly_PVR_DMA is for diferent use now (fixed the interrupts enum too)
-	DmaTime(CH2);
+	asic_RaiseInterrupt(holly_CH2_DMA);
 }
 
 //on demand data transfer

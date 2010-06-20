@@ -11,7 +11,6 @@
 #include "dc/mem/sh4_mem.h"
 #include "pvr_sb_regs.h"
 #include "plugins/plugin_manager.h"
-#include "dc/sh4/sh4_interpreter.h"
 
 u32 pvr_sb_readreg_Pvr(u32 addr,u32 sz);
 void pvr_sb_writereg_Pvr(u32 addr,u32 data,u32 sz);
@@ -67,7 +66,7 @@ void do_pvr_dma()
 	SB_PDST = 0x00000000;
 
 	//TODO : *CHECKME* is that ok here ? the docs don't say here it's used [PVR-DMA , bit 11]
-	DmaTime(PVR);
+	asic_RaiseInterrupt(holly_PVR_DMA);
 }
 void RegWrite_SB_PDST(u32 data)
 {
@@ -121,7 +120,7 @@ void pvr_do_sort_dma()
 
 	//end of dma :)
 	SB_SDST=0;
-	DmaTime(PVR_SORT);
+	asic_RaiseInterrupt(holly_PVR_SortDMA);
 }
 //auto sort dma :|
 void RegWrite_SB_SDST(u32 data)
