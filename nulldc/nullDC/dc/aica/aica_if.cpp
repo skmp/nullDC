@@ -9,7 +9,6 @@
 #include "dc/mem/sb.h"
 #include "plugins/plugin_manager.h"
 #include "dc/asic/asic.h"
-#include "dc/sh4/sh4_interpreter.h"
 
 #include <time.h>
 
@@ -214,7 +213,7 @@ void Write_SB_ADST(u32 data)
 			SB_ADLEN = 0x00000000;
 
 			
-			DmaTime(SPU);
+			asic_RaiseInterrupt(holly_SPU_DMA);
 		}
 	}
 }
@@ -265,7 +264,7 @@ void Write_SB_E1ST(u32 data)
 			SB_E1LEN = 0x00000000;
 
 			
-			DmaTime(EXT);
+			asic_RaiseInterrupt(holly_EXT_DMA1);
 		}
 	}
 }

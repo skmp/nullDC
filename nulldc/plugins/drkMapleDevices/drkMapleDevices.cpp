@@ -5,7 +5,7 @@
 	Ever wondered how REALLY bad code looks like ? just keep on reading ...
 */
 
-//#define _HAS_LGLCD_
+#define _HAS_LGLCD_
 
 #include "nullDC\plugins\plugin_header.h"
 #include <memory.h>

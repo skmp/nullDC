@@ -224,7 +224,6 @@ do_update:
 		add rec_cycles,ecx;
 		//ecx=cycles
 		call UpdateSystem;
-		call DmaTime;
 
 		//check for exit
 		cmp rec_sh4_int_bCpuRun,0;
