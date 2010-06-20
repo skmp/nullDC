@@ -473,9 +473,6 @@ void gd_process_ata_cmd()
 	case ATA_IDENTIFY_DEV:
 		printf_ata("ATA_IDENTIFY_DEV\n");
 		gd_spi_pio_end((u8*)&reply_a1[packet_cmd.data_8[2]>>1],packet_cmd.data_8[4]);
-
-		if (SecNumber.Status == GD_BUSY && BusyToken!=0)
-		GDStatus.CORR=1;
 		break;
 
 	case ATA_SET_FEATURES:
