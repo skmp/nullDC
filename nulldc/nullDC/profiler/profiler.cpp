@@ -74,8 +74,11 @@ u64 CycleDiff()
 	oldcycles=200*1000*1000-rtc_cycles+(u64)settings.dreamcast.RTC*200*1000*1000;
 	return oldcycles-oo;
 }
+
 bool RunProfiler;
 bool TBP_Enabled;
+bool Reset_Stats;
+
 void init_ProfilerModules()
 {
 	main_mod.FromAddress(init_ProfilerModules);
@@ -88,7 +91,7 @@ void init_ProfilerModules()
 void init_Profiler(void* param)
 {
 	//Clear profile info
-	memset(&profile_info,0,sizeof(prof_info));
+	memset(&profile_info,0,sizeof(prof_info));	
 
 	RunProfiler=true;
 
@@ -101,15 +104,17 @@ void start_Profiler()
 	init_ProfilerModules();
 
 	TBP_Enabled=true;
+	
 	CycleDiff();
-	if (prof_thread)
-		prof_thread->Start();
+
+	if (prof_thread) prof_thread->Start();
 }
 void stop_Profiler()
 {
-	TBP_Enabled=false;
-	if (prof_thread)
-		prof_thread->Suspend();
+	TBP_Enabled = false;
+	Reset_Stats = true;
+
+	if (prof_thread) prof_thread->Suspend();
 }
 void term_Profiler()
 {
@@ -118,7 +123,7 @@ void term_Profiler()
 	prof_thread->WaitToEnd(-1);
 	delete prof_thread;
 	//Clear profile info
-	memset(&profile_info,0,sizeof(prof_info));
+	memset(&profile_info,0,sizeof(prof_info));	
 }
 extern void* Dynarec_Mainloop_no_update;
 extern void* Dynarec_Mainloop_do_update;
@@ -127,46 +132,56 @@ extern void* Dynarec_Mainloop_end;
 void AnalyseTick(u32 pc,prof_info* to)
 {
 	if (aica_mod.Inside(pc))
-	{
-		to->aica_tick_count++;
+	{				
+		to->current_count[AICA_TC]++;
 	}
 	else if (arm_mod.Inside(pc))
-	{
-		to->arm_tick_count++;
+	{		
+		to->current_count[ARM_TC]++;
 	}
 	else if (pvr_mod.Inside(pc))
 	{
-		to->gfx_tick_count++;
+		to->current_count[GFX_TC]++;
 	}
 	else if (gdrom_mod.Inside(pc))
 	{
-		to->gdrom_tick_count++;
+		to->current_count[GDROM_TC]++;
 	}
 	else if (main_mod.Inside(pc))
 	{
 		if (pc >= (u32)Dynarec_Mainloop_no_update && pc <= (u32)Dynarec_Mainloop_end)
-			to->dyna_loop_tick_count++;
+			to->current_count[DYNA_LOOP_TC]++;
 		else
-			to->main_tick_count++;
+			to->current_count[MAIN_TC]++;
 	}
 	else if (dyna_mod.Inside(pc))
 	{
 		//dyna_profiler_tick((void*)pc);
-		to->dyna_tick_count++;
+		to->current_count[DYNA_TC]++;
 	}
 	else
-		to->rest_tick_count++;
+		to->current_count[REST_TC]++;
 }
 extern u32 no_interrupts,yes_interrupts;
  u32 THREADCALL ProfileThead(void* param)
  {
-	 prof_info info;
+	 prof_info info;		 
+	 prof_stats stats;
+
 	 memset(&info,0,sizeof(prof_info));
+	 memset(&stats,0,sizeof(prof_stats));
 
 	 CONTEXT cntx;
 
 	 while(RunProfiler)
 	 {
+		 // Reset max/avg stats
+		 if(Reset_Stats)
+		 {
+			memset(&stats,0,sizeof(prof_stats));
+			Reset_Stats = false;
+		 }
+		
 		 //get emulation thread's pc
 		 memset(&cntx,0,sizeof(cntx));
 		 cntx.ContextFlags= CONTEXT_FULL;
@@ -174,18 +189,18 @@ extern u32 no_interrupts,yes_interrupts;
 		 verify(GetThreadContext((HANDLE)param,&cntx));
 
 		 //count ticks
-		 info.total_tick_count++;
+		 info.total_tc++;
 		 AnalyseTick(cntx.Eip,&info);
 
 		 //Update Stats if needed
-		 if (info.total_tick_count>MAX_TICK_COUNT)
-		 {
-			 wchar temp[512];
+		 if (info.total_tc>MAX_TICK_COUNT)
+		 {			 			 
+			 wchar temp[1024];			 
 
-			 memcpy(&profile_info,&info,sizeof(prof_info));
-			 memset(&info,0,sizeof(prof_info));
+			 memcpy(&profile_info,&info,sizeof(prof_info));			 			 	 
+			 memset(&info,0,sizeof(prof_info));			 			 
 
-			 profile_info.ToText(temp);
+			 profile_info.ToText(temp, &stats);
 			 wprintf(_T("%s \n"),temp);
 			 
 			 if ( yes_interrupts+no_interrupts)
@@ -204,3 +219,15 @@ extern u32 no_interrupts,yes_interrupts;
 	 //CloseHandle((HANDLE)param);
 	 return 0;
  }
+
+int percent(int tick, int total) 
+{
+	if (total == 0) return 0.0f;
+	else return (tick*10000)/total; // (tick*100.0f)/(float)total;
+}
+
+int effsceas(int tick, int cycleDif)
+{
+	if (tick == 0) return 0.0f;
+	else return (int)(cycleDif/(double)tick/1000.0/20.0); // (float)(cycleDif/(double)tick/1000.0/1000.0/20.0);
+}
