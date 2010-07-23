@@ -369,15 +369,15 @@ void EXPORT_CALL b_GetPerformanceInfo(nullDCPerfomanceInfo* dst)
 	if (TBP_Enabled)
 	{
 		dst->TBP.Valid=1;
-		dst->TBP.Ticks=tbpi.total_tick_count;
+		dst->TBP.Ticks=tbpi.total_tc;
 
-		dst->TBP.PowerVR=tbpi.gfx_tick_count;
-		dst->TBP.AICA=tbpi.aica_tick_count;
-		dst->TBP.GDRom=tbpi.gdrom_tick_count;
-		dst->TBP.Maple=tbpi.maple_tick_count;
-		dst->TBP.Main=tbpi.main_tick_count;
-		dst->TBP.Dyna=tbpi.dyna_tick_count;
-		dst->TBP.Rest=tbpi.rest_tick_count;
+		dst->TBP.PowerVR=tbpi.current_count[GFX_TC];
+		dst->TBP.AICA=tbpi.current_count[AICA_TC];
+		dst->TBP.GDRom=tbpi.current_count[GDROM_TC];
+		dst->TBP.Maple=tbpi.current_count[MAPLE_TC];
+		dst->TBP.Main=tbpi.current_count[MAIN_TC];
+		dst->TBP.Dyna=tbpi.current_count[DYNA_TC];
+		dst->TBP.Rest=tbpi.current_count[REST_TC];
 	}
 	else
 	{
