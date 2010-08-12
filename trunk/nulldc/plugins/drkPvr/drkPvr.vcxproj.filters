@@ -43,9 +43,6 @@
     <ClCompile Include="Renderer_if.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="oglRend.cpp">
-      <Filter>Renderer\OpenGL</Filter>
-    </ClCompile>
     <ClCompile Include="TexCache.cpp">
       <Filter>Renderer\TextureCache</Filter>
     </ClCompile>
@@ -81,9 +78,6 @@
     <ClInclude Include="Renderer_if.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="oglRend.h">
-      <Filter>Renderer\OpenGL</Filter>
-    </ClInclude>
     <ClInclude Include="TexCache.h">
       <Filter>Renderer\TextureCache</Filter>
     </ClInclude>
@@ -103,16 +97,11 @@
     <None Include="exports.def">
       <Filter>plugin</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CustomBuild Include="composition.fx">
+    <None Include="vs_hlsl.fx">
       <Filter>Renderer\Direct3D</Filter>
-    </CustomBuild>
-    <CustomBuild Include="ps_hlsl.fx">
+    </None>
+    <None Include="ps_hlsl.fx">
       <Filter>Renderer\Direct3D</Filter>
-    </CustomBuild>
-    <CustomBuild Include="vs_hlsl.fx">
-      <Filter>Renderer\Direct3D</Filter>
-    </CustomBuild>
+    </None>
   </ItemGroup>
 </Project>

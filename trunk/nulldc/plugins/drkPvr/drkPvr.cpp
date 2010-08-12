@@ -363,10 +363,12 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_zbuffer.format=L"Z Buffer Mode: %s";
 	menu_zbuffer.callback=handler_ZBufferMode;
 
+	menu_zbuffer.Add(ZBM,L"D24S8 Linear (Magic blue smoke)",4);
 	menu_zbuffer.Add(ZBM,L"D24FS8 (Fast when avaiable,Best Precition)",0);
 	menu_zbuffer.Add(ZBM,L"D24S8+FPE (Slow,Good Precition)",1);
-	menu_zbuffer.Add(ZBM,L"D24S8 Mode 1(Lower Precition)",2);
-	menu_zbuffer.Add(ZBM,L"D24S8 Mode 2(Lower Precition)",3);
+	menu_zbuffer.Add(ZBM,L"D24S8 Mode 1 (Lower Precition)",2);
+	menu_zbuffer.Add(ZBM,L"D24S8 Mode 2 (Lower Precition)",3);
+
 	menu_zbuffer.SetValue(settings.Emulation.ZBufferMode);
 	
 	u32 TCM=emu.AddMenuItem(emu.RootMenu,-1,L"Texture Cache Mode: %s",0,0);
@@ -601,7 +603,7 @@ void LoadSettings()
 	settings.Emulation.AlphaSortMode			=	cfgGetInt(L"Emulation.AlphaSortMode",1);
 	settings.Emulation.PaletteMode				=	cfgGetInt(L"Emulation.PaletteMode",1);
 	settings.Emulation.ModVolMode				= 	cfgGetInt(L"Emulation.ModVolMode",MVM_NormalAndClip);
-	settings.Emulation.ZBufferMode				= 	cfgGetInt(L"Emulation.ZBufferMode",3);
+	settings.Emulation.ZBufferMode				= 	cfgGetInt(L"Emulation.ZBufferMode",4);
 	settings.Emulation.TexCacheMode				= 	cfgGetInt(L"Emulation.TexCacheMode",0);
 
 	settings.OSD.ShowFPS						=	cfgGetInt(L"OSD.ShowFPS",0);

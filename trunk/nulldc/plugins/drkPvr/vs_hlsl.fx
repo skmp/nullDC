@@ -6,7 +6,9 @@
 //ZBufferMode -> z buffer mode :p
 //ZBufferMode : 0 -> fp fixup
 //ZBufferMode : 1 -> nothing
-//ZBufferMode : 2 -> rescale
+//ZBufferMode : 2 -> non linear rescale
+//ZBufferMode : 3 -> non linear rescale
+//ZBufferMode : 4 -> linear rescale
 //FixedFunction : 0 if ps, 1 if fixed function
 #ifndef FLT_MIN
 #define FLT_MIN 1.17549435e-38f
@@ -124,6 +126,8 @@ vertex_out VertexShader_main(in vertex_in vin)
 	#elif ZBufferMode==3
 		//vo.pos.z=1-1/(1+vin.pos.z);
 		vo.pos.z=CompressZ3(vin.pos.z);
+	#elif ZBufferMode==4
+		vo.pos.z=(vin.pos.z-W_min)/(W_max-W_min);
 	#endif
 	
 	vo.pos.w=1;
