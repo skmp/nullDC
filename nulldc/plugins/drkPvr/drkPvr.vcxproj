@@ -157,6 +157,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def" />
+    <None Include="ps_hlsl.fx" />
+    <None Include="vs_hlsl.fx" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

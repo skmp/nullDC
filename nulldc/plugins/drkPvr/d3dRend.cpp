@@ -43,6 +43,7 @@ bool dosort=false;
 	#define VB_CREATE_FLAGS D3DUSAGE_SOFTWAREPROCESSING
 #endif
 */
+#define scale_type_1
 
 //Convert offset32 to offset64
 u32 vramlock_ConvOffset32toOffset64(u32 offset32)
@@ -144,6 +145,7 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		"Float Z Buffering Emulation (D24S8+FPE)",
 		"Z Scale mode 1 (D24S8)",
 		"Z Scale mode 2 (D24S8)",
+		"Z Scale mode 42 (D24yada)",
 	};
 
 	//x=emulation mode
@@ -1366,6 +1368,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		"1",
 		"2",
 		"3",
+		"4",
 	};
 	char* ps_macro_TLUM[]=
 	{
@@ -2248,13 +2251,13 @@ __error_out:
 			float bg=*(float*)&ISP_BACKGND_D; 
 
 #ifdef scale_type_1
-			float c0=1/clamp(0.0000001f,10000000.0f,pvrrc.invW_max);
-			float c1=1/clamp(0.0000001f,10000000.0f,pvrrc.invW_min);
-			c0*=0.99f;
-			c1*=1.01f;
-
-			dev->SetVertexShaderConstantF(0,&c0,1);
-			dev->SetVertexShaderConstantF(1,&c1,1);
+			float c0[4]={clamp(0,10000000.0f,pvrrc.invW_min)};
+			float c1[4]={clamp(0.0000001f,10000000.0f,pvrrc.invW_max)};
+			c0[0]*=0.99f;
+			c1[0]*=1.01f;
+			//printf("ZMAE: %f %f\n",c0[0],c1[0]);
+			dev->SetVertexShaderConstantF(0,c0,1);
+			dev->SetVertexShaderConstantF(1,c1,1);
 #endif
 			/*
 				Set constants !
@@ -2426,13 +2429,13 @@ __error_out:
 					verifyc(dev->SetRenderState(D3DRS_ZFUNC,D3DCMP_GREATER));
 					
 					//TODO: Find out what ZPixelShader was supposed to be doing.
-					//verifyc(dev->SetPixelShader(ZPixelShader));
+					verifyc(dev->SetPixelShader(ZPixelShader));
 					verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,TRUE));
 
 					//we WANT stencil to have all 1's here for bit 1
 					//set it as needed here :) -> not realy , we want em 0'd
-
-					f32 fsq[] = {-640*8,-480*8,0, -640*8,480*8,0, 640*8,-480*8,0, 640*8,480*8,0};
+					
+					f32 fsq[] = {-640*8,-480*8,pvrrc.invW_min, -640*8,480*8,pvrrc.invW_min, 640*8,-480*8,pvrrc.invW_min, 640*8,480*8,pvrrc.invW_min};
 					/*
 					verifyc(dev->SetRenderState(D3DRS_ZENABLE,FALSE));						//Z doesnt matter
 					verifyc(dev->SetRenderState(D3DRS_STENCILFUNC,D3DCMP_ALWAYS));			//allways pass
@@ -2528,7 +2531,7 @@ __error_out:
 				else if (settings.Emulation.ModVolMode==MVM_Volume)
 				{
 					//TODO: Find out what ZPixelShader was supposed to be doing.
-					//verifyc(dev->SetPixelShader(ZPixelShader));
+					verifyc(dev->SetPixelShader(ZPixelShader));
 					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
 					dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 					dev ->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA); 
@@ -2606,7 +2609,7 @@ __error_out:
 	cResetEvent re(false,true);
 	D3DXMACRO vs_macros[]=
 	{
-		{"ZBufferMode",0},		//Z mode. 0 -> D24FS8, 1 -> D24S8 + FPemu, 2 -> D24S8 + scaling
+		{"ZBufferMode",0},		//Z mode. 0 -> D24FS8, 1 -> D24S8 + FPemu, 2 -> D24S8 + scaling, 3 -> more scale, 4-> more, linear, scale
 		{"FixedFunction",0},
 		{0,0}	//end of list
 	};
@@ -2885,6 +2888,7 @@ __error_out:
 
 #if MODVOL
 			ShadeColPixelShader=CompilePS("ps_hlsl.fx","PixelShader_ShadeCol",ps_macros);
+			ZPixelShader=CompilePS("ps_hlsl.fx","PixelShader_Z",ps_macros);
 #endif
 			Composition.ps_DrawA=CompilePS("composition.fx","ps_DrawA",0);
 			Composition.ps_DrawFB=CompilePS("composition.fx","ps_DrawFB",0);
@@ -3133,6 +3137,9 @@ nl:
 			decode_pvr_vertex(strip_base,vertex_ptr,&cv[i]);
 			vertex_ptr+=strip_vs;
 		}
+
+		float ZV=0;
+
 		cv[0].x=0;
 		cv[0].y=0;
 		cv[0].z=bg_d.f;
@@ -3150,6 +3157,13 @@ nl:
 		cv[3].y=480;
 		cv[3].z=bg_d.f;
 		
+		//this is really suboptimal for precition .. but whatever works, right ?
+		//(i don't really keep track of min, i just use bg_d)
+		//if (pvrrc.invW_min<bg_d.f)
+		pvrrc.invW_min=bg_d.f;
+		if (pvrrc.invW_max<bg_d.f)
+			pvrrc.invW_max=bg_d.f;
+
 		RenderWasStarted=true;
 		rs.Set();
 		FrameCount++;
@@ -3442,8 +3456,8 @@ nl:
 		//Poly Vertex handlers
 #ifdef scale_type_1
 #define z_update(zv) \
-	if (tarc.invW_min>zv)\
-		tarc.invW_min=zv;\
+	/*if (tarc.invW_min>zv)\
+		tarc.invW_min=zv;*/\
 	if (tarc.invW_max<zv)\
 		tarc.invW_max=zv;
 #else
@@ -3890,7 +3904,7 @@ nl:
 
 			cv[0].x=sv->x3;
 			cv[0].y=sv->y3;
-			cv[0].z=sv->z2; //temp , gota calc. 4th Z properly :p
+			//cv[0].z=sv->z2; //temp , gota calc. 4th Z properly :p
 
 
 			sprite_uv(2, u0,v0);
@@ -3899,6 +3913,9 @@ nl:
 			//sprite_uv(0, u0,v2);//or sprite_uv(u2,v0); ?
 
 			CaclulateSpritePlane(cv);
+
+			z_update(cv[0].z);
+
 			if (CurrentPP->count)
 			{
 				Vertex* vert=vert_reappend;
@@ -3953,6 +3970,8 @@ nl:
 			lmr->z1=mvv->z1;
 			lmr->x2=mvv->x2;
 
+			z_update(mvv->z1);
+			z_update(mvv->z0);
 			//lmr_count++;
 		#endif	
 		}
@@ -3964,6 +3983,7 @@ nl:
 				return;
 			lmr->y2=mvv->y2;
 			lmr->z2=mvv->z2;
+			z_update(mvv->z2);
 		#endif
 		}
 
