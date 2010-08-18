@@ -1737,7 +1737,8 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 					{
 						buffer_out[0]=0xffffffff;
 						buffer_out[1]=0xffffffff;
-						u32 keycode=~kcode[0];
+						u32 keycode =~kcode[0];
+						u32 keycode2=~kcode[1];
 
 						if(keycode&NAOMI_SERVICE_KEY_2)		//Service
 							buffer_out[0]&=~(1<<0x1b);
@@ -1841,10 +1842,14 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 							unsigned char glbl=0x00;
 							unsigned char p1_1=0x00;
 							unsigned char p1_2=0x00;
+							unsigned char p2_1=0x00;
+							unsigned char p2_2=0x00;
 							static unsigned char LastKey[256];
 							static unsigned short coin1=0x0000;
+							static unsigned short coin2=0x0000;
 							unsigned char Key[256];
 							GetKeyboardState(Key);
+							
 							if(keycode&NAOMI_SERVICE_KEY_1)			//Service ?
 								glbl|=0x80;
 							if(keycode&NAOMI_TEST_KEY_1)			//Test
@@ -1871,10 +1876,42 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 								p1_2|=0x20;
 							if(keycode&NAOMI_BTN5_KEY)			//btn6
 								p1_2|=0x10;
-							static bool old_coin=false;
+							
+							if(keycode2&NAOMI_TEST_KEY_1)			//Test
+								p2_1|=0x40;
+							if(keycode2&NAOMI_START_KEY)			//start ?
+								p2_1|=0x80;
+							if(keycode2&NAOMI_UP_KEY)			//up
+								p2_1|=0x20;
+							if(keycode2&NAOMI_DOWN_KEY)		//down
+								p2_1|=0x10;
+							if(keycode2&NAOMI_LEFT_KEY)		//left
+								p2_1|=0x08;
+							if(keycode2&NAOMI_RIGHT_KEY)		//right
+								p2_1|=0x04;
+							if(keycode2&NAOMI_BTN0_KEY)			//btn1
+								p2_1|=0x02;
+							if(keycode2&NAOMI_BTN1_KEY)			//btn2
+								p2_1|=0x01;
+							if(keycode2&NAOMI_BTN2_KEY)			//btn3
+								p2_2|=0x80;
+							if(keycode2&NAOMI_BTN3_KEY)			//btn4
+								p2_2|=0x40;
+							if(keycode2&NAOMI_BTN4_KEY)			//btn5
+								p2_2|=0x20;
+							if(keycode2&NAOMI_BTN5_KEY)			//btn6
+								p2_2|=0x10;
+
+							static bool old_coin =false;
+							static bool old_coin2=false;
+
 							if((old_coin==false) && (keycode&NAOMI_COIN_KEY))
 								coin1++;
 							old_coin = (keycode&NAOMI_COIN_KEY) ? true:false;
+
+							if((old_coin2==false) && (keycode2&NAOMI_COIN_KEY))
+								coin2++;
+							old_coin2 = (keycode2&NAOMI_COIN_KEY) ? true:false;
 
 							buffer_out_b[0x11+0]=0x00;
 							buffer_out_b[0x11+1]=0x8E;	//Valid data check
@@ -1890,13 +1927,13 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 							buffer_out_b[8+0x12+1]=glbl;
 							buffer_out_b[8+0x12+2]=p1_1;
 							buffer_out_b[8+0x12+3]=p1_2;
-							buffer_out_b[8+0x12+4]=0x00;
-							buffer_out_b[8+0x12+5]=0x00;
+							buffer_out_b[8+0x12+4]=p2_1;
+							buffer_out_b[8+0x12+5]=p2_2;
 							buffer_out_b[8+0x12+6]=1;
 							buffer_out_b[8+0x12+7]=coin1>>8;
 							buffer_out_b[8+0x12+8]=coin1&0xff;
-							buffer_out_b[8+0x12+9]=0x00;
-							buffer_out_b[8+0x12+10]=0x00;
+							buffer_out_b[8+0x12+9]=coin2>>8;
+							buffer_out_b[8+0x12+10]=coin2&0xff;
 							buffer_out_b[8+0x12+11]=1;
 							buffer_out_b[8+0x12+12]=0x00;
 							buffer_out_b[8+0x12+13]=0x00;
