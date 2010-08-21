@@ -606,6 +606,20 @@ CompiledBlockInfo* bm_ReverseLookup(void* code_ptr)
 			return b;
 		}
 	}
+
+	//Also look on suspended blocks, code might still run from there and use bm_RL for a block
+	//that is to be discarded
+	//Happens on The Grinch, it suspends a block and then a non-fastpath access is done !
+	for(size_t i=0;i<SuspendedBlocks.ItemCount;i++)
+	{
+		CompiledBlockInfo* b=SuspendedBlocks[i];
+
+		if ((c-(u8*)b->Code) < b->size)
+		{
+			return b;
+		}
+	}
+	
 	return 0;
 }
 
