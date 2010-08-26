@@ -724,7 +724,7 @@ INT_PTR CALLBACK ConfigKeysDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 			{
 				waiting_key=false;
 
-				swprintf_s(temp,sizeof(temp),L"Updated Key Mapping,%d",VK_down);
+				swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Updated Key Mapping,%d",VK_down);
 				Static_SetText(GetDlgItem(hWnd,IDC_STATUS),temp);
 				joypad_settings[current_port][edited_key].KC=VK_down;
 				SaveSettings();
@@ -747,12 +747,12 @@ INT_PTR CALLBACK ConfigKeysDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM 
 				waiting_key=false;
 				waiting_key_timer=6;
 
-				swprintf_s(temp,sizeof(temp),L"Timed out while waiting for new key",waiting_key_timer/kbratio);
+				swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Timed out while waiting for new key",waiting_key_timer/kbratio);
 				Static_SetText(GetDlgItem(hWnd,IDC_STATUS),temp);
 			}
 			else
 			{
-				swprintf_s(temp,sizeof(temp),L"Waiting for key ...%d\n",waiting_key_timer/kbratio);
+				swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Waiting for key ...%d\n",waiting_key_timer/kbratio);
 				Static_SetText(GetDlgItem(hWnd,IDC_STATUS),temp);
 			}
 		}
@@ -3093,27 +3093,27 @@ s32 FASTCALL CreateMain(maple_device_instance* inst,u32 id,u32 flags,u32 rootmen
 #else
 		inst->dma=ControllerDMA;
 #endif
-		swprintf_s(temp,sizeof(temp),L"Controller[winhook] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Controller[winhook] : 0x%02X",inst->port);
 	}
 	else if (id==1)
 	{
 		inst->dma=ControllerDMA_net;
-		swprintf_s(temp,sizeof(temp),L"Controller[winhook,net] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Controller[winhook,net] : 0x%02X",inst->port);
 	}
 	else if (id==3)
 	{
 		inst->dma=KbdDMA;
-		swprintf_s(temp,sizeof(temp),L"Keyboard : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Keyboard : 0x%02X",inst->port);
 	}
 	else if (id==4)
 	{
 		inst->dma=ControllerDMA_nul;
-		swprintf_s(temp,sizeof(temp),L"Controller [no input] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Controller [no input] : 0x%02X",inst->port);
 	}
 	else if (id==5)
 	{
 		inst->dma=MouseDMA;
-		swprintf_s(temp,sizeof(temp),L"Mouse [winhook] : 0x%02X",inst->port);
+		swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Mouse [winhook] : 0x%02X",inst->port);
 	}
 	host.AddMenuItem(rootmenu,-1,temp,0,0);
 /*
@@ -3157,7 +3157,7 @@ s32 FASTCALL CreateMain(maple_device_instance* inst,u32 id,u32 flags,u32 rootmen
 s32 FASTCALL CreateSub(maple_subdevice_instance* inst,u32 id,u32 flags,u32 rootmenu)
 {
 	wchar wtemp[512];
-	swprintf_s(wtemp,sizeof(wtemp),L"VMU :vmu_data_port%02X.bin",inst->port);
+	swprintf_s(wtemp,sizeof(wtemp)/sizeof(wchar),L"VMU :vmu_data_port%02X.bin",inst->port);
 	host.AddMenuItem(rootmenu,-1,wtemp,0,0);	
 
 	u32 mitem = host.AddMenuItem(rootmenu,-1,L"Show VMU",vmu_showwindow,g_ShowVMU);
@@ -3213,7 +3213,7 @@ s32 FASTCALL CreateSub(maple_subdevice_instance* inst,u32 id,u32 flags,u32 rootm
 	if (lastPosY>4)
 		lastPosY=0;
 	wchar windowtext[512];
-	swprintf_s(windowtext,sizeof(windowtext),L"nullDC VMU %c%d",'A'+(inst->port>>6),(int)(log10f((float)(inst->port&31))/log10f(2.0f)));
+	swprintf_s(windowtext,sizeof(windowtext)/sizeof(wchar),L"nullDC VMU %c%d",'A'+(inst->port>>6),(int)(log10f((float)(inst->port&31))/log10f(2.0f)));
 	SetWindowText(dev->lcd.handle,windowtext);
 	EnableWindow(dev->lcd.handle,TRUE);
 
@@ -3578,7 +3578,7 @@ void LoadSettings()
 		for (int i=0;joypad_settings_K[i].name;i++)
 		{
 			wchar temp[512];
-			swprintf_s(temp,sizeof(temp),L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
+			swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
 			joypad_settings[port][i].KC=host.ConfigLoadInt(L"ndc_hookjoy",temp,joypad_settings_K[i].KC);
 		}
 	}
@@ -3600,7 +3600,7 @@ void SaveSettings()
 		for (int i=0;joypad_settings_K[i].name;i++)
 		{
 			wchar temp[512];
-			swprintf_s(temp,sizeof(temp),L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
+			swprintf_s(temp,sizeof(temp)/sizeof(wchar),L"Port%c_%s",port+'A',&joypad_settings_K[i].name[4]);
 			host.ConfigSaveInt(L"ndc_hookjoy",temp,joypad_settings[port][i].KC);
 		}
 	}
