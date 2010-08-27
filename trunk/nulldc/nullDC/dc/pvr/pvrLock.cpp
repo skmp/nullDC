@@ -204,7 +204,7 @@ bool VramLockedWrite(u8* address)
 				if ((*list)[i])
 				{
 					msgboxf(L"Error , pvr is suposed to remove lock",MBX_OK);
-					__asm int 3;
+					__debugbreak(); 
 				}
 
 			}

@@ -48,7 +48,7 @@ HWND ProfilerWindow;
 
 void* GetWindowPtr(HWND hWnd,int nIndex)
 {
-#if X64
+#ifdef X64
 	return (void*)GetWindowLongPtr(hWnd,nIndex);
 #else
 	return (void*)GetWindowLongPtr(hWnd,nIndex);
@@ -57,7 +57,7 @@ void* GetWindowPtr(HWND hWnd,int nIndex)
 
 void SetWindowPtr( HWND hWnd,int nIndex,void* dwNewLong)
 {
-#if X64
+#ifdef X64
 	SetWindowLongPtr(hWnd,nIndex,(LONG_PTR)dwNewLong);
 #else
 	SetWindowLongPtr(hWnd,nIndex,(LONG)dwNewLong);

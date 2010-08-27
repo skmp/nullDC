@@ -46,10 +46,12 @@ void _vmem_mirror_mapping(u32 new_region,u32 start,u32 size);
 u8 fastcall _vmem_ReadMem8(u32 Address);
 u16 fastcall _vmem_ReadMem16(u32 Address);
 u32 fastcall _vmem_ReadMem32(u32 Address);
+u64 fastcall _vmem_ReadMem64(u32 Address);
 //WriteMem(s)
 void fastcall _vmem_WriteMem8(u32 Address,u8 data);
 void fastcall _vmem_WriteMem16(u32 Address,u16 data);
 void fastcall _vmem_WriteMem32(u32 Address,u32 data);
+void fastcall _vmem_WriteMem64(u32 Address,u64 data);
 
 //global reserved mem space
 extern u8* sh4_reserved_mem;

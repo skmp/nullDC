@@ -62,8 +62,14 @@ T __fastcall _vmem_readt(u32 addr)
 			return (*(_vmem_ReadMem8FP**)((u8*)_vmem_RF8+data_ptr))(addr);
 		else if (sizeof(T)==2)
 			return (*(_vmem_ReadMem16FP**)((u8*)_vmem_RF16+data_ptr))(addr);
-		else
+		else if (sizeof(T)==4)
 			return (*(_vmem_ReadMem32FP**)((u8*)_vmem_RF32+data_ptr))(addr);
+		else if (sizeof(T)==8)
+		{
+			//VS2k10: REALLY BAD CODE GENERATED
+			_vmem_ReadMem32FP* handler=*(_vmem_ReadMem32FP**)((u8*)_vmem_RF32+data_ptr);
+			return handler(addr) | (((u64)handler(addr+4))<<32);
+		}
 	}
 	else
 		return *(T*)data_ptr;
@@ -80,8 +86,15 @@ void __fastcall _vmem_writet(u32 addr,T data)
 			(*(_vmem_WriteMem8FP**)((u8*)_vmem_WF8+data_ptr))(addr,data);
 		else if (sizeof(T)==2)
 			(*(_vmem_WriteMem16FP**)((u8*)_vmem_WF16+data_ptr))(addr,data);
-		else
+		else if (sizeof(T)==4)
 			(*(_vmem_WriteMem32FP**)((u8*)_vmem_WF32+data_ptr))(addr,data);
+		else if (sizeof(T)==8)
+		{
+			//VS2k10: REALLY BAD CODE GENERATED
+			_vmem_WriteMem32FP* handler=*(_vmem_WriteMem32FP**)((u8*)_vmem_WF32+data_ptr);
+			handler(addr,(u32)data);
+			handler(addr+4,data>>32);
+		}
 	}
 	else
 		*(T*)data_ptr=data;
@@ -92,11 +105,13 @@ void __fastcall _vmem_writet(u32 addr,T data)
 u8 fastcall _vmem_ReadMem8(u32 addr) { return _vmem_readt<u8>(addr); }
 u16 fastcall _vmem_ReadMem16(u32 addr) { return _vmem_readt<u16>(addr); }
 u32 fastcall _vmem_ReadMem32(u32 addr) { return _vmem_readt<u32>(addr); }
+u64 fastcall _vmem_ReadMem64(u32 addr) { return _vmem_readt<u64>(addr); }
 
 //WriteMem
 void fastcall _vmem_WriteMem8(u32 addr,u8 data) { _vmem_writet(addr,data); }
 void fastcall _vmem_WriteMem16(u32 addr,u16 data) { _vmem_writet(addr,data); }
 void fastcall _vmem_WriteMem32(u32 addr,u32 data) { _vmem_writet(addr,data); }
+void fastcall _vmem_WriteMem64(u32 addr,u64 data) { _vmem_writet(addr,data); }
 
 //0xDEADC0D3 or 0
 #define MEM_ERROR_RETURN_VALUE 0xDEADC0D3

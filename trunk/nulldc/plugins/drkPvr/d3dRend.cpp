@@ -2255,7 +2255,7 @@ __error_out:
 			float c1[4]={clamp(0.0000001f,10000000.0f,pvrrc.invW_max)};
 			c0[0]*=0.99f;
 			c1[0]*=1.01f;
-			//printf("ZMAE: %f %f\n",c0[0],c1[0]);
+//			printf("ZMAE: %f %f\n",c0[0],c1[0]);
 			dev->SetVertexShaderConstantF(0,c0,1);
 			dev->SetVertexShaderConstantF(1,c1,1);
 #endif
@@ -3458,7 +3458,7 @@ nl:
 #define z_update(zv) \
 	/*if (tarc.invW_min>zv)\
 		tarc.invW_min=zv;*/\
-	if (tarc.invW_max<zv)\
+	if (((u32&)zv)<0x41000000 && tarc.invW_max<zv)\
 		tarc.invW_max=zv;
 #else
 	#define z_update(zv)

@@ -189,7 +189,7 @@ enum Sh4RegType
 #define MBX_RV_IGNORE            5
 #define MBX_RV_YES               6
 #define MBX_RV_NO                7
-#define dbgbreak __asm {int 3}
+#define dbgbreak __debugbreak()
 
 #define BPT_OPCODE		0x8A00
 

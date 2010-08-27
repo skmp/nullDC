@@ -18,7 +18,7 @@
 #include "mmu.h"
 
 //64bytes of sq
-__declspec(align(32)) u8 sq_both[64];
+__declspec(align(64)) u8 sq_both[64];
 
 //i know , its because of templates :)
 #pragma warning( disable : 4127 /*4244*/)

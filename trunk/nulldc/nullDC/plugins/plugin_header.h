@@ -36,6 +36,11 @@ typedef unsigned __int64 u64;
 typedef float f32;
 typedef double f64;
 
+#ifdef _M_X64
+#undef X86
+#define X64
+#endif
+
 #ifdef X86
 typedef u32 unat;
 #endif

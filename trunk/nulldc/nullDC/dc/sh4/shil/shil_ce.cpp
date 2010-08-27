@@ -174,7 +174,7 @@ void ce_die(char* reason)
 	else
 		printf("C.E. pass : die\n");
 
-	__asm int 3;
+	__debugbreak();
 }
 bool ce_CanBeConst(u32 reg)
 {
