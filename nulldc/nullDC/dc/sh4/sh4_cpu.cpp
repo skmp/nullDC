@@ -34,7 +34,7 @@
 #define iWarn cpu_iWarn
 
 //Read Mem macros
-#define ReadMemU64(to,addr) ReadMem64(addr,&(to))
+#define ReadMemU64(to,addr) (u64&)to=ReadMem64(addr)
 #define ReadMemU32(to,addr) to=ReadMem32(addr)
 #define ReadMemS32(to,addr) to=(s32)ReadMem32(addr)
 #define ReadMemS16(to,addr) to=(u32)(s32)(s16)ReadMem16(addr)
@@ -46,7 +46,7 @@
 #define ReadMemBOS8(to,addr,offset)		ReadMemS8(to,addr+offset)
 
 //Write Mem Macros
-#define WriteMemU64(addr,data)				WriteMem64(addr,&(data))
+#define WriteMemU64(addr,data)				WriteMem64(addr,(u64&)data)
 #define WriteMemU32(addr,data)				WriteMem32(addr,(u32)data)
 #define WriteMemU16(addr,data)				WriteMem16(addr,(u16)data)
 #define WriteMemU8(addr,data)				WriteMem8(addr,(u8)data)

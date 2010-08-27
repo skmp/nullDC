@@ -363,7 +363,7 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_zbuffer.format=L"Z Buffer Mode: %s";
 	menu_zbuffer.callback=handler_ZBufferMode;
 
-	menu_zbuffer.Add(ZBM,L"D24S8 Linear (Magic blue smoke)",4);
+	menu_zbuffer.Add(ZBM,L"D24S8 Adaptive Linear (New, Buggy still)",4);
 	menu_zbuffer.Add(ZBM,L"D24FS8 (Fast when avaiable,Best Precition)",0);
 	menu_zbuffer.Add(ZBM,L"D24S8+FPE (Slow,Good Precition)",1);
 	menu_zbuffer.Add(ZBM,L"D24S8 Mode 1 (Lower Precition)",2);

@@ -90,7 +90,7 @@ using namespace std;
 
 #ifdef MEM_ERROR_BREAK
 	#ifdef X86
-		#define MEM_DO_BREAK {__asm { int 03}}
+		#define MEM_DO_BREAK {__debugbreak(); }
 	#else
 		#define MEM_DO_BREAK {printf("**Mem Error Break**\n");getc(stdin);}
 	#endif
@@ -101,7 +101,7 @@ using namespace std;
 #ifdef TRACE
 	#ifdef DEBUG
 		#ifdef X86
-			#define TRACE_DO_BREAK {__asm { int 03}}
+			#define TRACE_DO_BREAK {dbgbreak;}
 		#else
 			#define TRACE_DO_BREAK {printf("**Trace Break**\n");getc(stdin);}
 		#endif
@@ -149,7 +149,7 @@ using namespace std;
 #define VER_FULLNAME	VER_EMUNAME L" v1.0.4" _X_x_X_MMU_VER_STR L" (built " _T(__DATE__) L"@" _T(__TIME__) L")"
 #define VER_SHORTNAME	VER_EMUNAME L" 1.0.4" _X_x_X_MMU_VER_STR
 
-#define dbgbreak __asm {int 3}
+#define dbgbreak __debugbreak(); 
 
 #define fastcall __fastcall
 #define FASTCALL __fastcall

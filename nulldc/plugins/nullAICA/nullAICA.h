@@ -71,7 +71,7 @@ extern emu_info eminf;
 void LoadSettings();
 void SaveSettings();
 
-#define dbgbreak  { __asm {int 3}/* printf("Press ANY key to continue\n");getchar();*/}
+#define dbgbreak  { __debugbreak();/* printf("Press ANY key to continue\n");getchar();*/}
 
 #define fastcall __fastcall
 #define verify(x) if((x)==false){ printf("Verify Failed  : " #x "\n in %s -> %s : %d \n",__FUNCTION__,__FILE__,__LINE__); dbgbreak;}

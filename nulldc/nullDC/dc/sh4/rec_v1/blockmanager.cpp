@@ -189,7 +189,7 @@ public :
 			if (_Myfirst[i]!=BLOCK_NONE)
 			{
 				printf("BlockList::CheckEmptyList fatal error , ItemCount!=RealItemCount\n");
-				__asm int 3;
+				__debugbreak(); 
 				return;
 			}
 
@@ -963,6 +963,6 @@ void dyna_profiler_tick(void* addr)
 			return;
 		}
 	}
-	__asm int 3;
+	__debugbreak(); 
 	printf("0x%X OMG! UNABLE TO MATCH BLOCK TEH NOES\n",addr);
 }

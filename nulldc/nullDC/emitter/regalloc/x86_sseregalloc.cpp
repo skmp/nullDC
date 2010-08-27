@@ -80,7 +80,7 @@ class SimpleSSERegAlloc:public FloatRegAllocator
 		if (reg>=fr_0 && reg<=fr_15)
 			__noop;
 		else
-			__asm int 3;
+			__debugbreak(); 
 	}
 	bool DoAlloc;
 	
@@ -222,7 +222,7 @@ class SimpleSSERegAlloc:public FloatRegAllocator
 				x86e->Emit(op_movss,d_reg,GetRegPtr(reg));
 			return d_reg;
 		}
-//		__asm int 3;
+//		__debugbreak(); 
 		//return XMM_Error;
 	}
 	//Save registers

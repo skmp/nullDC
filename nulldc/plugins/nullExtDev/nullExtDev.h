@@ -31,7 +31,7 @@
 			else if (sz==4)							\
 			{*(u32*)&arr[addr]=data;return;}}	
 
-#define verify(x) if((x)==false){ printf("Verify Failed  : " #x "\n in %s : %d \n",__FILE__,__LINE__);__asm { int 3}}
+#define verify(x) if((x)==false){ printf("Verify Failed  : " #x "\n in %s : %d \n",__FILE__,__LINE__);__debugbreak();}
 #define warn(x) if((x)==true){ printf("Warn Failed  : " #x "\n in %s : %d \n",__FILE__,__LINE__);}
 
 #define naked   __declspec( naked )

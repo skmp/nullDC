@@ -25,7 +25,7 @@ int msgboxf(wchar* text,unsigned int type,...);
 float GetSeconds();
 
 
-#define dbgbreak __asm {int 3}
+#define dbgbreak __debugbreak()
 
 #define fastcall __fastcall
 
