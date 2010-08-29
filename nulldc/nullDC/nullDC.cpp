@@ -233,16 +233,16 @@ void LoadSettings()
 	settings.dreamcast.cable=cfgLoadInt(L"nullDC",L"Dreamcast.Cable",3);
 	settings.dreamcast.RTC=cfgLoadInt(L"nullDC",L"Dreamcast.RTC",GetRTC_now());
 
-	settings.dreamcast.region=cfgLoadInt(L"nullDC",L"Dreamcast.Region",1);
-	settings.dreamcast.broadcast=cfgLoadInt(L"nullDC",L"Dreamcast.Broadcast",0);
+	settings.dreamcast.region=cfgLoadInt(L"nullDC",L"Dreamcast.Region",3);
+	settings.dreamcast.broadcast=cfgLoadInt(L"nullDC",L"Dreamcast.Broadcast",4);
 
 	settings.emulator.AutoStart=cfgLoadInt(L"nullDC",L"Emulator.AutoStart",0)!=0;
 	settings.emulator.NoConsole=cfgLoadInt(L"nullDC",L"Emulator.NoConsole",0)!=0;
 
 	//make sure values are valid
 	settings.dreamcast.cable=min(max(settings.dreamcast.cable,0),3);
-	settings.dreamcast.region=min(max(settings.dreamcast.region,0),2);
-	settings.dreamcast.broadcast=min(max(settings.dreamcast.broadcast,0),3);
+	settings.dreamcast.region=min(max(settings.dreamcast.region,0),3);
+	settings.dreamcast.broadcast=min(max(settings.dreamcast.broadcast,0),4);
 }
 void SaveSettings()
 {
