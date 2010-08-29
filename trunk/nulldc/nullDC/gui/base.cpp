@@ -199,8 +199,8 @@ s32 EXPORT_CALL GetEmuSetting(u32 sid,void* value)
 	_esai_(DREAMCAST_CABLE,dreamcast.cable,3);
 	_esai_(DREAMCAST_RTC,dreamcast.RTC,0xFFFFFFFF);
 
-	_esai_(DREAMCAST_REGION,dreamcast.region,2);
-	_esai_(DREAMCAST_BROADCAST,dreamcast.broadcast,3);
+	_esai_(DREAMCAST_REGION,dreamcast.region,3);
+	_esai_(DREAMCAST_BROADCAST,dreamcast.broadcast,4);
 
 	_esai_(EMULATOR_ASTART,emulator.AutoStart,1);
 

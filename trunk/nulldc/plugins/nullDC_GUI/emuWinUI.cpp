@@ -805,8 +805,8 @@ u32 rec_cpp_mid;
 u32 rec_enb_mid;
 u32 rec_ufpu_mid;
 u32 ct_menu[4];
-u32 sr_menu[3];
-u32 bf_menu[4];
+u32 sr_menu[4];
+u32 bf_menu[5];
 
 
 void UpdateMenus()
@@ -832,12 +832,12 @@ void UpdateMenus()
 		SetMenuItemStyle(ct_menu[i],GetSettingI(NDCS_DREAMCAST_CABLE)==i?MIS_Checked:0,MIS_Checked);
 	}
 	
-	for (int i=0;i<3;i++)
+	for (int i=0;i<4;i++)
 	{
 		SetMenuItemStyle(sr_menu[i],GetSettingI(NDCS_DREAMCAST_REGION)==i?MIS_Checked:0,MIS_Checked);
 	}
 	
-	for (int i=0;i<4;i++)
+	for (int i=0;i<5;i++)
 	{
 		SetMenuItemStyle(bf_menu[i],GetSettingI(NDCS_DREAMCAST_BROADCAST)==i?MIS_Checked:0,MIS_Checked);
 	}
@@ -873,7 +873,7 @@ MENU_HANDLER( Handle_Option_Cable_Type )
 MENU_HANDLER( Handle_Option_System_Region )
 {
 
-	for (int i=0;i<3;i++)
+	for (int i=0;i<4;i++)
 		if (sr_menu[i]==id)
 			SetSettingI(NDCS_DREAMCAST_REGION,i);
 	
@@ -883,7 +883,7 @@ MENU_HANDLER( Handle_Option_System_Region )
 MENU_HANDLER( Handle_Option_Broadcast_Format )
 {
 
-	for (int i=0;i<4;i++)
+	for (int i=0;i<5;i++)
 		if (bf_menu[i]==id)
 			SetSettingI(NDCS_DREAMCAST_BROADCAST,i);
 	
@@ -935,11 +935,13 @@ void CreateBasicMenus()
 			sr_menu[0]=AddMenuItem(system_region,-1,L"JAP",Handle_Option_System_Region,0);
 			sr_menu[1]=AddMenuItem(system_region,-1,L"USA",Handle_Option_System_Region,0);
 			sr_menu[2]=AddMenuItem(system_region,-1,L"EUR",Handle_Option_System_Region,0);
+			sr_menu[3]=AddMenuItem(system_region,-1,L"Default",Handle_Option_System_Region,0);
 		u32 broadcast_format=AddMenuItem(menu_setts,-1,L"Broadcast Format",0,0);
 			bf_menu[0]=AddMenuItem(broadcast_format,-1,L"NTSC",Handle_Option_Broadcast_Format,0);
 			bf_menu[1]=AddMenuItem(broadcast_format,-1,L"PAL",Handle_Option_Broadcast_Format,0);
 			bf_menu[2]=AddMenuItem(broadcast_format,-1,L"PAL_M",Handle_Option_Broadcast_Format,0);
 			bf_menu[3]=AddMenuItem(broadcast_format,-1,L"PAL_N",Handle_Option_Broadcast_Format,0);
+			bf_menu[4]=AddMenuItem(broadcast_format,-1,L"Default",Handle_Option_Broadcast_Format,0);
 
 	AddMenuItem(menu_options,-1,L"Select Plugins",Handle_Options_SelectPlugins,0);
 	AddSeperator(menu_options);
