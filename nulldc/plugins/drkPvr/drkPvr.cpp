@@ -296,9 +296,9 @@ void CreateSortMenu()
 	menu_sortmode.format=L"Sort : %s";
 
 	menu_sortmode.callback=handler_SSM;
-	menu_sortmode.Add(sort_menu,L"Off (Fastest)",0,L"Off");
+	menu_sortmode.Add(sort_menu,L"Off (Fastest, lowest accuracy)",0,L"Off");
 	menu_sortmode.Add(sort_menu,L"Per Strip",1,L"Strip");
-	menu_sortmode.Add(sort_menu,L"Per Triangle (Slowest)",2,L"Triangle");
+	menu_sortmode.Add(sort_menu,L"Per Triangle (Slowest, highest accuracy)",2,L"Triangle");
 	menu_sortmode.SetValue(settings.Emulation.AlphaSortMode);
 }
 //called when plugin is used by emu (you should do first time init here)
@@ -314,11 +314,11 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_resolution.format=L"Resolution: %s";
 	menu_resolution.callback=handler_resmode;
 
-	menu_resolution.Add(RSM,L"Maximum Supported",0);
+	menu_resolution.Add(RSM,L"Maximum Supported (Highest quality)",0);
 	menu_resolution.Add(RSM,L"Maximum, but up to 1280x800",1);
 	menu_resolution.Add(RSM,L"Native (640x480)",2);
 	menu_resolution.Add(RSM,L"Half of maximum pixels",3);
-	menu_resolution.Add(RSM,L"Quarter of maximum pixels",4);
+	menu_resolution.Add(RSM,L"Quarter of maximum pixels (Lowest quality)",4);
 	menu_resolution.SetValue(settings.Video.ResolutionMode);
 
 
@@ -340,8 +340,8 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_palmode.Add(PMT,L"Static",0);
 	menu_palmode.Add(PMT,L"Versioned",1);
 	AddSeperator(PMT);
-	menu_palmode.Add(PMT,L"Dynamic,Point",2);
-	menu_palmode.Add(PMT,L"Dynamic,Full",3);
+	menu_palmode.Add(PMT,L"Dynamic, Point",2);
+	menu_palmode.Add(PMT,L"Dynamic, Full",3);
 
 	menu_palmode.SetValue(settings.Emulation.PaletteMode);
 
@@ -352,10 +352,10 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_modvolmode.format=L"Modifier Volumes: %s";
 	menu_modvolmode.callback=handler_ModVolMode;
 
-	menu_modvolmode.Add(MVM,L"Normal And Clip (Slow)",MVM_NormalAndClip);
-	menu_modvolmode.Add(MVM,L"Normal (for slow cards)",MVM_Normal);
-	menu_modvolmode.Add(MVM,L"Off  (no shadows, fast)",MVM_Off);
-	menu_modvolmode.Add(MVM,L"Volumes (for debuging)",MVM_Volume);
+	menu_modvolmode.Add(MVM,L"Normal And Clip (Slowest, highest accuracy)",MVM_NormalAndClip);
+	menu_modvolmode.Add(MVM,L"Normal (Good speed, good accuracy)",MVM_Normal);
+	menu_modvolmode.Add(MVM,L"Off  (Fastest, no shadows)",MVM_Off);
+	menu_modvolmode.Add(MVM,L"Volumes (For debuging)",MVM_Volume);
 	menu_modvolmode.SetValue(settings.Emulation.ModVolMode);
 
 	u32 ZBM=emu.AddMenuItem(emu.RootMenu,-1,L"Z Buffer Mode: %s",0,0);
@@ -364,10 +364,10 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_zbuffer.callback=handler_ZBufferMode;
 
 	menu_zbuffer.Add(ZBM,L"D24S8 Adaptive Linear (New, Buggy still)",4);
-	menu_zbuffer.Add(ZBM,L"D24FS8 (Fast when avaiable,Best Precition)",0);
-	menu_zbuffer.Add(ZBM,L"D24S8+FPE (Slow,Good Precition)",1);
-	menu_zbuffer.Add(ZBM,L"D24S8 Mode 1 (Lower Precition)",2);
-	menu_zbuffer.Add(ZBM,L"D24S8 Mode 2 (Lower Precition)",3);
+	menu_zbuffer.Add(ZBM,L"D24FS8 (Fast when avaiable, Best Precision)",0);
+	menu_zbuffer.Add(ZBM,L"D24S8+FPE (Slow, Good Precision)",1);
+	menu_zbuffer.Add(ZBM,L"D24S8 Mode 1 (Lower Precision)",2);
+	menu_zbuffer.Add(ZBM,L"D24S8 Mode 2 (Lower Precision)",3);
 
 	menu_zbuffer.SetValue(settings.Emulation.ZBufferMode);
 	

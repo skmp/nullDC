@@ -243,10 +243,10 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,211,116,50,14
     CONTROL         "Enable Dynarec",IDC_REC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,7,254,15
     CONTROL         "Enable Constant Propagation",IDC_REC_CPP,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,39,254,10
-    LTEXT           "Enabling the dynarec will make the emulator much faster.There are no known bugs on it :).This setting is defaults to enabled.",IDC_STATIC,7,20,254,19
-    LTEXT           "Constant propagation is a dynarec optimisation pass.Enabling it will make the dynarec faster , however due to a known bug some games may not work correctly (Soul Reaver,Toy Commander missles , more).This setting is defaults to enabled.",IDC_STATIC,7,49,254,34
+    LTEXT           "Enabling dynarec will make the emulator much faster.  There are no known bugs on it :).  This setting is enabled by default.",IDC_STATIC,7,20,254,19
+    LTEXT           "Constant propagation is a dynarec optimisation pass.  Enabling it will make the dynarec faster, however due to a known bug some games may not work correctly (Soul Reaver, Toy Commander missles, more).  This setting is enabled by default.",IDC_STATIC,7,49,254,34
     CONTROL         "Underclock FPU",IDC_REC_UFPU,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,84,254,10
-    LTEXT           "Underclocking the FPU will make the emulator run faster , but some games will have speed problems (DOA2,VF3,more).This setting is defaults to disabled.",IDC_STATIC,7,95,254,21
+    LTEXT           "Underclocking the FPU will make the emulator run faster, but some games will have speed problems (DOA2, VF3, more).  This setting is disabled by default.",IDC_STATIC,7,95,254,21
 END
 
 
