@@ -3539,10 +3539,10 @@ nl:
 #else
 	//Precaclulated intesinty (saves 8 bytes / vertex)
 	#define vert_face_base_color(baseint) \
-		vert_float_color_(cv->col,FaceBaseColor[3]/**vtx->baseint*/,FaceBaseColor[0]*vtx->baseint,FaceBaseColor[1]*vtx->baseint,FaceBaseColor[2]*vtx->baseint);
+		vert_float_color_(cv->col,FaceBaseColor[3]/**vtx->baseint*/,FaceBaseColor[0]/**vtx->baseint*/,FaceBaseColor[1]/**vtx->baseint*/,FaceBaseColor[2]/**vtx->baseint*/);
 
 	#define vert_face_offs_color(offsint) \
-		vert_float_color_(cv->spc,FaceOffsColor[3]/**vtx->offsint*/,FaceOffsColor[0]*vtx->offsint,FaceOffsColor[1]*vtx->offsint,FaceOffsColor[2]*vtx->offsint);	
+		vert_float_color_(cv->spc,FaceOffsColor[3]/**vtx->offsint*/,FaceOffsColor[0]/**vtx->offsint*/,FaceOffsColor[1]/**vtx->offsint*/,FaceOffsColor[2]/**vtx->offsint*/);	
 
 	#define vert_int_no_base()
 	#define vert_int_no_offs()
