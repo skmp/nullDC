@@ -3371,8 +3371,9 @@ nl:
 	to[2] = b;	\
 	to[3] = a;
 
+#define sat(x) (x<0?0:x>1?1:x)
 #define poly_float_color(to,src) \
-	poly_float_color_(to,pp->src##A,pp->src##R,pp->src##G,pp->src##B)
+	poly_float_color_(to,sat(pp->src##A),sat(pp->src##R),sat(pp->src##G),sat(pp->src##B))
 
 	//poly param handling
 	__forceinline
@@ -3537,12 +3538,17 @@ nl:
 		vert_float_color_(cv->spc,FaceOffsColor[3],FaceOffsColor[0],FaceOffsColor[1],FaceOffsColor[2]);	 \
 		vert_int_offs(offsint);
 #else
-	//Precaclulated intesinty (saves 8 bytes / vertex)
+	//Notes:
+	//Alpha doesn't get intensity
+	//Intesity is clamped before the mul, as well as on face color to work the same as the hardware. [Fixes red dog]
+
 	#define vert_face_base_color(baseint) \
-		vert_float_color_(cv->col,FaceBaseColor[3]/**vtx->baseint*/,FaceBaseColor[0]/**vtx->baseint*/,FaceBaseColor[1]/**vtx->baseint*/,FaceBaseColor[2]/**vtx->baseint*/);
+		{ float satint=sat(vtx->baseint); \
+		vert_float_color_(cv->col,FaceBaseColor[3],FaceBaseColor[0]*satint,FaceBaseColor[1]*satint,FaceBaseColor[2]*satint); }
 
 	#define vert_face_offs_color(offsint) \
-		vert_float_color_(cv->spc,FaceOffsColor[3]/**vtx->offsint*/,FaceOffsColor[0]/**vtx->offsint*/,FaceOffsColor[1]/**vtx->offsint*/,FaceOffsColor[2]/**vtx->offsint*/);	
+		{ float satint=sat(vtx->offsint); \
+		vert_float_color_(cv->spc,FaceOffsColor[3],FaceOffsColor[0]*satint,FaceOffsColor[1]*satint,FaceOffsColor[2]*satint); }
 
 	#define vert_int_no_base()
 	#define vert_int_no_offs()
