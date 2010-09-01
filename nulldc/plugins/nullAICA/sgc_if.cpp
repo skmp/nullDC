@@ -435,35 +435,12 @@ struct ChannelEx
 	{
 		Step();
 	}
-	template<int idx> 
-	__forceinline static void TemplateStep()
-	{
-		Chans[idx].Generate();
-	}
-	template<int idx> 
-	__forceinline static void TemplateChain()
-	{
-		TemplateStep<idx>();
-	
-		TemplateChain< idx + 1>();
-	}
-	template<> 
-	__forceinline static void TemplateChain<64>() { }
-
-	
-
 	__forceinline static void GenerateAll()
 	{
-		//takes quite a while to generate ...
-		//Thats why its used only on rls builds
-#ifdef NDEBUG
-		ChannelEx::TemplateChain<0>();
-#else
 		for (int i=0;i<64;i++)
 		{
 			Chans[i].Generate();
 		}
-#endif
 	}
 	void SetAegState(_EG_state newstate)
 	{
