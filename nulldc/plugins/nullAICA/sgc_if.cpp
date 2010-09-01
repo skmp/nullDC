@@ -391,7 +391,7 @@ struct ChannelEx
 
 		return rv;
 	}
-	void Step()
+	__forceinline void Step()
 	{
 		if (!enabled)
 			return;
@@ -431,9 +431,39 @@ struct ChannelEx
 		StepStream(this);
 		lfo.Step(this);
 	}
-	void Generate()
+	__forceinline void Generate()
 	{
 		Step();
+	}
+	template<int idx> 
+	__forceinline static void TemplateStep()
+	{
+		Chans[idx].Generate();
+	}
+	template<int idx> 
+	__forceinline static void TemplateChain()
+	{
+		TemplateStep<idx>();
+	
+		TemplateChain< idx + 1>();
+	}
+	template<> 
+	__forceinline static void TemplateChain<64>() { }
+
+	
+
+	__forceinline static void GenerateAll()
+	{
+		//takes quite a while to generate ...
+		//Thats why its used only on rls builds
+#ifdef NDEBUG
+		ChannelEx::TemplateChain<0>();
+#else
+		for (int i=0;i<64;i++)
+		{
+			Chans[i].Generate();
+		}
+#endif
 	}
 	void SetAegState(_EG_state newstate)
 	{
@@ -1658,11 +1688,8 @@ void AICA_Sample()
 	mixr = 0;
 	memset(dsp.MIXS,0,sizeof(dsp.MIXS));
 
-	for (int i=0;i<64;i++)
-	{
-		Chans[i].Generate();
-	}
-
+	ChannelEx::GenerateAll();
+	
 	//OK , generated all Chanels  , now DSP/ect + final mix ;p
 	//CDDA EXTS input
 	
