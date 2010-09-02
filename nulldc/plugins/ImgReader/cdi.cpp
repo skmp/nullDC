@@ -29,9 +29,11 @@ SPfcToc* pstToc;
 SessionInfo cdi_ses;
 TocInfo cdi_toc;
 DiscType cdi_Disctype;
+
 struct file_TrackInfo
 {
 	u32 FAD;
+	u32 Control;
 	u32 Offset;
 	u32 SectorSize;
 };
@@ -40,7 +42,7 @@ file_TrackInfo Track[101];
 
 u32 TrackCount;
 
-u8 SecTemp[2352];
+u8 SecTemp[2448];
 FILE* fp_cdi;
 void cdi_ReadSSect(u8* p_out,u32 sector,u32 secsz)
 {
@@ -48,6 +50,7 @@ void cdi_ReadSSect(u8* p_out,u32 sector,u32 secsz)
 	{
 		if (Track[i+1].FAD>sector)
 		{
+			verify(sizeof(SecTemp)>=Track[i].SectorSize);
 			u32 fad_off=sector-Track[i].FAD;
 			fseek(fp_cdi,Track[i].Offset+fad_off*Track[i].SectorSize,SEEK_SET);
 			fread(SecTemp,Track[i].SectorSize,1,fp_cdi);
@@ -138,6 +141,7 @@ void cdi_CreateToc()
 
 
 			Track[track].FAD=cdi_toc.tracks[track].FAD;
+			Track[track].Control=cdi_toc.tracks[track].Control;
 			Track[track].SectorSize=cdi_track->dwBlockSize;
 			Track[track].Offset=TrackOffset;
 			printf("    Start FAD : %d\n",Track[track].FAD);

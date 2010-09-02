@@ -575,11 +575,19 @@ void gd_process_spi_cmd()
 		//seems like a non data command :)
 	case 0x70:
 		printf_spicmd("SPI : unknown ? [0x70]\n");
+		printf("SPI : unknown ? [0x70]\n");
 		/*GDStatus.full=0x50; //FIXME
 		RaiseInterrupt(holly_GDROM_CMD);*/
 
 		gd_set_state(gds_procpacketdone);
 		break;
+
+
+	// Command 71 seems to trigger some sort of authentication check(?).
+	// Update Sept 1st 2010: It looks like after a sequence of events the drive ends up having a specific state.
+	// If the drive is fed with a "bootable" disc it ends up in "PAUSE" state. On all other cases it ends up in "STANDBY".
+	// Cmd 70 and Error Handling / Sense also seem to take part in the above mentioned sequence of events.
+	// This is more or less a hack until more info about this command becomes available. ~Psy
 	case 0x71:
 		{
 			printf_spicmd("SPI : unknown ? [0x71]\n");
@@ -588,13 +596,8 @@ void gd_process_spi_cmd()
 			
 			gd_spi_pio_end((u8*)&reply_71[0],reply_71_sz);//uCount
 
-// Command 71 seems to trigger some sort of authentication check(?).
-// According to the results of this check the drive state changes accordingly to either standby or pause.
-// So after we send the data we just check if the disc is a GD-ROM or another disc type and set the right state.
-// Only "problem" now is that we send the "right" data during the check even if the disc is not a GD-ROM.
-// Now all discs boot fine so do not touch unless you have some knowledge on the subject. K? ~ Psy
 
-			if (libGDR.GetDiscType()==GdRom)
+			if (libGDR.GetDiscType()==GdRom || libGDR.GetDiscType()==CdRom_XA)
 				SecNumber.Status=GD_PAUSE;
 			else
 				SecNumber.Status=GD_STANDBY;
