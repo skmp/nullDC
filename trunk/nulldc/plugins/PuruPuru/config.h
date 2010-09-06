@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 // Project description
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -------------------
 // Name: nullDC 
 // Description: A nullDC Compatible Input Plugin
 //
@@ -20,7 +20,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Config dialog functions
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -----------------------
 
 INT_PTR CALLBACK OpenConfig( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
 
@@ -39,3 +39,4 @@ void SetButton(HWND hDlg, int item, wchar* value);
 void OpenAbout(HINSTANCE abouthInstance, HWND _hParent);
 
 BOOL CALLBACK AboutDlg(HWND abouthWnd, UINT message, WPARAM wParam, LPARAM lParam);
+

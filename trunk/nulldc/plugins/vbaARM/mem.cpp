@@ -73,10 +73,10 @@ void term_mem()
 	
 }
 
-//00000000Å 007FFFFF @DRAM_AREA* 
-//00800000Å 008027FF @CHANNEL_DATA 
-//00802800Å 00802FFF @COMMON_DATA 
-//00803000Å 00807FFF @DSP_DATA 
+//00000000~007FFFFF @DRAM_AREA* 
+//00800000~008027FF @CHANNEL_DATA 
+//00802800~00802FFF @COMMON_DATA 
+//00803000~00807FFF @DSP_DATA 
 
 template<int sz,typename T>
 T fastcall ReadMemArm(u32 addr)
@@ -113,3 +113,4 @@ template u32 ReadMemArm<4,u32>(u32 adr);
 template void WriteMemArm<1>(u32 adr,u8 data);
 template void WriteMemArm<2>(u32 adr,u16 data);
 template void WriteMemArm<4>(u32 adr,u32 data);
+

@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 // Project description
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -------------------
 // Name: nullDC 
 // Description: A nullDC Compatible Input Plugin
 //
@@ -13,7 +13,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Variables
-// ¯¯¯¯¯¯¯¯¯
+// ---------
 
 extern u32 current_port;
 extern bool emulator_running;
@@ -38,7 +38,7 @@ static const wchar* ControllerType[] =
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Config dialog functions
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -----------------------
 
 INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
@@ -739,7 +739,7 @@ void UpdateVisibleItems(HWND hDlg, int controllertype)
 }
 
 // Set dialog items
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ----------------
 void SetControllerAll(HWND hDlg, int controller)
 {		
 	SendMessage(GetDlgItem(hDlg, IDC_JOYNAME_SDL), CB_SETCURSEL, joysticks[controller].ID, 0);
@@ -787,7 +787,7 @@ void SetControllerAll(HWND hDlg, int controller)
 }
 
 // Get dialog items
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ----------------
 void GetControllerAll(HWND hDlg, int controller)
 {
 	if(joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_SDL)
@@ -823,14 +823,14 @@ void GetControllerAll(HWND hDlg, int controller)
 }
 
 // Get text from static text item
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ------------------------------
 void GetButton(HWND hDlg, int item, wchar* Receiver)
 {	
 	GetDlgItemText(hDlg, item, Receiver, 8);	
 }
 
 // Set text in static text item
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ----------------------------
 void SetButton(HWND hDlg, int item, wchar* value)
 {	
 	SetDlgItemText(hDlg, item, value);
@@ -838,17 +838,17 @@ void SetButton(HWND hDlg, int item, wchar* value)
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Config dialog functions
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -----------------------
 
 // OpenAbout
-// ¯¯¯¯¯¯¯¯¯
+// ---------
 void OpenAbout(HINSTANCE abouthInstance, HWND _hParent)
 {
 	DialogBox(abouthInstance,MAKEINTRESOURCE(IDD_ABOUT), _hParent, AboutDlg);
 }
 
 // AboutDlg
-// ¯¯¯¯¯¯¯¯
+// --------
 BOOL CALLBACK AboutDlg(HWND abouthWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	wchar format[512];	
@@ -878,3 +878,4 @@ BOOL CALLBACK AboutDlg(HWND abouthWnd, UINT message, WPARAM wParam, LPARAM lPara
 	}
     return FALSE;
 }
+

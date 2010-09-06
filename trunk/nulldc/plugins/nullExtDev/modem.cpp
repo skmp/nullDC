@@ -11,7 +11,7 @@ union modemreg_t
 	{
 		//00 Receive Data Buffer (RBUFFER)/Voice Receive Data Buffer (VBUFR)
 		u8 reg00;
-		//01 VOLUME VPAUSE — — TXHF RXHF RXP
+		//01 VOLUME VPAUSE - - TXHF RXHF RXP
 		struct
 		{
 			u8 RXP:1;
@@ -21,8 +21,8 @@ union modemreg_t
 			u8 VPAUSE:1;
 			u8 VOLUME:2;
 		} reg01;
-		//02 TDE SQDIS S511 — RTSDE V54TE V54AE V54PE 
-		//                     DCDEN CDEN — — CODBITS
+		//02 TDE SQDIS S511 - RTSDE V54TE V54AE V54PE 
+		//                     DCDEN CDEN - - CODBITS
 		struct
 		{
 			union
@@ -51,7 +51,7 @@ union modemreg_t
 				};
 			};
 		} reg02;
-		//03 EPT SEPT SRCEN RLSDE — — GTE GTS
+		//03 EPT SEPT SRCEN RLSDE - - GTE GTS
 		struct
 		{
 			u8 GTS:1;
@@ -62,7 +62,7 @@ union modemreg_t
 			u8 SEPT:1;
 			u8 EPT:1;
 		} reg03;
-		//04 RB — — FIFOEN — NRZIEN/VAGC TOD STRN
+		//04 RB - - FIFOEN - NRZIEN/VAGC TOD STRN
 		struct
 		{
 			u8 STRN:1;
@@ -73,7 +73,7 @@ union modemreg_t
 			u8 nil1:2;
 			u8 RB:1;
 		} reg04;
-		//05 — — — TXSQ CEQ — STOFF —
+		//05 - - - TXSQ CEQ - STOFF -
 		struct
 		{
 			u8 nil1_2:1;
@@ -83,7 +83,7 @@ union modemreg_t
 			u8 TXSQ:1;
 			u8 nil1:3;
 		} reg05;
-		//06 — EXOS — HDLC PEN STB WDSZ/DECBITS
+		//06 - EXOS - HDLC PEN STB WDSZ/DECBITS
 		struct
 		{
 			u8 WDSZ_DECBITS:2;
@@ -94,7 +94,7 @@ union modemreg_t
 			u8 EXOS:1;
 			u8 nil1:1;
 		} reg06;
-		//07 RDLE RDL L2ACT — L3ACT — RA MHLD
+		//07 RDLE RDL L2ACT - L3ACT - RA MHLD
 		struct
 		{
 			u8 MHLD:1;
@@ -142,7 +142,7 @@ union modemreg_t
 			u8 FLAGDT:1;
 			u8 PNSUC:1;
 		} reg0a;
-		//0B TONEA TONEB TONEC ATV25 ATBEL — DISDET EQMAT
+		//0B TONEA TONEB TONEC ATV25 ATBEL - DISDET EQMAT
 		struct
 		{
 			u8 EQMAT:1;
@@ -166,7 +166,7 @@ union modemreg_t
 			u8 ACDET:1;
 			u8 AADET:1;
 		} reg0c;
-		//0D P2DET PNDET S1DET SCR1 U1DET — TXFNF —
+		//0D P2DET PNDET S1DET SCR1 U1DET - TXFNF - 
 		struct
 		{
 			u8 nil2:1;
@@ -222,7 +222,7 @@ union modemreg_t
 		} reg13;
 		//14 ABCODE
 		u8 reg14;
-		//15 SLEEP — RDWK HWRWK AUTO RREN EXL3 EARC
+		//15 SLEEP - RDWK HWRWK AUTO RREN EXL3 EARC
 		struct
 		{
 			u8 EARC:1;
@@ -241,7 +241,7 @@ union modemreg_t
 		//18 Memory Access Data LSB B7-B0 (MEDAL)
 		//19 Memory Access Data MSB B15-B8 (MEDAM)
 		u16 reg18_19;
-		//1A SFRES RIEN RION DMAE — SCOBF SCIBE SECEN
+		//1A SFRES RIEN RION DMAE - SCOBF SCIBE SECEN
 		struct
 		{
 			u8 SECEN:1;
@@ -263,7 +263,7 @@ union modemreg_t
 			u8 EDET:1;
 		} reg1b;
 		//1C Memory Access Address Low B7-B0 (MEADDL)
-		//1D MEACC — MEMW MEMCR Memory Access Address High B11-B8 (MEADDH)
+		//1D MEACC - MEMW MEMCR Memory Access Address High B11-B8 (MEADDH)
 		struct
 		{
 			u8 MEMADD_l:8;	//anything else exept u8 breaks it ? WTFH ?
@@ -273,7 +273,7 @@ union modemreg_t
 			u8 nil:1;
 			u8 MEACC:1;
 		} reg1c_1d;
-		//1E TDBIA RDBIA TDBIE — TDBE RDBIE — RDBF
+		//1E TDBIA RDBIA TDBIE - TDBE RDBIE - RDBF
 		struct
 		{
 			u8 RDBF:1;
@@ -285,7 +285,7 @@ union modemreg_t
 			u8 RDBIA:1;
 			u8 TDBIA:1;
 		} reg1e;
-		//1F NSIA NCIA — NSIE NEWS NCIE — NEWC
+		//1F NSIA NCIA - NSIE NEWS NCIE - NEWC
 		struct
 		{
 			u8 NEWC:1;
@@ -581,3 +581,4 @@ void FASTCALL ModemWriteMem_A0_006(u32 addr,u32 data,u32 size)
 		}
 	}
 } 
+
