@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 // Project description
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -------------------
 // Name: nullDC 
 // Description: A nullDC Compatible Input Plugin
 //
@@ -31,7 +31,7 @@ CONTROLLER_INFO_XINPUT	 xoyinfo[4];
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // DllMain 
-// ¯¯¯¯¯¯¯
+// -------
 BOOL APIENTRY DllMain(	HINSTANCE hinstDLL,	// DLL module handle
 						DWORD dwReason,		// reason called
 						LPVOID lpvReserved)	// reserved
@@ -44,7 +44,7 @@ BOOL APIENTRY DllMain(	HINSTANCE hinstDLL,	// DLL module handle
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // dcGetInterface
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// --------------
 
 void EXPORT_CALL dcGetInterface(plugin_interface* info)
 {
@@ -77,10 +77,10 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Common Input Plugin Functions
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -----------------------------
 
 // Load plugin
-// ¯¯¯¯¯¯¯¯¯¯¯
+// -----------
 // Notes: Called when plugin is loaded by the emu, the param has some handy functions so i make a copy of it ;).
 s32 FASTCALL Load(emu_info* emu)
 {	
@@ -112,7 +112,7 @@ s32 FASTCALL Load(emu_info* emu)
 }
 
 // Unload plugin
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -------------
 // Notes: Called when plugin is unloaded by emulator (only if Load was called before).
 void FASTCALL Unload()
 {
@@ -125,10 +125,10 @@ void FASTCALL Unload()
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Maple Input Plugin Functions
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ----------------------------
 
 // CreateMain
-// ¯¯¯¯¯¯¯¯¯¯
+// ----------
 // Notes: Called to create a main device, like joystick, lightgun and such.
 // inst: instance info
 //	inst->port is the port (in the native maple format) of the device
@@ -165,7 +165,7 @@ s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 root
 }
 
 // CreateSub
-// ¯¯¯¯¯¯¯¯¯
+// ---------
 // Notes: Called to create a sub device, uses same params as CreateMain
 s32 FASTCALL CreateSub(maple_subdevice_instance* inst, u32 id, u32 flags, u32 rootmenu)
 {	
@@ -176,7 +176,7 @@ s32 FASTCALL CreateSub(maple_subdevice_instance* inst, u32 id, u32 flags, u32 ro
 }
 
 // Init PAD (start emulation)
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// --------------------------
 // Notes: Called when emulation is started.
 // data: the inst->data pointer as filled by the Create* functions
 // id: device index on the dcGetInterface
@@ -200,7 +200,7 @@ s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
 }
 
 // Shutdown PAD (stop emulation)
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -----------------------------
 // Called when emuation is terminated
 // data: the inst->data pointer as filled by the Create* functions
 // id: device index on the dcGetInterface
@@ -216,7 +216,7 @@ void FASTCALL Term(void* data, u32 id)
 }
 
 // Free memory (quit emulator)?
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ----------------------------
 // Notes: Destroy the device
 // data: the inst->data pointer as filled by the Create* functions
 // id: device index on the dcGetInterface
@@ -235,10 +235,10 @@ void FASTCALL Destroy(void* data, u32 id)
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // General Plugin Functions
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ------------------------
 
 // ControllerDMA
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -------------
 // http://mc.pp.se/dc/controller.html
 
 char Joy_strName[64] = "Dreamcast Controller\0";
@@ -1199,7 +1199,7 @@ void GetJoyState(int controller)
 }
 
 // ConfigMenuCallback
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ------------------
 // Notes: MUST be EXPORT_CALL, because it is a callback for a menu ;)
 // Called when the config menu is selected
 // id = menu id (can be used to set the style with host.SetMenuItemStyle & co)
@@ -1222,7 +1222,7 @@ void EXPORT_CALL ConfigMenuCallback(u32 id, void* w, void* p)
 }
 
 // Save settings to file
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ---------------------
 void SaveConfig()
 {
 	wchar SectionName[32];
@@ -1256,7 +1256,7 @@ void SaveConfig()
 }
 
 // Load settings from file
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -----------------------
 void LoadConfig()
 {
 	wchar SectionName[32];
@@ -1292,7 +1292,7 @@ void LoadConfig()
 }
 
 // Search attached devices
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -----------------------
 	
 
 void AnsiToWide(wchar* dest, const char *src)

@@ -634,7 +634,7 @@ sh4_opcodelistentry opcodes[]=
 	{rec_shil_i0000_nnnn_0010_0010	,i0000_nnnn_0010_0010	,Mask_n		,0x0022	,Normal				,OpDissCFS,"stc VBR,<REG_N>"				,2,2,CO,fix_none},	//stc VBR,<REG_N>               
 	{rec_shil_i0000_nnnn_0011_0010	,i0000_nnnn_0011_0010	,Mask_n		,0x0032	,Normal				,OpDissCFS,"stc SSR,<REG_N>"				,2,2,CO,fix_none},	//stc SSR,<REG_N>  
 	
-				//STC SGR,Rn SGR > Rn 0000_nnnn_0011_1010 Privileged —(this one is 0x0f3A)
+				//STC SGR,Rn SGR > Rn 0000_nnnn_0011_1010 Privileged -(this one is 0x0f3A)
 	{rec_shil_i0000_nnnn_0011_1010	,i0000_nnnn_0011_1010	,Mask_n		,0x003A	,Normal				,OpDissCFS,"stc SGR,<REG_N>"				,3,3,CO,fix_none},	//stc SGR,<REG_N> 
 
 	{rec_shil_i0000_nnnn_0100_0010	,i0000_nnnn_0100_0010	,Mask_n		,0x0042	,Normal				,OpDissCFS,"stc SPC,<REG_N>"				,2,2,CO,fix_none},	//stc SPC,<REG_N>               
@@ -708,7 +708,7 @@ sh4_opcodelistentry opcodes[]=
 	{rec_shil_i0100_nnnn_0001_0010	,i0100_nnnn_0001_0010	,Mask_n		,0x4012	,Normal				,OpDissCFS,"sts.l MACL,@-<REG_N>"			,1,3,CO,rn_4	},	//sts.l MACL,@-<REG_N>          
 	{rec_shil_i0100_nnnn_0010_0010	,i0100_nnnn_0010_0010	,Mask_n		,0x4022	,Normal				,OpDissCFS,"sts.l PR,@-<REG_N>"				,1,1,CO,rn_4	},	//sts.l PR,@-<REG_N>            
 	
-					//STC.L DBR,@-Rn  0100_nnnn_1111_0010 Privileged —
+					//STC.L DBR,@-Rn  0100_nnnn_1111_0010 Privileged -
 	{rec_shil_i0100_nnnn_1111_0010	,i0100_nnnn_1111_0010	,Mask_n		,0x40F2	,Normal				,OpDissCFS,"stc.l DBR,@-<REG_N>"			,2,2,CO,rn_4	},	//stc.l DBR,@-<REG_N>           
 
 	{rec_shil_icpu_nimp				,i0100_nnnn_0000_0011	,Mask_n		,0x4003	,Normal				,OpDissCFS,"stc.l SR,@-<REG_N>"				,1,1,CO,rn_4	},	//stc.l SR,@-<REG_N>            
@@ -716,7 +716,7 @@ sh4_opcodelistentry opcodes[]=
 	{rec_shil_i0100_nnnn_0010_0011	,i0100_nnnn_0010_0011	,Mask_n		,0x4023	,Normal				,OpDissCFS,"stc.l VBR,@-<REG_N>"			,1,1,CO,rn_4	},	//stc.l VBR,@-<REG_N>           
 	{rec_shil_i0100_nnnn_0011_0011	,i0100_nnnn_0011_0011	,Mask_n		,0x4033	,Normal				,OpDissCFS,"stc.l SSR,@-<REG_N>"			,1,1,CO,rn_4	},	//stc.l SSR,@-<REG_N>           
 
-				//STC.L SGR,@-Rn      0100_nnnn_0011_0010 Privileged —
+				//STC.L SGR,@-Rn      0100_nnnn_0011_0010 Privileged -
 	{rec_shil_i0100_nnnn_0011_0010	,i0100_nnnn_0011_0010	,Mask_n		,0x4032	,Normal				,OpDissCFS,"stc.l SGR,@-<REG_N>"			,3,3,CO,rn_4	},	//stc.l SGR,@-<REG_N>           
 
 	{rec_shil_i0100_nnnn_0100_0011	,i0100_nnnn_0100_0011	,Mask_n		,0x4043	,Normal				,OpDissCFS,"stc.l SPC,@-<REG_N>"			,1,1,CO,rn_4	},	//stc.l SPC,@-<REG_N>           
@@ -727,7 +727,7 @@ sh4_opcodelistentry opcodes[]=
 	{rec_shil_i0100_nnnn_0101_0110	,i0100_nnnn_0101_0110	,Mask_n		,0x4056	,Normal				,OpDissCFS,"lds.l @<REG_N>+,FPUL"			,1,1,CO,fix_none},	//lds.l @<REG_N>+,FPUL          
 	{rec_shil_icpu_nimp				,i0100_nnnn_0110_0110	,Mask_n		,0x4066	,WritesFPSCR		,OpDissCFS,"lds.l @<REG_N>+,FPSCR"			,1,1,CO,fix_none},	//lds.l @<REG_N>+,FPSCR         
 	
-				    //LDC.L @Rm+,DBR  0100_mmmm_1111_0110 Privileged —
+				    //LDC.L @Rm+,DBR  0100_mmmm_1111_0110 Privileged -
 	{rec_shil_i0100_nnnn_1111_0110	,i0100_nnnn_1111_0110	,Mask_n		,0x40F6	,Normal				,OpDissCFS,"ldc.l @<REG_N>+,DBR"			,1,3,CO,fix_none},	//ldc.l @<REG_N>+,DBR            
 
 	{rec_shil_icpu_nimp				,i0100_nnnn_0000_0111	,Mask_n		,0x4007	,WritesSR			,OpDissCFS,"ldc.l @<REG_N>+,SR"				,1,1,CO,fix_none},	//ldc.l @<REG_N>+,SR            
@@ -735,7 +735,7 @@ sh4_opcodelistentry opcodes[]=
 	{rec_shil_i0100_nnnn_0010_0111	,i0100_nnnn_0010_0111	,Mask_n		,0x4027	,Normal				,OpDissCFS,"ldc.l @<REG_N>+,VBR"			,1,1,CO,fix_none},	//ldc.l @<REG_N>+,VBR           
 	{rec_shil_i0100_nnnn_0011_0111	,i0100_nnnn_0011_0111	,Mask_n		,0x4037	,Normal				,OpDissCFS,"ldc.l @<REG_N>+,SSR"			,1,1,CO,fix_none},	//ldc.l @<REG_N>+,SSR           
 
-			    //LDC.L @Rm+,SGR (Rm) 0100_mmmm_0011_0110 Privileged —
+			    //LDC.L @Rm+,SGR (Rm) 0100_mmmm_0011_0110 Privileged -
 	{rec_shil_i0100_nnnn_0011_0110	,i0100_nnnn_0011_0110	,Mask_n		,0x4036	,Normal				,OpDissCFS,"ldc.l @<REG_N>+,SGR"			,3,3,CO,fix_none},	//ldc.l @<REG_N>+,SGR           
 
 	{rec_shil_i0100_nnnn_0100_0111	,i0100_nnnn_0100_0111	,Mask_n		,0x4047	,Normal				,OpDissCFS,"ldc.l @<REG_N>+,SPC"			,1,1,CO,fix_none},	//ldc.l @<REG_N>+,SPC           
@@ -751,7 +751,7 @@ sh4_opcodelistentry opcodes[]=
 	{rec_shil_i0100_nnnn_0010_1110	,i0100_nnnn_0010_1110	,Mask_n		,0x402E	,Normal				,OpDissCFS,"ldc <REG_N>,VBR"				,1,1,CO,fix_none},	//ldc <REG_N>,VBR               
 	{rec_shil_i0100_nnnn_0011_1110	,i0100_nnnn_0011_1110	,Mask_n		,0x403E	,Normal				,OpDissCFS,"ldc <REG_N>,SSR"				,1,1,CO,fix_none},	//ldc <REG_N>,SSR
 	
-				//LDC Rm,SGR Rm > SGR 0100_mmmm_0011_1010 Privileged —
+				//LDC Rm,SGR Rm > SGR 0100_mmmm_0011_1010 Privileged -
 	{rec_shil_i0100_nnnn_0011_1010	,i0100_nnnn_0011_1010	,Mask_n		,0x403A	,Normal				,OpDissCFS,"ldc <REG_N>,SGR"				,3,3,CO,fix_none},	//ldc <REG_N>,SGR
 
 	{rec_shil_i0100_nnnn_0100_1110	,i0100_nnnn_0100_1110	,Mask_n		,0x404E	,Normal				,OpDissCFS,"ldc <REG_N>,SPC"				,1,1,CO,fix_none},	//ldc <REG_N>,SPC               
@@ -938,3 +938,4 @@ void DissasembleOpcode(u16 opcode,u32 pc,char* Dissasm)
 		sprintf(Dissasm,"unknown Opcode 0x%X",opcode);
 	}
 }
+

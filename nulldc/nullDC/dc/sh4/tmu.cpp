@@ -111,8 +111,8 @@ void UpdateTMUCounts(u32 reg)
 			printf("TMU ch%d , TCR%d mode is External (7) , can't be used on dreamcast",reg,reg);
 			break;
 	}
-	tmu_prescaler_shift[reg]+=2;// because we count in Iö cycles (cpu core cycles) and the tmu is provided w/
-					    // the Pö (perhipal clock)
+	tmu_prescaler_shift[reg]+=2;// because we count in Io cycles (cpu core cycles) and the tmu is provided w/
+					    // the Po (perhipal clock)
 	tmu_prescaler_mask[reg]=(1<<tmu_prescaler_shift[reg])-1;
 
 	tmu_prescaler[reg]=0;
@@ -238,3 +238,4 @@ void tmu_Reset(bool Manual)
 void tmu_Term()
 {
 }
+

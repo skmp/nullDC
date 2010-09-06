@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////////
 // Project description
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// -------------------
 // Name: nullDC 
 // Description: A nullDC Compatible Input Plugin
 //
@@ -24,7 +24,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Define
-// ¯¯¯¯¯¯
+// ------
 
 #define INPUT_VERSION	"0.1"
 #define INPUT_STATE		"PUBLIC RELEASE"
@@ -35,7 +35,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Structures
-// ¯¯¯¯¯¯¯¯¯¯
+// ----------
 
 struct CONTROLLER_STATE		// DC PAD INFO/STATE
 {
@@ -143,7 +143,7 @@ enum
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Custom Functions
-// ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+// ----------------
 
 // Common
 s32 FASTCALL Load(emu_info* emu);
@@ -167,3 +167,4 @@ void EXPORT_CALL ConfigMenuCallback(u32 id,void* w,void* p);
 void SaveConfig();
 void LoadConfig();
 int Search_Devices();
+
