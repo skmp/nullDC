@@ -261,7 +261,3 @@ void Regs_Reset(bool Manual)
 	FB_BURSTCTRL		= 0x00090639;
 	PT_ALPHA_REF		= 0x000000FF;
 }
-
-//PVR implementation
-//--------------------------------------
-//--------------------------------------
