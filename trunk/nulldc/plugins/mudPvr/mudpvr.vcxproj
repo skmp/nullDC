@@ -140,14 +140,17 @@
     <ClCompile Include="src\pvr_impl.cpp" />
     <ClCompile Include="src\pvr_renderer_d3d1x.cpp" />
     <ClCompile Include="src\ta.cpp" />
+    <ClCompile Include="src\TexCache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\mudpvr.h" />
     <ClInclude Include="src\pvr_impl.h" />
     <ClInclude Include="src\pvr_renderer_d3d1x.h" />
+    <ClInclude Include="src\regs.h" />
     <ClInclude Include="src\ta.h" />
     <ClInclude Include="src\ta_const_df.h" />
     <ClInclude Include="src\ta_structs.h" />
+    <ClInclude Include="src\TexCache.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

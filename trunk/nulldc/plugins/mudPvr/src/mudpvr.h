@@ -1,4 +1,4 @@
-#pragma once
+
 #define _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_DEPRECATE
 
@@ -20,6 +20,10 @@ int msgboxf(wchar* text,unsigned int type,...);
 #define MAJOR 0
 #define DCclock (200*1000*1000)
 
+
+extern bool render_end_pending;
+extern u32 render_end_pending_cycles;
+extern pvr_init_params params;
 
 float GetSeconds();
 

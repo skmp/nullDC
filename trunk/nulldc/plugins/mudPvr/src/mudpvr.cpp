@@ -4,8 +4,10 @@
 */
 #include "mudPvr.h"
 #include "ta.h"
+#include "pvr_impl.h"
 
 emu_info emu;
+pvr_init_params params;
 
 
 BOOL APIENTRY DllMain( HMODULE hModule,
@@ -50,36 +52,59 @@ s32 FASTCALL Load(emu_info* emu_inf)
 }
 
 
+//It's suposed to reset anything but vram (vram is set to 0 by emu)
 void FASTCALL ResetPvr(bool Manual)
 {
+	Regs_Reset(Manual);
+	spg_Reset(Manual);
+	rend_reset(Manual);
 }
 
 //called when entering sh4 thread , from the new thread context (for any thread speciacific init)
 s32 FASTCALL InitPvr(pvr_init_params* param)
 {
+	memcpy(&params,param,sizeof(params));
+
+	extern void BuildTwiddleTables();
+	BuildTwiddleTables();
+
+	if ((!Regs_Init()))
+	{
+		//failed
+		return rv_error;
+	}
+	if (!spg_Init())
+	{
+		//failed
+		return rv_error;
+	}
+	if (!rend_init())
+	{
+		//failed
+		return rv_error;
+	}
+	//olny the renderer cares about thread speciacific shit ..
+	if (!rend_thread_start())
+	{
+		return rv_error;
+	}
+
 	return rv_ok;
 }
 
 //called when exiting from sh4 thread , from the new thread context (for any thread speciacific de init) :P
 void FASTCALL TermPvr()
 {
-}
+	rend_thread_end();
 
-u32 FASTCALL ReadPvrRegister(u32 addr,u32 size)
-{
-	return 0;
-}
-
-void FASTCALL WritePvrRegister(u32 paddr,u32 data,u32 size)
-{
-}
-
-void FASTCALL spgUpdatePvr(u32 cycles)
-{
+	rend_term();
+	spg_Term();
+	Regs_Term();
 }
 
 void FASTCALL vramLockCB (vram_block* block,u32 addr)
 {
+	rend_text_invl(block);
 }
 
 void EXPORT_CALL dcGetInterface(plugin_interface* info)
