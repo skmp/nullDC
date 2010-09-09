@@ -35,7 +35,7 @@ void EXPORT_CALL handle_About(u32 id,void* w,void* p)
 
 void EXPORT_CALL EventHandler(u32 id,void*p)
 {
-	
+	rend_handle_event(id,p);
 }
 
 //called when plugin is unloaded by emulator
