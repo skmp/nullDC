@@ -136,6 +136,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\helper_classes.cpp" />
     <ClCompile Include="src\mudpvr.cpp" />
     <ClCompile Include="src\pvr_impl.cpp" />
     <ClCompile Include="src\pvr_renderer_d3d1x.cpp" />
@@ -143,6 +144,7 @@
     <ClCompile Include="src\TexCache.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\helper_classes.h" />
     <ClInclude Include="src\mudpvr.h" />
     <ClInclude Include="src\pvr_impl.h" />
     <ClInclude Include="src\pvr_renderer_d3d1x.h" />
