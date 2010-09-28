@@ -94,7 +94,7 @@ Disc* load_gdi(wchar* file_)
 }
 
 
-Disc* gdi_init(wchar* file)
+Disc* gdi_parse(wchar* file)
 {
 	size_t len=wcslen(file);
 	if (len>4)
