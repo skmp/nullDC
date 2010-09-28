@@ -71,7 +71,7 @@ bool parse_mds(wchar *mds_filename,bool verbose)
 	if (mds_size<16)
 		return false;
 
-	//do NOT load hole file to memory before checking ... cna be deadly for .nrg/.iso/ anything :p
+	//do NOT load whole file to memory before checking ... cna be deadly for .nrg/.iso/ anything :p
 	char mds_key[16];
 	fseek(mds_file,0,SEEK_SET);
 	fread(mds_key,16,1,mds_file);

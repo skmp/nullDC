@@ -7,49 +7,11 @@
 #include <memory.h>
 #include <windows.h>
 u32 NullDriveDiscType;
-DriveIF* CurrDrive;
-DriveIF drives[]=
+Disc* disc;
+Disc*(*drivers[])(wchar* path)=
 {
-	{
-		//cdi
-		cdi_DriveReadSector,
-			cdi_DriveGetTocInfo,
-			cdi_DriveGetDiscType,
-			cdi_GetSessionsInfo,
-			cdi_init,
-			cdi_term,
-			"CDI reader"
-	},
-	{
-		//cdi
-		mds_DriveReadSector,
-		mds_DriveGetTocInfo,
-		mds_DriveGetDiscType,
-		mds_GetSessionsInfo,
-		mds_init,
-		mds_term,
-		"NRG/MDS/MDF reader"
-	},
-	{
-		//iso
-		iso_DriveReadSector,
-		iso_DriveGetTocInfo,
-		iso_DriveGetDiscType,
-		iso_GetSessionsInfo,
-		iso_init,//these need to be filled
-		iso_term,
-		"ISO reader"
-	},
-	{
-		//ioctl
-		ioctl_DriveReadSector,
-		ioctl_DriveGetTocInfo,
-		ioctl_DriveGetDiscType,
-		ioctl_GetSessionsInfo,
-		ioctl_init,//these need to be filled
-		ioctl_term,
-		"IOCTL (CD DRIVE) reader"
-	},
+	gdi_init,
+	0
 };
 
 DriveNotifyEventFP* DriveNotifyEvent;
@@ -167,31 +129,22 @@ bool ConvertSector(u8* in_buff , u8* out_buff , int from , int to,int sector)
 
 bool InitDrive_(wchar* fn)
 {
-	if (CurrDrive !=0 && CurrDrive->Inited==true)
+	TermDrive();
+
+	//try all drivers
+	for (int i=0;drivers[i] && !(disc=drivers[i](fn));i++) ;
+
+	if (disc!=0)
 	{
-		//Terminate
-		CurrDrive->Inited=false;
-		CurrDrive->Term();
+		NullDriveDiscType=Busy;
+		DriveNotifyEvent(DiskChange,0);
+		Sleep(400); //busy for a bit
+		return true;
 	}
-
-	CurrDrive=0;
-
-	for (u32 i=0;i<4;i++)
+	else
 	{
-		if (drives[i].Init(fn))
-		{
-			NullDriveDiscType=Busy;
-			DriveNotifyEvent(DiskChange,0);
-			Sleep(400); //busy for a bit
-
-			CurrDrive=&drives[i];
-			CurrDrive->Inited=true;
-			printf("Using %s \n",CurrDrive->name);
-			return true;
-		}
+		NullDriveDiscType=NoDisk; //no disc :)
 	}
-	//CurrDrive=&drives[Iso];
-	NullDriveDiscType=NoDisk; //no disc :)
 	return false;
 }
 
@@ -218,7 +171,6 @@ bool InitDrive(u32 fileflags)
 #endif
 	if (gfrv==0)
 	{
-		CurrDrive=0;
 		NullDriveDiscType=NoDisk;
 		return true;
 	}
@@ -239,13 +191,10 @@ bool InitDrive(u32 fileflags)
 
 void TermDrive()
 {
-	if (CurrDrive !=0 && CurrDrive->Inited==true)
-	{
-		//Terminate
-		CurrDrive->Inited=false;
-		CurrDrive->Term();
-		CurrDrive=0;
-	}
+	if (disc!=0)
+		delete disc;
+
+	disc=0;
 }
 
 
@@ -271,48 +220,77 @@ u32 CreateTrackInfo_se(u32 ctrl,u32 addr,u32 tracknum)
 	p[3]=0;
 	return *(u32*)p;
 }
-void ConvToc(u32* to,TocInfo* from)
+
+
+void GetDriveSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
 {
-	to[99]=CreateTrackInfo_se(from->tracks[from->FistTrack-1].Control,from->tracks[from->FistTrack-1].Addr,from->FistTrack); 
-	to[100]=CreateTrackInfo_se(from->tracks[from->LastTrack-1].Control,from->tracks[from->LastTrack-1].Addr,from->LastTrack); 
-	to[101]=CreateTrackInfo(from->LeadOut.Control,from->LeadOut.Addr,from->LeadOut.FAD); 
-	for (int i=0;i<99;i++)
+	if (disc)
 	{
-		to[i]=CreateTrackInfo(from->tracks[i].Control,from->tracks[i].Addr,from->tracks[i].FAD); 
+		disc->ReadSectors(StartSector,SectorCount,buff,secsz);
 	}
 }
-
-
-
 void GetDriveToc(u32* to,DiskArea area)
 {
-	TocInfo driveTOC;
-	CurrDrive->GetToc(&driveTOC,area);
-	ConvToc(to,&driveTOC);
+	if (!disc)
+		return;
+	memset(to,0xFFFFFFFF,102*4);
+
+	//can't get toc on the second area on discs that don't have it
+	verify(area != DoubleDensity || disc->type == GdRom);
+
+	//normal CDs: 1 .. tc
+	//GDROM: area0 is 1 .. 2, area1 is 3 ... tc
+
+	u32 first_track=1;
+	u32 last_track=disc->tracks.size();
+	if (area==DoubleDensity)
+		first_track=3;
+	else if (disc->type==GdRom)
+	{
+		last_track=2;
+	}
+
+	//Geneate the TOC info
+
+	//-1 for 1..99 0 ..98
+	to[99]=CreateTrackInfo_se(disc->tracks[first_track-1].CTRL,disc->tracks[first_track-1].ADDR,first_track); 
+	to[100]=CreateTrackInfo_se(disc->tracks[last_track-1].CTRL,disc->tracks[last_track-1].ADDR,last_track); 
+	
+	if (disc->type==GdRom)
+	{
+		//use smaller LEADOUT
+		if (area==SingleDensity)
+			to[101]=CreateTrackInfo(disc->LeadOut.CTRL,disc->LeadOut.ADDR,13085);
+	}
+	else
+		to[101]=CreateTrackInfo(disc->LeadOut.CTRL,disc->LeadOut.ADDR,disc->LeadOut.StartFAD);
+
+	for (int i=first_track-1;i<last_track;i++)
+	{
+		to[i]=CreateTrackInfo(disc->tracks[i].CTRL,disc->tracks[i].ADDR,disc->tracks[i].StartFAD); 
+	}
 }
 
 void GetDriveSessionInfo(u8* to,u8 session)
 {
-	SessionInfo driveSeS;
-	if (CurrDrive && CurrDrive->GetSessionInfo)
-		CurrDrive->GetSessionInfo(&driveSeS);
-	
+	if (!disc)
+		return;
 	to[0]=2;//status , will get overwrited anyway
 	to[1]=0;//0's
 	
 	if (session==0)
 	{
-		to[2]=driveSeS.SessionCount;//count of sessions
-		to[3]=driveSeS.SessionsEndFAD>>16;//fad is sessions end
-		to[4]=driveSeS.SessionsEndFAD>>8;
-		to[5]=driveSeS.SessionsEndFAD>>0;
+		to[2]=disc->sessions.size();//count of sessions
+		to[3]=disc->EndFAD>>16;//fad is sessions end
+		to[4]=disc->EndFAD>>8;
+		to[5]=disc->EndFAD>>0;
 	}
 	else
 	{
-		to[2]=driveSeS.SessionStart[session-1];//start track of this session
-		to[3]=driveSeS.SessionFAD[session-1]>>16;//fad is session start
-		to[4]=driveSeS.SessionFAD[session-1]>>8;
-		to[5]=driveSeS.SessionFAD[session-1]>>0;
+		to[2]=disc->sessions[session-1].FirstTrack;//start track of this session
+		to[3]=disc->sessions[session-1].StartFAD>>16;//fad is session start
+		to[4]=disc->sessions[session-1].StartFAD>>8;
+		to[5]=disc->sessions[session-1].StartFAD>>0;
 	}
 }
 
