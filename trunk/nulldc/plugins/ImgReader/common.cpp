@@ -10,7 +10,8 @@ u32 NullDriveDiscType;
 Disc* disc;
 Disc*(*drivers[])(wchar* path)=
 {
-	gdi_init,
+	gdi_parse,
+	cdi_parse,
 	0
 };
 
@@ -309,4 +310,16 @@ void printtoc(TocInfo* toc,SessionInfo* ses)
 		}
 	}
 	printf("Session END: FAD END %d\n",ses->SessionsEndFAD);
+}
+
+DiscType GuessDiscType(bool m1, bool m2, bool da)
+{
+	if ((m1==true) && (da==false) && (m2==false))
+		return  CdRom;
+	else if (m2)
+		return  CdRom_XA;
+	else if (da && m1) 
+		return CdRom_Extra;
+	else
+		return CdRom;
 }

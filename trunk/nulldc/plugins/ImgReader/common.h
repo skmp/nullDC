@@ -30,12 +30,46 @@ struct SessionInfo
 	u32 SessionFAD[99];	//for sessions 1-99 ;)
 };
 
+/*
+Mode2 Subheader:
+
+"1" file number for identification of nested files (0 = not interleaver.)
+
+"2" channel number, the infantry of the various channels are selectable for playback
+
+"3" SUBMODE byte:
+
+7: last sector of file (EOF)
+6: Real-time sector (f.Echtzeitwiedergabe without error correction)
+5: Form 2 (bit = 1), form 1 (bit = 0)
+4: Trigger on (depending on OS)
+3: data sector (Submodebyte 3 or 2 or 1)
+2: ADPCM audio sector "
+1: Video-sector "
+0: last sector of a record (EOR)
+"4" Encoding type of audio (eg mono / stereo) and video data (in this byte data sectors is set to 0)
+
+"5" to "8" is the repetition of "1" through "4"
+
+
+RAW: 2352
+MODE1:
+SYNC (12) | HEAD (4) | data (2048) | edc (4) | space (8) | ecc (276)
+MODE2:
+SYNC (12) | HEAD (4) | sub-head (8) | sector_data (2328)
+  -form1 sector_data: 
+   data (2048) | edc (4) | ecc (276)
+
+  -form2 sector_data: 
+   data (2324) |edc(4)
+*/
 
 enum SectorFormat
 {
 	SECFMT_2352,				//full sector
 	SECFMT_2048_MODE1,			//2048 user byte, form1 sector
 	SECFMT_2048_MODE2_FORM1,	//2048 user bytes, form2m1 sector
+	SECFMT_2336_MODE2,			//2336 user bytes, 
 };
 
 enum SubcodeFormat
@@ -84,6 +118,14 @@ struct Track
 	u8 CTRL;
 	u8 ADDR;
 
+	Track()
+	{
+		file = 0;
+		StartFAD = 0;
+		EndFAD = 0;
+		CTRL = 0;
+		ADDR = 0;
+	}
 	bool Read(u32 FAD,u8* dst,SectorFormat* sector_type,u8* subcode,SubcodeFormat* subcode_type)
 	{
 		if (FAD>=StartFAD && (FAD<=EndFAD || EndFAD==0) && file)
@@ -137,6 +179,8 @@ struct Disc
 			{
 				ConvertSector(temp,dst,2352,fmt,FAD);
 			}
+			else if (fmt == 2048 && secfmt==SECFMT_2336_MODE2)
+				memcpy(dst,temp+8,2048);
 			else if (fmt==2048 && (secfmt==SECFMT_2048_MODE1 || secfmt==SECFMT_2048_MODE2_FORM1 ))
 			{
 				memcpy(dst,temp,2048);
@@ -182,6 +226,8 @@ struct RawTrackFile : TrackFile
 			*sector_type=SECFMT_2352;
 		else if (fmt==2048)
 			*sector_type=SECFMT_2048_MODE2_FORM1;
+		else if (fmt==2336)
+			*sector_type=SECFMT_2336_MODE2;
 		else
 		{
 			verify(false);
@@ -196,3 +242,5 @@ struct RawTrackFile : TrackFile
 			fclose(file);
 	}
 };
+
+DiscType GuessDiscType(bool m1, bool m2, bool da);
