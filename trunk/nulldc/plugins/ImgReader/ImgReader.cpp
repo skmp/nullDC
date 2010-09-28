@@ -68,20 +68,21 @@ void FASTCALL DriveReadSubChannel(u8 * buff, u32 format, u32 len)
 
 void FASTCALL DriveReadSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
 {
-	if (CurrDrive)
-		CurrDrive->ReadSector(buff,StartSector,SectorCount,secsz);
+	GetDriveSector(buff,StartSector,SectorCount,secsz);
+	//if (CurrDrive)
+	//	CurrDrive->ReadSector(buff,StartSector,SectorCount,secsz);
 }
 
 void FASTCALL DriveGetTocInfo(u32* toc,u32 area)
 {
-	if (CurrDrive)
+	
 		GetDriveToc(toc,(DiskArea)area);
 }
 //TODO : fix up
 u32 FASTCALL DriveGetDiscType()
 {
-	if (CurrDrive)
-		return CurrDrive->GetDiscType();
+	if (disc)
+		return disc->type;
 	else
 		return NullDriveDiscType;
 }

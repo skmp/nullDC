@@ -7,3 +7,5 @@ u32 FASTCALL iso_DriveGetDiscType();
 void iso_GetSessionsInfo(SessionInfo* sessions);
 bool iso_init(wchar* file);
 void iso_term(); 
+
+Disc* gdi_init(wchar* file);
