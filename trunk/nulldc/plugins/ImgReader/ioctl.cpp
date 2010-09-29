@@ -97,14 +97,7 @@ ULONG msf2fad( UCHAR Addr[4] )
 ULONG AddressToSectors( UCHAR Addr[4] );
 
 
-SessionInfo ioctl_ses;
-TocInfo ioctl_toc;
-DiscType ioctl_Disctype=CdRom;
-HANDLE ioctl_handle;
-SCSI_ADDRESS ioctl_addr;
-bool ioctl_usescsi;
-
-bool spti_SendCommand(HANDLE hand,spti_s& s)
+bool spti_SendCommand(HANDLE hand,spti_s& s,SCSI_ADDRESS& ioctl_addr)
 {
 	s.sptd.Length             = sizeof(SCSI_PASS_THROUGH_DIRECT);
 	s.sptd.PathId             = ioctl_addr.PathId;
@@ -127,7 +120,7 @@ bool spti_SendCommand(HANDLE hand,spti_s& s)
 	return true;
 }
 
-bool spti_Read10(HANDLE hand,void * pdata,u32 sector)
+bool spti_Read10(HANDLE hand,void * pdata,u32 sector,SCSI_ADDRESS& ioctl_addr)
 {
 	spti_s s;
 	memset(&s,0,sizeof(spti_s));
@@ -148,9 +141,9 @@ bool spti_Read10(HANDLE hand,void * pdata,u32 sector)
 	s.sptd.DataTransferLength = 0x800;
 	s.sptd.DataBuffer         = pdata;
 
-	return spti_SendCommand(hand,s);
+	return spti_SendCommand(hand,s,ioctl_addr);
 }
-bool spti_ReadCD(HANDLE hand,void * pdata,u32 sector)
+bool spti_ReadCD(HANDLE hand,void * pdata,u32 sector,SCSI_ADDRESS& ioctl_addr)
 {
 	spti_s s;
 	memset(&s,0,sizeof(spti_s));
@@ -183,88 +176,40 @@ bool spti_ReadCD(HANDLE hand,void * pdata,u32 sector)
 	s.sptd.DataIn             = 0x01;//DATA_IN
 	s.sptd.DataTransferLength = 2448;
 	s.sptd.DataBuffer         = pdata;
-	return spti_SendCommand(hand,s);
+	return spti_SendCommand(hand,s,ioctl_addr);
 }
 
-void FASTCALL ioctl_DriveReadSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
+struct PhysicalDrive;
+struct PhysicalTrack:TrackFile
 {
-	printf("ioctl_DriveReadSector(0x%08X,%d,%d,%d);\n",buff,StartSector,SectorCount,secsz);
-	static RAW_READ_INFO Info={{0,0},1,XAForm2};
-	for (u32 soff=0;soff<SectorCount;soff++)
+	PhysicalDrive* disc;
+	PhysicalTrack(PhysicalDrive* disc) { this->disc=disc; }
+
+	virtual void Read(u32 FAD,u8* dst,SectorFormat* sector_type,u8* subcode,SubcodeFormat* subcode_type);
+};
+
+struct PhysicalDrive:Disc
+{
+	HANDLE drive;
+	SCSI_ADDRESS scsi_addr;
+	bool use_scsi;
+
+	PhysicalDrive()
 	{
-		//Info.TrackMode = XAForm2 ;
-		//Info.SectorCount = 1;
-		u32 sectr=StartSector+soff-150;
-		u32 fmt=0;
-		u8 temp[2500];
-
-		if (ioctl_usescsi)
-		{
-			if (!spti_ReadCD(ioctl_handle, temp,sectr))
-			{
-				if (spti_Read10(ioctl_handle, buff,sectr))
-				{
-					fmt=2048;
-				}
-			}
-			else
-				fmt=2448;
-		}
-
-		if (fmt==0)
-		{
-			if (secsz==20480)
-			{
-				DWORD BytesReaded;
-				DWORD p=SetFilePointer(ioctl_handle,sectr*2048,0,FILE_BEGIN);
-				DWORD e=GetLastError();
-				DWORD pe=ReadFile(ioctl_handle,buff,SectorCount*2048,&BytesReaded,0);
-				DWORD em=GetLastError();
-				printf("");
-			}
-			else
-			{
-				Info.DiskOffset.QuadPart = (sectr) * CD_SECTOR_SIZE;
-				ULONG Dummy;
-				for (int tr=0;tr<3;tr++)
-				{
-					if ( 0 == DeviceIoControl( ioctl_handle, IOCTL_CDROM_RAW_READ, &Info, sizeof(Info), temp, RAW_SECTOR_SIZE, &Dummy, NULL ) )
-					{
-						Info.TrackMode=(TRACK_MODE_TYPE)((Info.TrackMode+1)%3);
-						if (tr==2)
-							printf("GDROM: Totaly failed to read sector @LBA %d\n",StartSector+soff-150);
-					}
-				}
-			}
-		}
-		if (fmt!=secsz)
-			ConvertSector(temp,buff,fmt,secsz,StartSector+soff);
-		buff+=secsz;
+		drive=INVALID_HANDLE_VALUE;
+		memset(&scsi_addr,0,sizeof(scsi_addr));
+		use_scsi=false;
 	}
-}
-void ioctl_DriveGetTocInfo(TocInfo* toc,DiskArea area)
-{
-	memcpy(toc,&ioctl_toc,sizeof(*toc));
-}
-u32 FASTCALL ioctl_DriveGetDiscType()
-{
-	return ioctl_Disctype;
-}
-bool ioctl_init(wchar* file)
-{
-	if (wcslen(file)==3 && GetDriveType(file)==DRIVE_CDROM)
+
+	bool Build(wchar* path)
 	{
-		wprintf(L"Opening device %s ...",file);
-		wchar fn[]={ L'\\', L'\\', L'.', L'\\', file[0], L':', L'\0' };
-		if ( INVALID_HANDLE_VALUE == ( ioctl_handle = CreateFile( fn, GENERIC_READ|GENERIC_WRITE,
-FILE_SHARE_READ|FILE_SHARE_WRITE,
-NULL, OPEN_EXISTING, 0, NULL)))
-			//GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL ) ) )
-		{
-			return false;//its there .. but wont open ...
-		}
-		wprintf(L" Opened device %s, reading TOC ...",fn);
-		// Get track-table and add it to the intern array
+		drive = CreateFile( path, GENERIC_READ|GENERIC_WRITE,FILE_SHARE_READ|FILE_SHARE_WRITE,NULL, OPEN_EXISTING, 0, NULL);
+
+		if ( INVALID_HANDLE_VALUE == drive )
+			return false;	//failed to open
+
+		wprintf(L" Opened device %s, reading TOC ...",path);
+		// Get track-table and parse it
 		CDROM_READ_TOC_EX tocrq={0};
 		 
 	 	tocrq.Format = CDROM_READ_TOC_EX_FORMAT_FULL_TOC;
@@ -275,24 +220,22 @@ NULL, OPEN_EXISTING, 0, NULL)))
 	
 		ULONG BytesRead;
 		memset(buff,0,sizeof(buff));
-		int code = DeviceIoControl(ioctl_handle,IOCTL_CDROM_READ_TOC_EX,&tocrq,sizeof(tocrq),ftd, 2048, &BytesRead, NULL);
-		wprintf(L" Readed TOC\n");
+		int code = DeviceIoControl(drive,IOCTL_CDROM_READ_TOC_EX,&tocrq,sizeof(tocrq),ftd, 2048, &BytesRead, NULL);
 		
 //		CDROM_TOC toc;
 		int currs=-1;
 		if (0==code)
 		{
-			ioctl_Disctype=NoDisk;
+			wprintf(L" failed\n");
+			//failed to read toc
+			CloseHandle(drive);
+			return false;
 		}
 		else
 		{
-			ioctl_Disctype=CdRom_XA;
-			memset(&ioctl_toc,0xFF,sizeof(ioctl_toc));
-			memset(&ioctl_ses,0xFF,sizeof(ioctl_ses));
+			wprintf(L" done !\n");
 
-			ioctl_toc.FistTrack=1;
-			ioctl_toc.LastTrack=0;
-			ioctl_ses.SessionCount=0;
+			type=CdRom_XA;
 
 			BytesRead-=sizeof(CDROM_TOC_FULL_TOC_DATA);
 			BytesRead/=sizeof(ftd->Descriptors[0]);
@@ -301,52 +244,140 @@ NULL, OPEN_EXISTING, 0, NULL)))
 			{
 				if (ftd->Descriptors[i].Point==0xA2)
 				{
-					ioctl_ses.SessionsEndFAD=msf2fad(ftd->Descriptors[i].Msf);
+					this->EndFAD=msf2fad(ftd->Descriptors[i].Msf);
 					continue;
 				}
 				if (ftd->Descriptors[i].Point>=1 && ftd->Descriptors[i].Point<=0x63 &&
 					ftd->Descriptors[i].Adr==1)
 				{
 					u32 trackn=ftd->Descriptors[i].Point-1;
-					ioctl_toc.tracks[trackn].Addr=ftd->Descriptors[i].Adr;
-					ioctl_toc.tracks[trackn].Control=ftd->Descriptors[i].Control;
-					ioctl_toc.tracks[trackn].FAD=msf2fad(ftd->Descriptors[i].Msf);
-					ioctl_toc.tracks[trackn].Session=ftd->Descriptors[i].SessionNumber;
-					ioctl_toc.LastTrack++;
+					verify(trackn==tracks.size());
+					Track t;
+
+					t.ADDR=ftd->Descriptors[i].Adr;
+					t.CTRL=ftd->Descriptors[i].Control;
+					t.StartFAD=msf2fad(ftd->Descriptors[i].Msf);
+					t.file = new PhysicalTrack(this);
+
+					tracks.push_back(t);
 
 					if (currs!=ftd->Descriptors[i].SessionNumber)
 					{
 						currs=ftd->Descriptors[i].SessionNumber;
-						ioctl_ses.SessionCount++;
-						ioctl_ses.SessionStart[currs-1]=trackn+1;
-						ioctl_ses.SessionFAD[currs-1]=ioctl_toc.tracks[trackn].FAD;
+						verify(sessions.size()==(currs-1));
+						Session s;
+						s.FirstTrack=trackn+1;
+						s.StartFAD=t.StartFAD;
+
+						sessions.push_back(s);
 					}
 				}
 			}
-			ioctl_toc.LeadOut.FAD=ioctl_ses.SessionsEndFAD;
-			ioctl_toc.LeadOut.Addr=0;
-			ioctl_toc.LeadOut.Control=0;
-			ioctl_toc.LeadOut.Session=0;
+			LeadOut.StartFAD=EndFAD;
+			LeadOut.ADDR=0;
+			LeadOut.CTRL=0;
 		}
-		printtoc(&ioctl_toc,&ioctl_ses);
 
 		DWORD bytesReturnedIO = 0;
-		BOOL resultIO = DeviceIoControl(ioctl_handle, IOCTL_SCSI_GET_ADDRESS, NULL, 0, &ioctl_addr, sizeof(ioctl_addr), &bytesReturnedIO, NULL);
+		BOOL resultIO = DeviceIoControl(drive, IOCTL_SCSI_GET_ADDRESS, NULL, 0, &scsi_addr, sizeof(scsi_addr), &bytesReturnedIO, NULL);
 		//done !
 		if (resultIO)
-			ioctl_usescsi=true;
+			use_scsi=true;
 		else
-			ioctl_usescsi=false;
-		return true;
+			use_scsi=false;
+	}
+};
+
+void PhysicalTrack::Read(u32 FAD,u8* dst,SectorFormat* sector_type,u8* subcode,SubcodeFormat* subcode_type)
+{
+	u32 fmt=0;
+	static u8 temp[2500];
+
+	u32 LBA=FAD-150;
+
+	if (disc->use_scsi)
+	{
+		if (!spti_ReadCD(disc->drive, temp,LBA,disc->scsi_addr))
+		{
+			if (spti_Read10(disc->drive, dst,LBA,disc->scsi_addr))
+			{
+				//sector read succcess, just user data
+				*sector_type=SECFMT_2048_MODE2_FORM1; //m2f1 seems more common ? is there some way to detect it properly here?
+				return;
+			}
+		}
+		else
+		{
+			//sector read succcess, with subcode
+			memcpy(dst,temp,2352);
+			memcpy(subcode,temp+2352,96);
+
+			*sector_type=SECFMT_2352;
+			*subcode_type=SUBFMT_96;
+			return;
+		}
+	}
+
+	//hmm, spti failed/cannot be used
+
+
+	//try IOCTL_CDROM_RAW_READ
+
+
+	static __RAW_READ_INFO Info;
+	
+	Info.SectorCount=1;
+	Info.DiskOffset.QuadPart = LBA * CD_SECTOR_SIZE; //CD_SECTOR_SIZE, even though we read RAW sectors. Its how winapi works.
+	ULONG Dummy;
+	
+	//try all 3 track modes, starting from the one that succeeded last time (Info is static) to save time !
+	for (int tr=0;tr<3;tr++)
+	{
+		if ( 0 == DeviceIoControl( disc->drive, IOCTL_CDROM_RAW_READ, &Info, sizeof(Info), dst, RAW_SECTOR_SIZE, &Dummy, NULL ) )
+		{
+			Info.TrackMode=(TRACK_MODE_TYPE)((Info.TrackMode+1)%3);	//try next mode
+		}
+		else
+		{
+			//sector read succcess
+			*sector_type=SECFMT_2352;
+			return;
+		}
+	}
+
+	//finally, try ReadFile
+	if (SetFilePointer(disc->drive,LBA*2048,0,FILE_BEGIN)!=INVALID_SET_FILE_POINTER)
+	{
+		DWORD BytesRead;
+		if (FALSE!=ReadFile(disc->drive,dst,2048,&BytesRead,0) && BytesRead==2048)
+		{
+			//sector read succcess, just user data
+			*sector_type=SECFMT_2048_MODE2_FORM1; //m2f1 seems more common ? is there some way to detect it properly here?
+			return;
+		}
+	}
+
+	printf("IOCTL: Totaly failed to read sector @LBA %d\n",LBA);
+}
+
+
+Disc* ioctl_parse(wchar* file)
+{
+	
+	if (wcslen(file)==3 && GetDriveType(file)==DRIVE_CDROM)
+	{
+		wprintf(L"Opening device %s ...",file);
+		wchar fn[]={ L'\\', L'\\', L'.', L'\\', file[0], L':', L'\0' };
+		PhysicalDrive* rv = new PhysicalDrive();	
+
+		if (rv->Build(fn))
+			return rv;
+		else
+		{
+			delete rv;
+			return 0;
+		}
 	}
 	else
-		return false;
-}
-void ioctl_term()
-{
-	CloseHandle(ioctl_handle);
-}
-void ioctl_GetSessionsInfo(SessionInfo* sessions)
-{
-	memcpy(sessions,&ioctl_ses,sizeof(*sessions));
+		return 0;
 }
