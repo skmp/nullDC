@@ -1,0 +1,107 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="TA">
+      <UniqueIdentifier>{b78d493c-f05c-4bbd-969d-1763bbcd8094}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="spg">
+      <UniqueIdentifier>{4610108c-dad6-4c51-bcd3-c2e4204f6bd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{144d8c9d-489e-4b20-9de8-3daa87addaf6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\OpenGL">
+      <UniqueIdentifier>{07bfd7d5-709c-43a2-8833-2851c9ee33de}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\TextureCache">
+      <UniqueIdentifier>{8cf475d3-5e70-44c1-94ed-05a33b2881f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\null">
+      <UniqueIdentifier>{700754df-c431-4793-9fe1-b15125ec62d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Renderer\Direct3D">
+      <UniqueIdentifier>{44c15e88-7083-4678-8320-1607d9de06ac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="regs">
+      <UniqueIdentifier>{6ecb738d-6155-4da9-bec5-4bafeb3f6e6d}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="drkPvr.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="ta.cpp">
+      <Filter>TA</Filter>
+    </ClCompile>
+    <ClCompile Include="SPG.cpp">
+      <Filter>spg</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer_if.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="TexCache.cpp">
+      <Filter>Renderer\TextureCache</Filter>
+    </ClCompile>
+    <ClCompile Include="nullRend.cpp">
+      <Filter>Renderer\null</Filter>
+    </ClCompile>
+    <ClCompile Include="d3dRend.cpp">
+      <Filter>Renderer\Direct3D</Filter>
+    </ClCompile>
+    <ClCompile Include="regs.cpp">
+      <Filter>regs</Filter>
+    </ClCompile>
+    <ClCompile Include="helper_classes.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="drkPvr.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="ta.h">
+      <Filter>TA</Filter>
+    </ClInclude>
+    <ClInclude Include="ta_const_df.h">
+      <Filter>TA</Filter>
+    </ClInclude>
+    <ClInclude Include="ta_structs.h">
+      <Filter>TA</Filter>
+    </ClInclude>
+    <ClInclude Include="spg.h">
+      <Filter>spg</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer_if.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="TexCache.h">
+      <Filter>Renderer\TextureCache</Filter>
+    </ClInclude>
+    <ClInclude Include="nullRend.h">
+      <Filter>Renderer\null</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dRend.h">
+      <Filter>Renderer\Direct3D</Filter>
+    </ClInclude>
+    <ClInclude Include="regs.h">
+      <Filter>regs</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h" />
+    <ClInclude Include="helper_classes.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>plugin</Filter>
+    </None>
+    <None Include="vs_hlsl.fx">
+      <Filter>Renderer\Direct3D</Filter>
+    </None>
+    <None Include="ps_hlsl.fx">
+      <Filter>Renderer\Direct3D</Filter>
+    </None>
+  </ItemGroup>
+</Project>

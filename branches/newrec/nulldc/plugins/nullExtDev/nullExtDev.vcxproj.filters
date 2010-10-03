@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="modem">
+      <UniqueIdentifier>{b9a763e3-28ca-4673-9276-33eb31d538c9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lan">
+      <UniqueIdentifier>{d1e182b3-0f7f-4b34-a15b-4d29d7467bbc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="bba">
+      <UniqueIdentifier>{4de15486-a18c-4681-a54e-a2e8fbb0b2df}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>plugin</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="nullExtDev.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="modem.cpp">
+      <Filter>modem</Filter>
+    </ClCompile>
+    <ClCompile Include="lan.cpp">
+      <Filter>lan</Filter>
+    </ClCompile>
+    <ClCompile Include="bba.cpp">
+      <Filter>bba</Filter>
+    </ClCompile>
+    <ClCompile Include="pcap_io.cpp">
+      <Filter>bba</Filter>
+    </ClCompile>
+    <ClCompile Include="rtl8139c.cpp">
+      <Filter>bba</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="nullExtDev.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="modem.h">
+      <Filter>modem</Filter>
+    </ClInclude>
+    <ClInclude Include="lan.h">
+      <Filter>lan</Filter>
+    </ClInclude>
+    <ClInclude Include="bba.h">
+      <Filter>bba</Filter>
+    </ClInclude>
+    <ClInclude Include="rtl8139c.h">
+      <Filter>bba</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuildStep Include="pcap_io.h">
+      <Filter>bba</Filter>
+    </CustomBuildStep>
+  </ItemGroup>
+</Project>

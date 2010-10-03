@@ -1,0 +1,20 @@
+In case you want to build the emu, here is some info to make your lives easier:
+
+You're gonna need Visual Studio .NET 2010 (NOT the express version!) to build the project. Express version might also work but it might do weird stuff and you'll need a Windows SDK, so I would not recommend it if you're not sure what you're doing.
+
+A recent version of the DirectX 9.0c SDK is also required to build most stuff.
+
+nullAICA uses optional sound streaming through the SDL development library so you'll need it to build with SDL support. SDL support will also have to be defined in the nullAICA source code.
+Note: Sound streaming through SDL is probably broken anyway.
+
+If you want to build the emulator with MMU support you have to define MMU support. This should be placed in "types.h" (last time I checked, it was already there but commented out).
+
+If you want to build a NAOMI, ATOMISWAVE, etc. version you should define which version you want in "plugin_types.h". The default definition is DC_PLATFORM_NORMAL (the definition is placed after the list with the available versions).
+
+drkMapleDevices comes with optional support for the LCD screen of some Logitech keyboards (G15). You've got to to define LCD support in "drkMapleDevices.cpp" for it to work. The LCD SDK is also needed to build the plugin that way.
+
+The LCD SDK version originally used is 1.04.153
+
+Last time I checked, nullExtDev needed the WinPcap library to build.
+
+EOF

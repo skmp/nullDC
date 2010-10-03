@@ -1,0 +1,109 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="AICA">
+      <UniqueIdentifier>{40b5c129-13d0-4e53-8c42-0d6a8d19ddec}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AICA\mem">
+      <UniqueIdentifier>{336bc205-8053-44d0-b345-a810661ea224}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AICA\sgc">
+      <UniqueIdentifier>{962e6dec-5210-460d-9948-e91e2f7fca59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="audio streaming">
+      <UniqueIdentifier>{57dab793-5432-402d-ae1e-cb8c2dff832a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui">
+      <UniqueIdentifier>{5807c5e0-74df-4984-a09b-76ad1dedc368}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\config">
+      <UniqueIdentifier>{63e64875-0625-467c-98be-7a5384742b26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="gui\debugger">
+      <UniqueIdentifier>{953a7e1b-6a8b-4988-869c-39ad58fafc3a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>plugin</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="nullAICA.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="aica.cpp">
+      <Filter>AICA</Filter>
+    </ClCompile>
+    <ClCompile Include="mem.cpp">
+      <Filter>AICA\mem</Filter>
+    </ClCompile>
+    <ClCompile Include="dsp.cpp">
+      <Filter>AICA\sgc</Filter>
+    </ClCompile>
+    <ClCompile Include="sgc_if.cpp">
+      <Filter>AICA\sgc</Filter>
+    </ClCompile>
+    <ClCompile Include="audiostream.cpp">
+      <Filter>audio streaming</Filter>
+    </ClCompile>
+    <ClCompile Include="ds_audiostream.cpp">
+      <Filter>audio streaming</Filter>
+    </ClCompile>
+    <ClCompile Include="sdl_audiostream.cpp">
+      <Filter>audio streaming</Filter>
+    </ClCompile>
+    <ClCompile Include="config_ui.cpp">
+      <Filter>gui\config</Filter>
+    </ClCompile>
+    <ClCompile Include="debugger_ui.cpp">
+      <Filter>gui\debugger</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="nullAICA.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="aica.h">
+      <Filter>AICA</Filter>
+    </ClInclude>
+    <ClInclude Include="mem.h">
+      <Filter>AICA\mem</Filter>
+    </ClInclude>
+    <ClInclude Include="dsp.h">
+      <Filter>AICA\sgc</Filter>
+    </ClInclude>
+    <ClInclude Include="sgc_if.h">
+      <Filter>AICA\sgc</Filter>
+    </ClInclude>
+    <ClInclude Include="audiostream.h">
+      <Filter>audio streaming</Filter>
+    </ClInclude>
+    <ClInclude Include="audiostream_rif.h">
+      <Filter>audio streaming</Filter>
+    </ClInclude>
+    <ClInclude Include="ds_audiostream.h">
+      <Filter>audio streaming</Filter>
+    </ClInclude>
+    <ClInclude Include="sdl_audiostream.h">
+      <Filter>audio streaming</Filter>
+    </ClInclude>
+    <ClInclude Include="gui.h">
+      <Filter>gui</Filter>
+    </ClInclude>
+    <ClInclude Include="config_ui.h">
+      <Filter>gui\config</Filter>
+    </ClInclude>
+    <ClInclude Include="debugger_ui.h">
+      <Filter>gui\debugger</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="nullAICA.rc" />
+  </ItemGroup>
+</Project>

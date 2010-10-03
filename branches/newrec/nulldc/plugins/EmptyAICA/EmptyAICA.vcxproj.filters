@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="plugin">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="AICA">
+      <UniqueIdentifier>{bdff9e09-a130-4525-bb95-2bbbf8461d35}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="EmptyAICA.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="aica_hax.cpp">
+      <Filter>AICA</Filter>
+    </ClCompile>
+    <ClCompile Include="aica_hle.cpp">
+      <Filter>AICA</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="EmptyAICA.h">
+      <Filter>plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="aica_hax.h">
+      <Filter>AICA</Filter>
+    </ClInclude>
+    <ClInclude Include="aica_hle.h">
+      <Filter>AICA</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="exports.def">
+      <Filter>plugin</Filter>
+    </None>
+  </ItemGroup>
+</Project>
