@@ -90,7 +90,7 @@ enum Sh4RegType
 	xf_14=xf_0+14,
 	xf_15=xf_0+15,
 
-	//special regs , used _olny_ on rec
+	//special regs , used _only_ on rec
 	reg_ftrv=xf_15+1,
 	reg_xmtrx=reg_ftrv+1,
 	//sr_T=xmtrx+1,

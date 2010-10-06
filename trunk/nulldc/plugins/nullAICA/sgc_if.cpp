@@ -1667,7 +1667,7 @@ void AICA_Sample()
 
 	ChannelEx::GenerateAll();
 	
-	//OK , generated all Chanels  , now DSP/ect + final mix ;p
+	//OK , generated all Channels  , now DSP/ect + final mix ;p
 	//CDDA EXTS input
 	
 	if (cdda_index>=CDDA_SIZE)

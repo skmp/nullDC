@@ -150,7 +150,7 @@ void Sh4_int_Run()
 		//loop start
 i_mainloop:
 
-		//run a single opcode -- doesnt use _any_ stack space :D
+		//run a single opcode -- doesn't use _any_ stack space :D
 		{
 i_run_opcode:
 			mov ecx , pc;			//param #1 for readmem16
@@ -167,9 +167,9 @@ i_run_opcode:
 		}
 
 		//exeption rollback point
-		//if an exeption happened , resume execution here
+		//if an exception happened, resume execution here
 i_exept_rp:
-		//update system  and run a new timeslice
+		//update system and run a new timeslice
 		xor eax,eax;			//zero eax [used later]
 
 		//Calculate next timeslice
@@ -478,7 +478,7 @@ bool ExecuteDelayslot_RTE()
 
 #include "ccn.h"
 
-void FreeSuspendedBlocks();;
+void FreeSuspendedBlocks();
 void DynaPrintCycles();
 
 //General update

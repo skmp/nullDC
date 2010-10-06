@@ -127,7 +127,7 @@ struct GD_SecNumbT
 #define GD_RETRY	0x08	// Read retry in progress (option)
 #define GD_ERROR	0x09	// Reading of disc TOC failed (state does not allow access) 
 
-//Responce strings
+//Response strings
 extern u16 reply_a1[];
 extern u16 reply_11[];
 extern u16 reply_71[];

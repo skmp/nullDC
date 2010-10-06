@@ -48,7 +48,7 @@ void DMAC_Ch2St()
 	if( (dst >= 0x10000000) && (dst <= 0x10FFFFFF) )
 	{
 		u32 p_addr=src & RAM_MASK;
-		//GetMemPtr perhaps ? it's not good to use teh mem arrays directly 
+		//GetMemPtr perhaps ? it's not good to use the mem arrays directly 
 		while(len)
 		{
 			if ((p_addr+len)>RAM_SIZE)

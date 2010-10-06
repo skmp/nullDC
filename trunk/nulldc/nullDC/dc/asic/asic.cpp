@@ -30,7 +30,7 @@ void asic_RL4Pending()
 	InterruptPend(sh4_IRL_11,t1|t2|t3);
 }
 
-//return true if any RL2 iterupts are pending
+//return true if any RL2 interrupt is pending
 void asic_RL2Pending()
 {
 	bool t1=(SB_ISTNRM & SB_IML2NRM)!=0;
