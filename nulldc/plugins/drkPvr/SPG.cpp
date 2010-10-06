@@ -72,7 +72,7 @@ void CalculateSync()
 
 bool render_end_pending=false;
 u32 render_end_pending_cycles;
-//called from sh4 context , should update pvr/ta state and evereything else
+//called from sh4 context , should update pvr/ta state and everything else
 void FASTCALL spgUpdatePvr(u32 cycles)
 {
 	if (Line_Cycles==0)
@@ -82,10 +82,10 @@ void FASTCALL spgUpdatePvr(u32 cycles)
 	if (clc_pvr_scanline >  Line_Cycles)//60 ~herz = 200 mhz / 60=3333333.333 cycles per screen refresh
 	{
 		//ok .. here , after much effort , we did one line
-		//now , we must chekc for raster beam interupts and vblank
+		//now , we must check for raster beam interrupts and vblank
 		prv_cur_scanline=(prv_cur_scanline+1)%pvr_numscanlines;
 		clc_pvr_scanline -= Line_Cycles;
-		//Check for scanline interrupts -- realy need to test the scanline values
+		//Check for scanline interrupts -- really need to test the scanline values
 		
 		if (SPG_VBLANK_INT.vblank_in_interrupt_line_number == prv_cur_scanline)
 			params.RaiseInterrupt(holly_SCANINT1);
@@ -107,12 +107,12 @@ void FASTCALL spgUpdatePvr(u32 cycles)
 		SPG_STATUS.vsync=in_vblank;
 		SPG_STATUS.scanline=prv_cur_scanline;
 
-		//Vblank start -- realy need to test the scanline values
+		//Vblank start -- really need to test the scanline values
 		if (prv_cur_scanline==0)
 		{
 			//Vblank counter
 			vblk_cnt++;
-			params.RaiseInterrupt(holly_HBLank);// -> This turned out to be HBlank btw , needs to be emulater ;(
+			params.RaiseInterrupt(holly_HBLank);// -> This turned out to be HBlank btw , needs to be emulated ;(
 			//TODO : rend_if_VBlank();
 			rend_vblank();//notify for vblank :)
 			UpdateRRect();

@@ -29,15 +29,15 @@ enum sh4_eu
 	sh4_eu_max
 };
 
-//exeption fixup needed , added it to fix exeption on opcodes that modify before exept :)
+//exception fixup needed , added it to fix exception on opcodes that modify before exept :)
 enum sh4_exept_fixup
 {
 	fix_none,
 	rn_opt_1,	//1 if n!=m
 	rn_opt_2,	//2 if n!=m
 	rn_opt_4,	//4 if n!=m
-	rn_4,		//allwways 4 from rn
-	rn_fpu_4,	//4 or 8 , acording to fpu size
+	rn_4,		//always 4 from rn
+	rn_fpu_4,	//4 or 8 , according to fpu size
 };
 struct sh4_opcodelistentry
 {

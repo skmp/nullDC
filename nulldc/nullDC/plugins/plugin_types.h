@@ -338,7 +338,7 @@ typedef s32 FASTCALL PvrInitFP(pvr_init_params* param);
 typedef void FASTCALL TaDMAFP(u32* data,u32 size);
 typedef void FASTCALL TaSQFP(u32* data);
 
-//OSD interface extentions
+//OSD interface extensions
 
 //can i fold that into a single line ?
 typedef struct osdTexture_i* osdTexture;
@@ -356,7 +356,7 @@ typedef s32 FASTCALL osdTexCreateFP(u32 w,u32 h,OSDFORMAT fmt,void* data);
 typedef s32 FASTCALL osdTexBindFP(osdTexture tex);
 typedef s32 FASTCALL osdTexDestroyFP(osdTexture tex);
 
-//Vertexes !
+//Vertices !
 typedef s32 FASTCALL osdVtxFP(float x,float y,float z,float w,float r,float g,float b,float a,float u,float v);
 
 struct pvr_plugin_if
@@ -365,7 +365,7 @@ struct pvr_plugin_if
 	PluginResetFP*	Reset;
 	PluginTermFP*	Term;
 
-	ExeptionHanlderFP* ExeptionHanlder; //Called on unhandled write exeption, set to 0 if not used.If not 0 , 
+	ExeptionHanlderFP* ExeptionHanlder; //Called on unhandled write exception, set to 0 if not used.If not 0 , 
 										//it disables the internal locking system
 
 	UpdateFP*		UpdatePvr;			//called every ~ 1800 cycles , set to 0 if not used
@@ -378,7 +378,7 @@ struct pvr_plugin_if
 	vramLockCBFP*	LockedBlockWrite;	//set to 0 if not used
 
 	//osd interface
-	//I realy need to decide if this will be optional or not
+	//I really need to decide if this will be optional or not
 	struct 
 	{
 		osdVtxFP*				Vtx;
@@ -402,7 +402,7 @@ enum DiscType
 
 	NoDisk=0x1,			//These are a bit hacky .. but work for now ...
 	Open=0x2,			//tray is open :)
-	Busy=0x3			//busy -> needs to be autmaticaly done by gdhost
+	Busy=0x3			//busy -> needs to be automatically done by gdhost
 };
 
 enum DiskArea
@@ -601,8 +601,8 @@ struct maple_device_definition
 };
 struct maple_plugin_if
 {
-	//*Main functions are ingored if no main devices are exported
-	//*Sub functions are ingored if no main devices are exported
+	//*Main functions are ignored if no main devices are exported
+	//*Sub functions are ignored if no main devices are exported
 	//Create Instance
 	MapleCreateInstanceFP* CreateMain;
 	MapleSubCreateInstanceFP* CreateSub;
@@ -611,7 +611,7 @@ struct maple_plugin_if
 	MapleInitInstanceFP*	Init;
 	MapleTermInstanceFP*	Term;
 	
-	maple_device_definition devices[32];	//Last one must be of type MDT_EndOfList , uless all 32 are used
+	maple_device_definition devices[32];	//Last one must be of type MDT_EndOfList , unless all 32 are used
 };
 
 //******************************************************
