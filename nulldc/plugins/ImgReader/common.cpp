@@ -229,6 +229,11 @@ void GetDriveSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
 	if (disc)
 	{
 		disc->ReadSectors(StartSector,SectorCount,buff,secsz);
+		if (disc->type == GdRom && StartSector==45150 && SectorCount==7)
+		{
+			PatchRegion_0(buff,secsz);
+			PatchRegion_6(buff+2048*6,secsz);
+		}
 	}
 }
 void GetDriveToc(u32* to,DiskArea area)

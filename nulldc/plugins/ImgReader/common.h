@@ -174,7 +174,7 @@ struct Disc
 				verify(false);
 			}
 
-			//TODO: Proper sector convertions
+			//TODO: Proper sector conversions
 			if (secfmt==SECFMT_2352)
 			{
 				ConvertSector(temp,dst,2352,fmt,FAD);
