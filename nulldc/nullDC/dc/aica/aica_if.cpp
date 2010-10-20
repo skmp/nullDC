@@ -189,12 +189,19 @@ void Write_SB_ADST(u32 data)
 	{
 		if (SB_ADEN&1)
 		{
-			if (SB_ADDIR==1)
-				msgboxf(L"AICA DMA : SB_ADDIR==1 !!!!!!!!",MBX_OK | MBX_ICONERROR);
-
 			u32 src=SB_ADSTAR;
 			u32 dst=SB_ADSTAG;
 			u32 len=SB_ADLEN & 0x7FFFFFFF;
+
+			if ((SB_ADDIR&1)==1)
+			{
+				//swap direction
+				u32 t=src;
+				src=dst;
+				dst=src;
+				printf("**AICA DMA : SB_ADDIR==1: Not sure this works, please report if broken/missing sound or crash\n**");
+			}
+
 
 			for (u32 i=0;i<len;i+=4)
 			{
