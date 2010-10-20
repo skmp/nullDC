@@ -315,6 +315,8 @@ bool shil_ce_check_static(u32 addr,u32 sz)
 	}
 	return false;
 }
+bool is_writem_safe(BasicBlock* bb, shil_opcode* op);
+
 //Optimisation pass mainloop
 u32 shil_optimise_pass_ce_main(BasicBlock* bb)
 {
@@ -328,11 +330,31 @@ u32 shil_optimise_pass_ce_main(BasicBlock* bb)
 
 	size_t old_Size=bb->ilst.opcodes.size();
 
+	u32 unsafe_pos=0xFFFFFFFF;
+	if (settings.dynarec.Safe)
+	{
+		shil_ce_is_locked=true;		//block is safe til a write mem opcode that can modify it
+		for (size_t i=0;i<bb->ilst.opcodes.size();i++)
+		{
+			shil_opcode* op=&bb->ilst.opcodes[i];
+
+			if (op->opcode==shilop_writem && !is_writem_safe(bb,op))
+			{
+				printf("Block %08X : disabling read-const @ %d/%d\n",bb->start,i,bb->ilst.opcodes.size());
+				unsafe_pos=i;
+				break;
+			}
+		}
+	}
+
+
 	bool old_re_run=ce_re_run;
 	for (size_t i=0;i<bb->ilst.opcodes.size();i++)
 	{
 		shil_opcode* op=&bb->ilst.opcodes[i];
 
+		if (i==unsafe_pos)
+			shil_ce_is_locked=false;
 		old_re_run=ce_re_run;
 		if (shil_ce_lut[op->opcode](op,bb,&il)==false)
 			il.opcodes.push_back(*op);//emit the old opcode
@@ -705,6 +727,27 @@ shilh(readm)
 
 	return false;
 }
+
+bool is_writem_safe(BasicBlock* bb, shil_opcode* op)
+{
+	bool rv=ce_ReadWriteParams(op);
+	u32 addr;
+	if (GetRamReadAdr(op,&addr))
+	{
+		u32 size=op->flags&3;
+		if (bb->IsMemLocked(addr))
+		{
+			return false;	//block modifies its page. not safe.
+		}
+		else
+		{
+			return true;	//block writes somewhere outside of its page. safe.
+		}
+	}
+
+	//any non-static write may write in the block page list, so its not safe by default
+	return false;
+}
 shilh(writem)
 {
 	bool rv=ce_ReadWriteParams(op);
@@ -715,15 +758,9 @@ shilh(writem)
 		u32 size=op->flags&3;
 		if (shil_ce_is_locked && bb->IsMemLocked(addr) && (size!=FLAG_64))
 		{
+			verify(!settings.dynarec.Safe);	//can't happen in safe mode
 			shil_ce_is_locked=false;
 			printf("CE: Block will be demoted to manual for the CE pass\n");
-			/*
-			if (shil_ce_check_static(addr,size))
-			{
-				printf("WRITEMEM:KILLALL");
-				kill_all=true;
-				shil_ce_is_locked=true;
-			}*/
 		}
 	}
 	//even if we did optimise smth , a readback may be needed

@@ -326,25 +326,29 @@ int ExeptionHandler(u32 dwCode, void* pExceptionPointers)
 		//the write 
 		u32 pos=ep->ContextRecord->Eip; //<- the write
 		CompiledBlockInfo* cbi=bm_ReverseLookup((void*)pos);
-		if (cbi)
+
+		if (!cbi)
 		{
-			printf("Except in block %X | %X\n",cbi->Code,cbi);
-			//cbb->Rewrite
-			u32* ptr_jae_offset=(u32*)(pos-4-6);
-			u8* offset_2=(u8*)(*ptr_jae_offset + pos -6-2);
-			u8* ptr_cmp=(u8*)(pos-6-6-6);
-			*ptr_cmp=0xE9;
-			*(u32*) (ptr_cmp+1)=*ptr_jae_offset+7 + offset_2[0];
-			ep->ContextRecord->Eip=(pos-6-6-6- offset_2[1]);
-			//printf("Patched %08X,%08X<-%08X %d %d\n",ep->ContextRecord->Eip,ep->ContextRecord->Ecx,offset_2[0],offset_2[1]);
-			//		ep->ContextRecord->Ecx=ep->ContextRecord->Eax;
-			return EXCEPTION_CONTINUE_EXECUTION;
-		}
-		else
-		{
-			printf("[GPF]Unhandled access to : 0x%X\n",address);
+			printf("**DYNAREC_BUG: bm_ReverseLookup failed to resolve %08X, will blindly patch due to %08X**\n",pos,address);
+			printf("**PLEASE REPORT THIS IF NOT ON THE ISSUE TRACKER ALREADY --raz**\n");
 			return EXCEPTION_CONTINUE_SEARCH;
 		}
+
+#ifdef DEBUG
+		else
+			printf("Except in block %X | %X\n",cbi->Code,cbi);
+#endif
+
+		//cbb->Rewrite
+		u32* ptr_jae_offset=(u32*)(pos-4-6);
+		u8* offset_2=(u8*)(*ptr_jae_offset + pos -6-2);
+		u8* ptr_cmp=(u8*)(pos-6-6-6);
+		*ptr_cmp=0xE9;
+		*(u32*) (ptr_cmp+1)=*ptr_jae_offset+7 + offset_2[0];
+		ep->ContextRecord->Eip=(pos-6-6-6- offset_2[1]);
+		//printf("Patched %08X,%08X<-%08X %d %d\n",ep->ContextRecord->Eip,ep->ContextRecord->Ecx,offset_2[0],offset_2[1]);
+		//		ep->ContextRecord->Ecx=ep->ContextRecord->Eax;
+		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 	else
 	{

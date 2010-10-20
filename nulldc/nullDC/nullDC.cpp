@@ -228,6 +228,7 @@ void LoadSettings()
 {
 	settings.dynarec.Enable=cfgLoadInt(L"nullDC",L"Dynarec.Enabled",1)!=0;
 	settings.dynarec.CPpass=cfgLoadInt(L"nullDC",L"Dynarec.DoConstantPropagation",1)!=0;
+	settings.dynarec.Safe=cfgLoadInt(L"nullDC",L"Dynarec.SafeMode",1)!=0;
 	settings.dynarec.UnderclockFpu=cfgLoadInt(L"nullDC",L"Dynarec.UnderclockFpu",0)!=0;
 	
 	settings.dreamcast.cable=cfgLoadInt(L"nullDC",L"Dreamcast.Cable",3);
@@ -248,6 +249,7 @@ void SaveSettings()
 {
 	cfgSaveInt(L"nullDC",L"Dynarec.Enabled",settings.dynarec.Enable);
 	cfgSaveInt(L"nullDC",L"Dynarec.DoConstantPropagation",settings.dynarec.CPpass);
+	cfgSaveInt(L"nullDC",L"Dynarec.SafeMode",settings.dynarec.Safe);
 	cfgSaveInt(L"nullDC",L"Dynarec.UnderclockFpu",settings.dynarec.UnderclockFpu);
 	cfgSaveInt(L"nullDC",L"Dreamcast.Cable",settings.dreamcast.cable);
 	cfgSaveInt(L"nullDC",L"Dreamcast.RTC",settings.dreamcast.RTC);

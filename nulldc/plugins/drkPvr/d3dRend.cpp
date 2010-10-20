@@ -2152,7 +2152,9 @@ __error_out:
 			}
 			else
 			{
-				die ("HAHA\n");
+				printf("*************************************************************************\n");
+				printf("**mv_mode!=1. THIS IS PROLLY BUGGED, REPORT IF NOT ON THE ISSUE TRACKER**\n");
+				printf("*************************************************************************\n");
 				//res : old : final 
 				//0   : 0   : 00
 				//0   : 1   : 00
