@@ -194,6 +194,7 @@ s32 EXPORT_CALL GetEmuSetting(u32 sid,void* value)
 		
 	_esai_(DYNAREC_ENABLED,dynarec.Enable,1);
 	_esai_(DYNAREC_CPPASS,dynarec.CPpass,1);
+	_esai_(DYNAREC_SAFEMODE,dynarec.Safe,1);
 	_esai_(DYNAREC_UCFPU,dynarec.UnderclockFpu,1);
 
 	_esai_(DREAMCAST_CABLE,dreamcast.cable,3);
@@ -234,12 +235,17 @@ s32 EXPORT_CALL SetEmuSetting(u32 sid,void* value)
 		if (sh4_cpu->ResetCache)
 			sh4_cpu->ResetCache();
 		break;
-		
-		_esai_(DYNAREC_UCFPU,dynarec.UnderclockFpu,1);
+
+		_esai_(DYNAREC_SAFEMODE,dynarec.Safe,1);
 		if (sh4_cpu->ResetCache)
 			sh4_cpu->ResetCache();
 		break;
 
+		_esai_(DYNAREC_UCFPU,dynarec.UnderclockFpu,1);
+		if (sh4_cpu->ResetCache)
+			sh4_cpu->ResetCache();
+		break;
+		
 		_esai_(DREAMCAST_CABLE,dreamcast.cable,3);
 		break;
 

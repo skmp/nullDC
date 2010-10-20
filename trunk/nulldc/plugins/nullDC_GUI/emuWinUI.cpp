@@ -802,6 +802,7 @@ MENU_HANDLER( Handle_Option_Bool_Template )
 
 u32 gui_fullscreen_mid;
 u32 rec_cpp_mid;
+u32 rec_safe_mid;
 u32 rec_enb_mid;
 u32 rec_ufpu_mid;
 u32 ct_menu[4];
@@ -815,16 +816,20 @@ void UpdateMenus()
 	{
 		SetMenuItemStyle(rec_enb_mid,MIS_Checked,MIS_Checked);
 		SetMenuItemStyle(rec_cpp_mid,0,MIS_Grayed);
+		SetMenuItemStyle(rec_safe_mid,0,MIS_Grayed);
 		SetMenuItemStyle(rec_ufpu_mid,0,MIS_Grayed);
 	}
 	else
 	{
 		SetMenuItemStyle(rec_enb_mid,0,MIS_Checked);
 		SetMenuItemStyle(rec_cpp_mid,MIS_Grayed,MIS_Grayed);
+		SetMenuItemStyle(rec_safe_mid,MIS_Grayed,MIS_Grayed);
 		SetMenuItemStyle(rec_ufpu_mid,MIS_Grayed,MIS_Grayed);
 	}
 
+
 	SetMenuItemStyle(rec_cpp_mid,GetSettingI(NDCS_DYNAREC_CPPASS)?MIS_Checked:0,MIS_Checked);
+	SetMenuItemStyle(rec_safe_mid,GetSettingI(NDCS_DYNAREC_SAFEMODE)?MIS_Checked:0,MIS_Checked);
 	SetMenuItemStyle(rec_ufpu_mid,GetSettingI(NDCS_DYNAREC_UCFPU)?MIS_Checked:0,MIS_Checked);
 
 	for (int i=0;i<4;i++)
@@ -847,7 +852,11 @@ MENU_HANDLER( Handle_Option_EnableCP )
 	Handle_Option_Bool_Template<NDCS_DYNAREC_CPPASS>(id,hWnd,stuff);
 	UpdateMenus();
 }
-
+MENU_HANDLER( Handle_Option_EnableSAFE )
+{
+	Handle_Option_Bool_Template<NDCS_DYNAREC_SAFEMODE>(id,hWnd,stuff);
+	UpdateMenus();
+}
 MENU_HANDLER( Handle_Option_EnableRec )
 {
 	Handle_Option_Bool_Template<NDCS_DYNAREC_ENABLED>(id,hWnd,stuff);
@@ -923,6 +932,7 @@ void CreateBasicMenus()
 		AddMenuItem(menu_setts,-1,L"Show",Handle_Options_Config,0);
 		AddSeperator(menu_setts);
 		rec_enb_mid=AddMenuItem(menu_setts,-1,L"Enable Dynarec",Handle_Option_EnableRec,0);
+		rec_safe_mid=AddMenuItem(menu_setts,-1,L"Accurate Mode",Handle_Option_EnableSAFE,0);
 		rec_cpp_mid=AddMenuItem(menu_setts,-1,L"Enable CP pass",Handle_Option_EnableCP,0);
 		rec_ufpu_mid=AddMenuItem(menu_setts,-1,L"Underclock FPU",Handle_Option_UnderclockFpu,0);
 		AddSeperator(menu_setts);

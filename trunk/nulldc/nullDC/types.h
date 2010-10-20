@@ -198,6 +198,7 @@ struct __settings
 		bool Enable;
 		bool CPpass;
 		bool UnderclockFpu;
+		bool Safe;	//only use the 'safe' subset of the dynarec
 	} dynarec;
 	
 	struct

@@ -284,6 +284,9 @@ Sh4RegType div_som_reg3;
 
 u32 MatchDiv32(u32 pc , Sh4RegType &reg1,Sh4RegType &reg2 , Sh4RegType &reg3)
 {
+	if (settings.dynarec.Safe)
+		return 0;
+
 	u32 v_pc=pc;
 	u32 match=1;
 	for (int i=0;i<32;i++)
