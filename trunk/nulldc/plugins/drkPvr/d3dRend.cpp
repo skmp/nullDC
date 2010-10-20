@@ -725,13 +725,13 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		{
 			IDirect3DTexture9* tex=fb_texture;
 			IDirect3DSurface9* surf=fb_surf;
+			RECT rs={0,0,640,480};
 
 			if ((FB_R_CTRL.fb_enable && !VO_CONTROL.blank_video) || DC_PLATFORM==DC_PLATFORM_ATOMISWAVE)
 			{
 				if ( *ptest!=0xDEADC0DE)
 				{
 					D3DLOCKED_RECT lr;
-					RECT rs={0,0,640,480};
 					u32 bpp;
 					switch(FB_R_CTRL.fb_depth)
 					{
@@ -859,7 +859,7 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 
 
 			if (surf!=0)
-				dev->StretchRect(surf,0,backbuffer,0, D3DTEXF_LINEAR);
+				dev->StretchRect(surf,&rs,backbuffer,0, D3DTEXF_LINEAR);
 
 			dev->SetRenderTarget(0,backbuffer);
 			dev->SetTexture(0,tex);
