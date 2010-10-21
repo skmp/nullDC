@@ -129,39 +129,55 @@ Optiongroup menu_widemode;
 Optiongroup menu_resolution;
 int oldmode=-1;
 int osx=-1,osy=-1;
-void UpdateRRect()
+
+
+//dst[0] -> width of rect to be adjusted
+//dst[1] -> height
+//src: w,h of rect to be matched
+void CalcRect(float* dst,float* src)
 {
-	float rect[4]={0,0,640,480};
 	if (settings.Enhancements.AspectRatioMode!=0)
 	{
-		WINDOWINFO winf;
-		GetWindowInfo((HWND)emu.GetRenderTarget(),&winf);
-		
-		int sx=winf.rcClient.right-winf.rcClient.left;
-		int sy=winf.rcClient.bottom-winf.rcClient.top;
-		if (osx!=sx || osy!=sy)
-		{
-			osx=sx;
-			osy=sy;
-			oldmode=-1;
-		}
 		//printf("New rect %d %d\n",sx,sy);
-		float nw=((float)sx/(float)sy)*480.0f;
-		float nh=((float)sy/(float)sx)*640.0f;
-		if (nh<480)
+		float nw=((float)src[0]/(float)src[1])*dst[1];
+		float nh=((float)src[1]/(float)src[0])*dst[0];
+		if (nh<dst[1])
 		{
-			nh=480;
+			nh=dst[1];
 		}
 		else
 		{
-			nw=640.0f;
+			nw=dst[0];
 		}
-
-		rect[0]=(nw-640)/2;
-		rect[2]=nw;
-		rect[1]=(nh-480)/2;
-		rect[3]=nh;
+		dst[0]=nw;
+		dst[1]=nh;
 	}
+}
+void UpdateRRect()
+{
+	float dc_wh[2]={640,480};
+	float rect[4];
+	WINDOWINFO winf;
+	GetWindowInfo((HWND)emu.GetRenderTarget(),&winf);
+
+	int sx=winf.rcClient.right-winf.rcClient.left;
+	int sy=winf.rcClient.bottom-winf.rcClient.top;
+	if (osx!=sx || osy!=sy)
+	{
+		osx=sx;
+		osy=sy;
+		oldmode=-1;
+	}
+
+	float win_wh[2]={sx,sy};
+
+	CalcRect(dc_wh,win_wh);
+
+	rect[0]=(dc_wh[0]-640)/2;
+	rect[2]=dc_wh[0];
+	rect[1]=(dc_wh[1]-480)/2;
+	rect[3]=dc_wh[1];
+
 	rend_set_render_rect(rect,oldmode!=settings.Enhancements.AspectRatioMode);
 	oldmode=settings.Enhancements.AspectRatioMode;
 }
