@@ -725,12 +725,20 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		{
 			IDirect3DTexture9* tex=fb_texture;
 			IDirect3DSurface9* surf=fb_surf;
-			RECT rs={0,0,640,480};
+			
+			//assume rect is same as front buffer
+			RECT rs={0,0,fb_surf_desc.Width,fb_surf_desc.Height};
+			
+			dev->ColorFill(backbuffer,0,D3DCOLOR_ARGB(255,VO_BORDER_COL.Red,VO_BORDER_COL.Green,VO_BORDER_COL.Blue));
 
 			if ((FB_R_CTRL.fb_enable && !VO_CONTROL.blank_video) || DC_PLATFORM==DC_PLATFORM_ATOMISWAVE)
 			{
 				if ( *ptest!=0xDEADC0DE)
 				{
+					//use proper FB rect size
+					rs.right=640;
+					rs.bottom=480;
+
 					D3DLOCKED_RECT lr;
 					u32 bpp;
 					switch(FB_R_CTRL.fb_depth)
@@ -854,12 +862,32 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 			{
 				tex=0;
 				surf=0;
-				dev->ColorFill(backbuffer,0,D3DCOLOR_ARGB(255,VO_BORDER_COL.Red,VO_BORDER_COL.Green,VO_BORDER_COL.Blue));
 			}
 
-
+			//if 0, then simply colorfill (fb is off)
 			if (surf!=0)
-				dev->StretchRect(surf,&rs,backbuffer,0, D3DTEXF_LINEAR);
+			{
+				//perform aspect ratio matching here ..
+				//this is wayyyy wayy way way way more complicated than it needs, its what psy calls razimaths(tm)
+				//it actually works
+				void CalcRect(float* dst,float* src);
+				float rdf[2]={rs.right,rs.bottom};
+				float rsf[2]={fb_surf_desc.Width,fb_surf_desc.Height};
+				RECT rd;
+				CalcRect(rdf,rsf);
+				rd.right=0.5f+rs.right/rdf[0]*rsf[0];
+				rd.bottom=0.5f+rs.bottom/rdf[1]*rsf[1];
+				rd.left=abs((LONG)fb_surf_desc.Width-rd.right)/2;
+				rd.top=abs((LONG)fb_surf_desc.Height-rd.bottom)/2;
+				
+				rd.right+=rd.left;
+				rd.bottom+=rd.top;
+				if (rd.right>fb_surf_desc.Width)
+					rd.right=fb_surf_desc.Width;
+				if (rd.bottom>fb_surf_desc.Height)
+					rd.bottom=fb_surf_desc.Height;
+				dev->StretchRect(surf,&rs,backbuffer,&rd, D3DTEXF_LINEAR);	//add an option for D3DTEXF_POINT for pretty pixels?
+			}
 
 			dev->SetRenderTarget(0,backbuffer);
 			dev->SetTexture(0,tex);
