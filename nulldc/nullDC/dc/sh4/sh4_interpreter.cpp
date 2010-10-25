@@ -511,7 +511,7 @@ void __fastcall VerySlowUpdate()
 void __fastcall SlowUpdate()
 {
 	#if DC_PLATFORM!=DC_PLATFORM_NAOMI
-		UpdateGDRom();		
+		UpdateGDRom();
 	#else
 		Update_naomi();
 	#endif	
@@ -524,6 +524,9 @@ void __fastcall SlowUpdate()
 
 void __fastcall MediumUpdate()
 {
+	void maple_periodical(u32 cycl);
+	maple_periodical(3584);
+
 	static int aica_sample_cycles=0;
 	aica_sample_cycles+=3584*AICA_SAMPLE_GCM;
 
@@ -547,8 +550,9 @@ int __fastcall UpdateSystem()
 		MediumUpdate();
 	
 	update_cnt++;
-
+	
 	UpdateTMU(448);
 	UpdatePvr(448);
+	
 	return UpdateINTC();
 }

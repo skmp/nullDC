@@ -43,8 +43,9 @@ void maple_vblank()
 			else
 			{
 				//printf("DDT vblank\n");
+				SB_MDST = 1;
 				DoMapleDma();
-				SB_MDST = 0;
+				//the periodial callback handlers raising the interrupt and stuff
 				if ((SB_MSYS>>12)&1)
 				{
 					maple_ddt_pending_reset=true;
@@ -62,17 +63,32 @@ void maple_SB_MSHTCL_Write(u32 data)
 	if (data&1)
 		maple_ddt_pending_reset=false;
 }
+s32 maple_pending_dma;
+
+void maple_periodical(u32 cycl)
+{
+	if (maple_pending_dma>0)
+	{
+		verify(SB_MDST==1);
+		maple_pending_dma-=cycl;
+		if (maple_pending_dma<=0)
+		{
+			asic_RaiseInterrupt(holly_MAPLE_DMA);
+			SB_MDST=0;
+		}
+	}
+}
 void maple_SB_MDST_Write(u32 data)
 {
 	if (data & 0x1)
 	{
 		if (SB_MDEN &1)
 		{
-			//SB_MDST=1;
+			SB_MDST=1;
 			DoMapleDma();
 		}
 	}
-	SB_MDST = 0;	//No dma in progress :)
+	//SB_MDST = 0;	//No dma in progress :)
 }
 
 bool IsOnSh4Ram(u32 addr)
@@ -119,6 +135,7 @@ u32 dmacount=0;
 void DoMapleDma()
 {
 	verify(SB_MDEN &1)
+	u32 total_bytes=0;
 #if debug_maple
 	printf("Maple :DoMapleDma\n");
 #endif
@@ -188,6 +205,7 @@ void DoMapleDma()
 						&p_out[1],
 						outlen);
 				}
+				total_bytes+=inlen+outlen;
 
 				#if debug_maple
 					printf("Maple :port%d_%d : 0x%02X -> done 0x%02X \n",device,subport,command,resp);
@@ -220,7 +238,8 @@ void DoMapleDma()
 		}
 	}
 //dma_end:
-	asic_RaiseInterrupt(holly_MAPLE_DMA);
+
+	maple_pending_dma=total_bytes*200000000/262144;
 }
 
 //device : 0 .. 4 -> subdevice , 5 -> main device :)
