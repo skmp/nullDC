@@ -56,6 +56,7 @@ Disc* load_gdi(wchar* file_)
 
 		Track t;
 		t.ADDR=0;
+		t.CTRL=CTRL;
 		t.StartFAD=FADS+150;
 		t.EndFAD=0;		//fill it in
 		t.file=0;
@@ -79,7 +80,7 @@ Disc* load_gdi(wchar* file_)
 
 	//session 2 : start @ track 3, and its fad
 	ses.FirstTrack=3;
-	ses.StartFAD=disc->tracks[0].StartFAD;
+	ses.StartFAD=disc->tracks[2].StartFAD;
 	disc->sessions.push_back(ses);
 
 	//this isn't always true for gdroms, depens on area look @ the get-toc code
