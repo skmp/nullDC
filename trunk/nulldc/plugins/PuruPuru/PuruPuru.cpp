@@ -15,7 +15,7 @@
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Variables
-// ¯¯¯¯¯¯¯¯¯
+// ---------
 HINSTANCE PuruPuru_hInst = NULL;
 emu_info host;
 u32 current_port = 0;
@@ -469,13 +469,13 @@ int GetStateKey (int port, int type, wchar* input )
 }
 
 int GetStateXInput (int port, int type, wchar* input )
-{
-	char key[256];
-	GetKeyState(key);		
-
+{	
 	XInputGetState( joysticks[port].ID, &xoyinfo[port].state );
 	port = joysticks[port].ID;	
-	
+
+	char key[256];
+	if(joysticks[port].keys) GetKeyState(key);		
+		
 	int num = _wtoi(&input[1]);
 
 	switch(type)
@@ -645,10 +645,10 @@ int GetStateXInput (int port, int type, wchar* input )
 						return 0;
 				}
 				else if(input[0] == L'K')
-					{
-						if(key[num]) return 32767;
-						else		 return 0;
-					}
+				{
+					if(key[num]) return 32767;
+					else		 return 0;
+				}
 						
 			}
 		case TRIGGER:
@@ -949,11 +949,11 @@ int GetStateXInput (int port, int type, wchar* input )
 // 22000 AXIS to BUTTON threshold.
 
 int GetStateSDL (int port, int type, wchar* input )
-{						
-	char key[256];
-	GetKeyState(key);	
-
+{							
 	port = joysticks[port].ID;
+
+	char key[256];
+	if(joysticks[port].keys) GetKeyState(key);
 
 	int num = _wtoi(&input[1]); // wtoi Works a lot better than I thought.
 	bool plus = false;
