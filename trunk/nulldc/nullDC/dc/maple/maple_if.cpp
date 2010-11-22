@@ -43,7 +43,6 @@ void maple_vblank()
 			else
 			{
 				//printf("DDT vblank\n");
-				SB_MDST = 1;
 				DoMapleDma();
 				//the periodial callback handlers raising the interrupt and stuff
 				if ((SB_MSYS>>12)&1)
@@ -84,7 +83,6 @@ void maple_SB_MDST_Write(u32 data)
 	{
 		if (SB_MDEN &1)
 		{
-			SB_MDST=1;
 			DoMapleDma();
 		}
 	}
@@ -134,7 +132,8 @@ u32 GetConnectedDevices(u32 Port)
 u32 dmacount=0;
 void DoMapleDma()
 {
-	verify(SB_MDEN &1)
+	verify(SB_MDEN &1);
+	verify(SB_MDST==0);
 	u32 total_bytes=0;
 #if debug_maple
 	printf("Maple :DoMapleDma\n");
@@ -239,7 +238,8 @@ void DoMapleDma()
 	}
 //dma_end:
 
-	maple_pending_dma=total_bytes*200000000/262144;
+	maple_pending_dma=total_bytes*200000000/262144+1;
+	SB_MDST=1;
 }
 
 //device : 0 .. 4 -> subdevice , 5 -> main device :)
