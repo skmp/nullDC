@@ -198,7 +198,7 @@ void Write_SB_ADST(u32 data)
 				//swap direction
 				u32 t=src;
 				src=dst;
-				dst=src;
+				dst=t;
 				printf("**AICA DMA : SB_ADDIR==1: Not sure this works, please report if broken/missing sound or crash\n**");
 			}
 
