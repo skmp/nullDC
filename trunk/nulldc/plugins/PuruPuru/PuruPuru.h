@@ -159,8 +159,8 @@ void FASTCALL Destroy(void* data,u32 id);
 // Other
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
 
-void GetKeyState(char* keys);
-void GetJoyState(int controller);
+void GetKeyStatus(char* keys);
+void GetJoyStatus(int controller);
 
 void EXPORT_CALL ConfigMenuCallback(u32 id,void* w,void* p);
 

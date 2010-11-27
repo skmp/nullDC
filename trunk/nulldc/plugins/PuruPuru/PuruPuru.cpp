@@ -273,7 +273,7 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 	if(!joysticks[port].enabled)
 		return 7;
 
-	GetJoyState(port);
+	GetJoyStatus(port);
 
 	switch (Command)
 	{
@@ -431,19 +431,21 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 	}
 }
 
-void GetKeyState(char* keys)
-{
-	 for (int k = 0; k < 256; k++)	 
-		 keys[k] = (char)(GetAsyncKeyState(k) >> 8);	
-
-	 // Workaround for Lenovo
-	 if(keys[255]) keys[255] = 0;
+void GetKeyStatus(char* keys)
+{	
+	for (int k = 0; k < 256; k += 4)
+	 {
+		keys[k]   = (char)(GetAsyncKeyState(k)   >> 8);
+		keys[k+1] = (char)(GetAsyncKeyState(k+1) >> 8);
+		keys[k+2] = (char)(GetAsyncKeyState(k+2) >> 8);
+		keys[k+3] = (char)(GetAsyncKeyState(k+3) >> 8);
+	 }	 
 }
 
-int GetStateKey (int port, int type, wchar* input )
+int GetStatusKey (int port, int type, wchar* input )
 {
 	char key[256];
-	GetKeyState(key);			
+	GetKeyStatus(key);			
 
 	int num = _wtoi(&input[1]);		
 
@@ -474,7 +476,7 @@ int GetStateXInput (int port, int type, wchar* input )
 	port = joysticks[port].ID;	
 
 	char key[256];
-	if(joysticks[port].keys) GetKeyState(key);		
+	if(joysticks[port].keys) GetKeyStatus(key);		
 		
 	int num = _wtoi(&input[1]);
 
@@ -953,7 +955,7 @@ int GetStateSDL (int port, int type, wchar* input )
 	port = joysticks[port].ID;
 
 	char key[256];
-	if(joysticks[port].keys) GetKeyState(key);
+	if(joysticks[port].keys) GetKeyStatus(key);
 
 	int num = _wtoi(&input[1]); // wtoi Works a lot better than I thought.
 	bool plus = false;
@@ -1081,7 +1083,7 @@ int GetStateSDL (int port, int type, wchar* input )
 	return 0;
 }
 
-void GetJoyState(int controller)
+void GetJoyStatus(int controller)
 {	
 	if(joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_SDL)
 	{	
@@ -1164,16 +1166,16 @@ void GetJoyState(int controller)
 		joystate[controller].axis[CTL_MAIN_X] = 0;
 		joystate[controller].axis[CTL_MAIN_Y] = 0;
 
-		joystate[controller].axis[CTL_MAIN_X] -= GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_XL] );
-		joystate[controller].axis[CTL_MAIN_X] += GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_XR] );				
+		joystate[controller].axis[CTL_MAIN_X] -= GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_XL] );
+		joystate[controller].axis[CTL_MAIN_X] += GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_XR] );				
 		
-		joystate[controller].axis[CTL_MAIN_Y] -= GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_YU] );		
-		joystate[controller].axis[CTL_MAIN_Y] += GetStateKey( controller, AXIS, joysticks[controller].control[MAP_A_YD] );		
+		joystate[controller].axis[CTL_MAIN_Y] -= GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_YU] );		
+		joystate[controller].axis[CTL_MAIN_Y] += GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_YD] );		
 
-		joystate[controller].halfpress = GetStateKey( controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
+		joystate[controller].halfpress = GetStatusKey( controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
 
-		joystate[controller].trigger[CTL_L_SHOULDER] = GetStateKey( controller, TRIGGER, joysticks[controller].control[MAP_LT] );
-		joystate[controller].trigger[CTL_R_SHOULDER] = GetStateKey( controller, TRIGGER, joysticks[controller].control[MAP_RT] );
+		joystate[controller].trigger[CTL_L_SHOULDER] = GetStatusKey( controller, TRIGGER, joysticks[controller].control[MAP_LT] );
+		joystate[controller].trigger[CTL_R_SHOULDER] = GetStatusKey( controller, TRIGGER, joysticks[controller].control[MAP_RT] );
 		
 		if ( joystate[controller].halfpress ) 
 		{
@@ -1184,16 +1186,16 @@ void GetJoyState(int controller)
 			joystate[controller].axis[CTL_MAIN_Y] /= 2;
 		}				
 				
-		joystate[controller].button[CTL_A_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_A] );
-		joystate[controller].button[CTL_B_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_B] );
-		joystate[controller].button[CTL_X_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_X] );
-		joystate[controller].button[CTL_Y_BUTTON]   = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_Y] );
-		joystate[controller].button[CTL_START]	    = GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_START] );				
+		joystate[controller].button[CTL_A_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_A] );
+		joystate[controller].button[CTL_B_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_B] );
+		joystate[controller].button[CTL_X_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_X] );
+		joystate[controller].button[CTL_Y_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_Y] );
+		joystate[controller].button[CTL_START]	    = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_START] );				
 
-		joystate[controller].dpad[CTL_D_PAD_UP]		= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_UP] );
-		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
-		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
-		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStateKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );		
+		joystate[controller].dpad[CTL_D_PAD_UP]		= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_UP] );
+		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
+		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
+		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );		
 	}
 	
 }

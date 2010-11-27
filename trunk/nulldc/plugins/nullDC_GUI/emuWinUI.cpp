@@ -1241,7 +1241,7 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		break;
 	case WM_KEYDOWN:
 		{
-			if(wParam == VK_F12)
+			if(wParam == VK_SCROLL)
 			{
 				if (!mouseCapture)
 				{
