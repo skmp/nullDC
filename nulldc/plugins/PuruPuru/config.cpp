@@ -287,7 +287,7 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 	while(waiting)
 	{					
 		XInputGetState( pad, &xoyinfo[pad].state );
-		GetKeyState(key);			
+		GetKeyStatus(key);			
 
 		// AXIS
 		if(xoyinfo[pad].state.Gamepad.sThumbLX >  threshold) 
@@ -506,7 +506,7 @@ bool GetInputKey(HWND hDlg, int buttonid, int controller)
 
 	while(waiting)
 	{					
-		GetKeyState(key);		
+		GetKeyStatus(key);		
 
 		for(int k = 0; k < 256; k++)
 		{
@@ -577,7 +577,7 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 	while(waiting)
 	{			
 		SDL_JoystickUpdate();
-		GetKeyState(key);
+		GetKeyStatus(key);
 
 		// AXIS
 		for(int b = 0; b < axes; b++)

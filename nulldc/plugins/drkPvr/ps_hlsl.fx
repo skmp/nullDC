@@ -202,6 +202,9 @@ PSO PixelShader_main(in pixel s )
 	float4 color=s.col/s.uv.w;
 	clip(s.uv.z);
 	
+	//For non-old ATI cards, fixes noised cars in Jet Grind Radio for example.
+	//color=round(color*255)/255;
+	
 	#if pp_UseAlpha==0
 		color.a=1;
 	#endif

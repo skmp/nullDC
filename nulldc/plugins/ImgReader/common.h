@@ -163,15 +163,18 @@ struct Disc
 
 	void ReadSectors(u32 FAD,u32 count,u8* dst,u32 fmt)
 	{
-		u8 temp[2352];
+		u8 temp[2352] = {0};
 		SectorFormat secfmt;
-		SubcodeFormat subfmt;
+		SubcodeFormat subfmt;		
+		bool readError = false;
 
 		while(count)
-		{
-			if (!ReadSector(FAD,temp,&secfmt,q_subchannel,&subfmt))
-			{
-				verify(false);
+		{			
+			
+			if (!readError && !ReadSector(FAD,temp,&secfmt,q_subchannel,&subfmt))
+			{				
+				readError = true; //verify(false);				
+				printf("ImgReader (common.h,177) - Sector read error!\n");
 			}
 
 			//TODO: Proper sector conversions
@@ -185,9 +188,10 @@ struct Disc
 			{
 				memcpy(dst,temp,2048);
 			}
-			else
+			else if(!readError)
 			{
-				verify(false);
+				readError = true; //verify(false);
+				printf("ImgReader (common.h,194) - Sector conversion error!\n");
 			}
 
 			dst+=fmt;

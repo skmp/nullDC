@@ -444,7 +444,7 @@ INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 	case WM_KEYDOWN:
 
-		if(wParam == VK_F12) mouseCapture = !mouseCapture;
+		if(wParam == VK_SCROLL) mouseCapture = !mouseCapture;
 
 		kb_down(wParam);
 
