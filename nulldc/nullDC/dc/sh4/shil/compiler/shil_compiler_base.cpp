@@ -1252,7 +1252,7 @@ x86_reg  readwrteparams(shil_opcode* op,x86_reg* fast_reg,u32* fast_offset)
 	assert(0==(op->flags & FLAG_IMM2));
 	assert(op->flags & FLAG_REG1);
 	*fast_reg=ERROR_REG;
-	bool Loaded=false;
+//	bool Loaded=false;
 
 	//can use
 	//mov ecx,imm
@@ -1314,7 +1314,7 @@ x86_reg  readwrteparams(shil_opcode* op,x86_reg* fast_reg,u32* fast_offset)
 		//2 olny
 	case flag_imm | flag_r2:
 		*fast_offset=op->imm1;
-		readwrteparams1(op->reg2,op->imm1,fast_reg);
+		readwrteparams1((u8)op->reg2,op->imm1,fast_reg);
 		reg=ECX;
 		break;
 
@@ -1331,23 +1331,23 @@ x86_reg  readwrteparams(shil_opcode* op,x86_reg* fast_reg,u32* fast_offset)
 		break;
 
 	case flag_r2 | flag_r0:
-		readwrteparams2(op->reg2,(u8)r0);
+		readwrteparams2((u8)op->reg2,(u8)r0);
 		reg=ECX;
 		break;
 
 	case flag_r2 | flag_gbr:
-		readwrteparams2(op->reg2,(u8)reg_gbr);
+		readwrteparams2((u8)op->reg2,(u8)reg_gbr);
 		reg=ECX;
 		break;
 
 		//3 olny
 	case flag_imm | flag_r2 | flag_gbr:
-		readwrteparams3(op->reg2,(u8)reg_gbr,op->imm1);
+		readwrteparams3((u8)op->reg2,(u8)reg_gbr,op->imm1);
 		reg=ECX;
 		break;
 
 	case flag_imm | flag_r2 | flag_r0:
-		readwrteparams3(op->reg2,(u8)r0,op->imm1);
+		readwrteparams3((u8)op->reg2,(u8)r0,op->imm1);
 		reg=ECX;
 		break;
 
@@ -1459,7 +1459,7 @@ void __fastcall shil_compile_readm(shil_opcode* op)
 	
 	if (size==FLAG_64)
 	{
-		x86e->Emit(op_movlps,GetRegPtr(GetSingleFromDouble(op->reg1)),XMM0);
+		x86e->Emit(op_movlps,GetRegPtr(GetSingleFromDouble((u8)op->reg1)),XMM0);
 		t.exit_point=x86e->CreateLabel(true,0);
 	}
 	else
@@ -1486,7 +1486,7 @@ void __fastcall shil_compile_readm(shil_opcode* op)
 		t.reg_data=destreg;
 	}
 	else
-		t.reg_data=(x86_reg)GetSingleFromDouble(op->reg1);
+		t.reg_data=(x86_reg)GetSingleFromDouble((u8)op->reg1);
 
 	//emit_vmem_read(reg_addr,op->reg1,m_unpack_sz[size]);
 	roml_patch_list.push_back(t);
@@ -1502,7 +1502,7 @@ void __fastcall shil_compile_writem(shil_opcode* op)
 	x86_reg rsrc;
 	if (size==FLAG_64)
 	{
-		u8 f32reg=GetSingleFromDouble(op->reg1);
+		u8 f32reg=GetSingleFromDouble((u8)op->reg1);
 		x86e->Emit(op_movlps,XMM0,GetRegPtr(f32reg));
 		rsrc=XMM0;
 	}
@@ -1564,7 +1564,7 @@ void __fastcall shil_compile_writem(shil_opcode* op)
 	*/
 	old_offset=x86e->x86_indx-old_offset;
 	
-	x86_Label* patch_point= x86e->CreateLabel(true,0);
+	//x86_Label* patch_point= x86e->CreateLabel(true,0);
 	x86_Label* p4_handler = x86e->CreateLabel(false,0);
 	//Ram Only Mem Lookup
 	roml(reg_addr,p4_handler,&old_offset,fast_reg,fast_reg_offset);
@@ -1580,18 +1580,18 @@ void __fastcall shil_compile_writem(shil_opcode* op)
 
 	roml_patch t;
 	t.p4_access=p4_handler;
-	t.resume_offset=old_offset;
+	t.resume_offset=(u8)old_offset;
 	t.exit_point=x86e->CreateLabel(true,0);
 	t.asz=size;
 	t.type=1;
-	t.is_float=was_float;
+	t.is_float=was_float != 0;
 	t.reg_addr=reg_addr;
 	if (size!=FLAG_64)
 	{
 		t.reg_data=rsrc;
 	}
 	else
-		t.reg_data=(x86_reg)GetSingleFromDouble(op->reg1);
+		t.reg_data=(x86_reg)GetSingleFromDouble((u8)op->reg1);
 
 	roml_patch_list.push_back(t);
 	
@@ -1602,7 +1602,7 @@ void* nvr_lut[4]={ReadMem8,ReadMem16,ReadMem32,ReadMem32};
 #include "dc/mem/sh4_internal_reg.h"
 void apply_roml_patches()
 {
-	for (int i=0;i<roml_patch_list.size();i++)
+	for (u32 i=0;i<roml_patch_list.size();i++)
 	{
 		void * function=roml_patch_list[i].type==1 ?nvw_lut[roml_patch_list[i].asz]:nvr_lut[roml_patch_list[i].asz];
 
@@ -1634,7 +1634,7 @@ void apply_roml_patches()
 			}
 			x86e->Emit(op_jmp,roml_patch_list[i].exit_point);
 			x86e->MarkLabel(normal_write);
-			*(u8*)&x86e->x86_buff[offset]=x86e->x86_indx-offset-2;
+			*(u8*)&x86e->x86_buff[offset]=(u8)x86e->x86_indx-offset-2;
 			//printf("patch offset: %d\n",x86e->x86_indx-offset-2);
 		}
 		else

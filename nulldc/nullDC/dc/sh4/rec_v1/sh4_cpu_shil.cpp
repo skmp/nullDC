@@ -4,12 +4,12 @@
 #include "dc/sh4/sh4_opcode_list.h"
 #include "dc/sh4/sh4_registers.h"
 #include "dc/sh4/shil/shil.h"
+#include "log\log_interface.hpp"
 #include <assert.h>
 
 #undef sh4op
 
 #define SH4_REC
-
 
 shil_stream* ilst;
 
@@ -341,7 +341,7 @@ bool __fastcall MatchDiv32u(u32 op,u32 pc)
 	u32 match=MatchDiv32(pc+2,div_som_reg1,div_som_reg2,div_som_reg3);
 
 
-	//printf("DIV32U matched %d%% @ 0x%X\n",match*100/65,pc);
+	//logWrite("DIV32U matched %d%% @ 0x%X\n",match*100/65,pc);
 	if (match==65)
 	{
 		//DIV32U was perfectly matched :)
@@ -361,7 +361,7 @@ bool __fastcall MatchDiv32s(u32 op,u32 pc)
 	div_som_reg3=(Sh4RegType)n;
 
 	u32 match=MatchDiv32(pc+2,div_som_reg1,div_som_reg2,div_som_reg3);
-	printf("DIV32S matched %d%% @ 0x%X\n",match*100/65,pc);
+	logWrite("DIV32S matched %d%% @ 0x%X\n",match*100/65,pc);
 	
 	if (match==65)
 	{
@@ -391,7 +391,7 @@ sh4op(i0010_nnnn_mmmm_0111)
 		//DIV32S was perfectly matched :)
 		bb->flags.SynthOpcode=BLOCK_SOM_SIZE_128;
 		ilst->div(div_som_reg1,div_som_reg2,div_som_reg3,FLAG_SX|FLAG_32);
-		printf("div32s %d/%d/%d\n",div_som_reg1,div_som_reg2,div_som_reg3);
+		logWrite("div32s %d/%d/%d\n",div_som_reg1,div_som_reg2,div_som_reg3);
 		//shil_interpret(op);
 	}
 	else //fallback to interpreter (16b div propably)
@@ -403,8 +403,8 @@ sh4op(i0010_nnnn_mmmm_0111)
 //div1 <REG_M>,<REG_N>          
 sh4op(i0011_nnnn_mmmm_0100)
 {
-	u32 n=GetN(op);
-	u32 m=GetM(op);
+	//u32 n=GetN(op);
+	//u32 m=GetM(op);
 
 	shil_interpret(op);
 }
@@ -430,8 +430,8 @@ sh4op(i0011_nnnn_mmmm_1111)
 //subc <REG_M>,<REG_N>          
 sh4op(i0011_nnnn_mmmm_1010)
 {
-	u32 n = GetN(op);
-	u32 m = GetM(op);
+	//u32 n = GetN(op);
+	//u32 m = GetM(op);
 /*
 	ilst->neg(r[n]);			//dest=-dest
 	ilst->LoadT(CF);			//load T to carry flag
@@ -459,8 +459,8 @@ sh4op(i0100_nnnn_0001_0000)
 //negc <REG_M>,<REG_N>          
 sh4op(i0110_nnnn_mmmm_1010)
 {
-	u32 n = GetN(op);
-	u32 m = GetM(op);
+	//u32 n = GetN(op);
+	//u32 m = GetM(op);
 
 	shil_interpret(op);
 }
@@ -633,8 +633,8 @@ sh4op(i0110_nnnn_mmmm_1111)
 //xtrct <REG_M>,<REG_N>         
 sh4op(i0010_nnnn_mmmm_1101)
 {
-	u32 n = GetN(op);
-	u32 m = GetM(op);
+	//u32 n = GetN(op);
+	//u32 m = GetM(op);
 
 	shil_interpret(op);
 }
@@ -700,11 +700,12 @@ sh4op(i1111_nnnn_mmmm_0000)
 	{
 		shil_interpret(op);
 		return;
+		/*
 		u32 n = (op >> 9) & 0x07;
 		u32 m = (op >> 5) & 0x07;
 		
 		ilst->fadd(dr[n],dr[m]);
-
+		*/
 		//START64();
 		//double drn=GetDR(n), drm=GetDR(m);
 		//drn += drm;
@@ -1405,7 +1406,7 @@ void DoDslot(u32 pc,BasicBlock* bb)
 	u16 opcode=ReadMem16(pc+2);
 
 	if (opcode==0 || opcode==0)
-		printf("0 on delayslot , ingoring it ..\n");
+		logWrite("0 on delayslot , ingoring it ..\n");
 	else
 		RecOpPtr[opcode](opcode,pc+2,bb);
 		bb->flags.HasDelaySlot=true;

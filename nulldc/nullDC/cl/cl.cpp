@@ -10,6 +10,7 @@
 #include <string.h>
 #include "config/config.h"
 #include "serial_ipc/serial_ipc_client.h"
+#include "log\\log_interface.hpp"
 
 wchar* trim_ws(wchar* str)
 {
@@ -49,7 +50,7 @@ int setconfig(wchar** arg,int cl)
 	{
 		if (cl<1)
 		{
-			printf("-config : invalid number of parameters, format is section:key=value\n");
+			logWrite("-config : invalid number of parameters, format is section:key=value\n");
 			return rv;
 		}
 		wchar* sep=wcsstr(arg[1],L":");
@@ -74,7 +75,7 @@ int setconfig(wchar** arg,int cl)
 
 		if (sect==0 || key==0)
 		{
-			printf("-config : invalid parameter, format is section:key=value\n");
+			logWrite("-config : invalid parameter, format is section:key=value\n");
 			return rv;
 		}
 
@@ -101,7 +102,7 @@ int setconfigfile(wchar** arg,int cl)
 {
 	if (cl<1)
 	{
-		printf("-configfile : invalid number of parameters, format is -configfile <file>\n");
+		logWrite("-configfile : invalid number of parameters, format is -configfile <file>\n");
 		return 0;
 	}
 	wcscpy(cfgPath,arg[1]);

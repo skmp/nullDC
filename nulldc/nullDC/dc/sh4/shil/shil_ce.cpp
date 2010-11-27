@@ -1,6 +1,6 @@
 #include "shil_ce.h"
 #include "dc\mem\sh4_mem.h"
-
+#include "log\log_interface.hpp"
 
 u64 total_ops_removed=0;
 void CompileBasicBlock_slow_c(BasicBlock* block,u32 pass);
@@ -35,11 +35,11 @@ void SetShilHanlder(shil_opcodes op,shil_ce_FP* ha)
 {
 	if (op>(shilop_count-1))
 	{
-		printf("SHIL COMPILER ERROR\n");
+		logWrite("SHIL COMPILER ERROR\n");
 	}
 	if (shil_ce_lut[op]!=shil_ce_nimp)
 	{
-		printf("SHIL COMPILER ERROR [hash table overwrite]\n");
+		logWrite("SHIL COMPILER ERROR [hash table overwrite]\n");
 	}
 
 	shil_ce_lut[op]=ha;
@@ -170,9 +170,9 @@ void Init_ce()
 void ce_die(char* reason)
 {
 	if (reason)
-		printf("C.E. pass : die [%s]\n",reason);
+		logWrite("C.E. pass : die [%s]\n",reason);
 	else
-		printf("C.E. pass : die\n");
+		logWrite("C.E. pass : die\n");
 
 	__debugbreak();
 }
@@ -267,9 +267,9 @@ void ce_WriteBack(u32 reg,shil_stream* il)
 	{
 		if ((shil_ce_gpr[reg].IsRB==false) || (shil_ce_gpr[reg].RegValue!=shil_ce_gpr[reg].RB_value))
 		{
-			u8 aliased_reg;
+			/*u8 aliased_reg;
 			u32 rv=ce_GetConst(reg);
-			/* // not realy usable til temporal reg alloc is implemented or smth :)
+			 // not realy usable til temporal reg alloc is implemented or smth :)
 			if (ce_FindExistingConst(rv,&aliased_reg))
 			{
 				il->mov((Sh4RegType)reg,(Sh4RegType)aliased_reg);
@@ -340,7 +340,7 @@ u32 shil_optimise_pass_ce_main(BasicBlock* bb)
 
 			if (op->opcode==shilop_writem && !is_writem_safe(bb,op))
 			{
-				printf("Block %08X : disabling read-const @ %d/%d\n",bb->start,i,bb->ilst.opcodes.size());
+				logWrite("Block %08X : disabling read-const @ %d/%d\n",bb->start,i,bb->ilst.opcodes.size());
 				unsafe_pos=i;
 				break;
 			}
@@ -349,6 +349,7 @@ u32 shil_optimise_pass_ce_main(BasicBlock* bb)
 
 
 	bool old_re_run=ce_re_run;
+
 	for (size_t i=0;i<bb->ilst.opcodes.size();i++)
 	{
 		shil_opcode* op=&bb->ilst.opcodes[i];
@@ -421,7 +422,7 @@ void shil_optimise_pass_ce_driver(BasicBlock* bb)
 
 	static_reads.clear();
 	//if (rv)
-	//	printf("Optimised block 0x%X , %d opts : %d passes ,delta=%d, total removed %d \n",bb->start,rv,pass,old_Size-bb->ilst.opcodes.size(),total_ops_removed);
+	//	logWrite("Optimised block 0x%X , %d opts : %d passes ,delta=%d, total removed %d \n",bb->start,rv,pass,old_Size-bb->ilst.opcodes.size(),total_ops_removed);
 
 }
 //default thing to do :p
@@ -671,7 +672,7 @@ shilh(readm)
 			shil_ce_add_static(addr,size);
 			if (size==FLAG_64)
 			{
-				Sh4RegType base=(Sh4RegType)GetSingleFromDouble(op->reg1);
+				Sh4RegType base=(Sh4RegType)GetSingleFromDouble((u8)op->reg1);
 				il->mov(base,ReadMem32(addr));
 				il->mov((Sh4RegType)(base+1),ReadMem32(addr+4));
 			}
@@ -730,11 +731,14 @@ shilh(readm)
 
 bool is_writem_safe(BasicBlock* bb, shil_opcode* op)
 {
-	bool rv=ce_ReadWriteParams(op);
+	//bool rv=ce_ReadWriteParams(op);
+
 	u32 addr;
 	if (GetRamReadAdr(op,&addr))
 	{
-		u32 size=op->flags&3;
+		return !bb->IsMemLocked(addr);
+		//u32 size=op->flags&3;
+		/*
 		if (bb->IsMemLocked(addr))
 		{
 			return false;	//block modifies its page. not safe.
@@ -742,7 +746,7 @@ bool is_writem_safe(BasicBlock* bb, shil_opcode* op)
 		else
 		{
 			return true;	//block writes somewhere outside of its page. safe.
-		}
+		}*/
 	}
 
 	//any non-static write may write in the block page list, so its not safe by default
@@ -752,7 +756,7 @@ shilh(writem)
 {
 	bool rv=ce_ReadWriteParams(op);
 	u32 addr;
-	bool kill_all=false;
+	//bool kill_all=false;
 	if (GetRamReadAdr(op,&addr))
 	{
 		u32 size=op->flags&3;
@@ -760,7 +764,7 @@ shilh(writem)
 		{
 			verify(!settings.dynarec.Safe);	//can't happen in safe mode
 			shil_ce_is_locked=false;
-			printf("CE: Block will be demoted to manual for the CE pass\n");
+			logWrite("CE: Block will be demoted to manual for the CE pass\n");
 		}
 	}
 	//even if we did optimise smth , a readback may be needed
@@ -1031,7 +1035,7 @@ u32 shil_optimise_pass_btp_main(BasicBlock* bb)
 		u32 new_cv=0;
 		if (backscan_const(bb,reg_pc,&new_cv))
 		{
-			//printf("Block promote 0x%X , from DYNAMIC to FIXED exit 0x%X : %d\n",bb->start,new_cv,bb->flags.ExitType);
+			//logWrite("Block promote 0x%X , from DYNAMIC to FIXED exit 0x%X : %d\n",bb->start,new_cv,bb->flags.ExitType);
 			bb->TF_next_addr=new_cv;
 			if (bb->flags.ExitType==BLOCK_EXITTYPE_DYNAMIC)
 				bb->flags.ExitType=BLOCK_EXITTYPE_FIXED;

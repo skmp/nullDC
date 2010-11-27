@@ -294,6 +294,7 @@
     <ClCompile Include="debug_mem.cpp" />
     <ClCompile Include="nullDC.cpp" />
     <ClCompile Include="stdclass.cpp" />
+    <ClCompile Include="log\log.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dc\dc.h">
@@ -512,6 +513,8 @@
     <ClInclude Include="basic_types.h" />
     <ClInclude Include="stdclass.h" />
     <ClInclude Include="types.h" />
+    <ClInclude Include="log\log.hpp" />
+    <ClInclude Include="log\log_interface.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="gui\ndc_icon.ico">

@@ -75,7 +75,7 @@ void RaiseAsicErr(HollyInterruptID inter)
 
 void fastcall asic_RaiseInterrupt(HollyInterruptID inter)
 {
-	u8 m=inter>>8;
+	u8 m=(u8)(inter>>8);
 	switch(m)
 	{
 	case 0:

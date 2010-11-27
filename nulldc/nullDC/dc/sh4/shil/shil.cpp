@@ -23,30 +23,30 @@ bool shil_opcode::ReadsReg(Sh4RegType reg)
 	if (this->flags & FLAG_REG1)
 	{
 		if (opcode!=shilop_mov && opcode!=shilop_movex && opcode!=shilop_readm)
-			used |= (reg1==reg) ;
+			used |= (bool)(reg1==reg) ;
 	}
 
 	if (this->flags & FLAG_REG2)
 	{
-		used |= (reg2==reg) ;
+		used |= (bool)(reg2==reg) ;
 	}
 
 	if (this->flags & FLAG_R0)
-		used |= (r0==reg) ;
+		used |= (bool)(r0==reg) ;
 
 	if (this->flags & FLAG_GBR)
-		used |= (reg_gbr==reg) ;
+		used |= (bool)(reg_gbr==reg) ;
 
 	if (this->flags & FLAG_MACH)
 	{
 		if (opcode!=shilop_mul)
-			used |= (reg_mach==reg) ;
+			used |= (bool)(reg_mach==reg) ;
 	}
 
 	if (this->flags & FLAG_MACL)
 	{
 		if (opcode!=shilop_mul)
-			used |= (reg_macl==reg) ;
+			used |= (bool)(reg_macl==reg) ;
 	}
 
 	return used;

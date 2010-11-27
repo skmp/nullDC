@@ -26,9 +26,9 @@ void RegWrite_SB_C2DST(u32 data)
 //PVR-DMA
 void do_pvr_dma()
 {
-	u32 chcr	= DMAC_CHCR[0].full,
-	dmaor	= DMAC_DMAOR.full,
-	dmatcr	= DMAC_DMATCR[0];
+	//u32 chcr	= DMAC_CHCR[0].full,
+	u32 dmaor	= DMAC_DMAOR.full;
+	//dmatcr	= DMAC_DMATCR[0];
 
 	u32	src		= SB_PDSTAR,
 		dst		= SB_PDSTAP,
