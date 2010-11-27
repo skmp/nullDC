@@ -52,7 +52,7 @@ CompiledBlockInfo*  __fastcall CompileCode(u32 pc)
 {
 	LARGE_INTEGER comp_time_start,comp_time_end;
 	CompiledBlockInfo* cblock=0;
-	bool reset_blocks;
+	//bool reset_blocks;
 
 	QueryPerformanceCounter(&comp_time_start);
 	{

@@ -340,7 +340,7 @@ SRamChip sys_nvmem(BBSRAM_SIZE);
 
 bool LoadRomFiles(wchar* root)
 {
-	char* bios_path[512];
+	//char* bios_path[512];
 	
 	if (!sys_rom.Load(root,ROM_PREFIX,L"%boot.bin;%boot.bin.bin;%bios.bin;%bios.bin.bin" ROM_NAMES,L"bootrom"))
 	{

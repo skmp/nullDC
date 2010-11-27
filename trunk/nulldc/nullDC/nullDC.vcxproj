@@ -302,6 +302,7 @@
     <ClCompile Include="dc\maple\maple_if.cpp" />
     <ClCompile Include="dc\asic\asic.cpp" />
     <ClCompile Include="gui\base.cpp" />
+    <ClCompile Include="log\log.cpp" />
     <ClCompile Include="plugins\plugin_manager.cpp" />
     <ClCompile Include="plugins\plugin_types.cpp" />
     <ClCompile Include="serial_ipc\serial_ipc_client.cpp" />
@@ -364,6 +365,8 @@
     <ClInclude Include="dc\mem\sh4_mem.h" />
     <ClInclude Include="dc\mem\Elf.h" />
     <ClInclude Include="dc\mem\memutil.h" />
+    <ClInclude Include="log\log.hpp" />
+    <ClInclude Include="log\log_interface.hpp" />
     <ClInclude Include="sh4_reg_playground.h">
       <FileType>Document</FileType>
     </ClInclude>
