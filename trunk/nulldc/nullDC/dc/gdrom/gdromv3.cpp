@@ -40,7 +40,7 @@ struct
 	u32 sector_type;
 } read_params;
 
-struct 
+struct packet_cmd_t
 {
 	u32 index;
 	union
@@ -71,7 +71,9 @@ struct
 			};
 		}GDReadBlock;
 	};
-} packet_cmd;
+};
+
+packet_cmd_t packet_cmd;
 
 //Buffer for sector reads [ dma ]
 struct 
@@ -157,6 +159,21 @@ u32 data_write_mode=0;
 #define printf_spicmd nilprintf
 #define printf_subcode nilprintf 
 
+u32 FASTCALL gdrom_get_sector_type(const packet_cmd_t& cmd)
+{
+	if((cmd.GDReadBlock.head == 1) && (cmd.GDReadBlock.subh == 1) 
+		&& (cmd.GDReadBlock.data == 1) && (cmd.GDReadBlock.expdtype == 3) && (cmd.GDReadBlock.other == 0))
+		return 2340;
+	else if( cmd.GDReadBlock.head || cmd.GDReadBlock.subh || cmd.GDReadBlock.other || (!cmd.GDReadBlock.data) )
+	{
+		logWrite("GDROM: *FIXME* ADD MORE CD READ SETTINGS %d %d %d %d 0x%01X\n",
+			cmd.GDReadBlock.head,cmd.GDReadBlock.subh,
+			cmd.GDReadBlock.other,cmd.GDReadBlock.data,
+			cmd.GDReadBlock.expdtype);
+	}
+	
+	return 2048;
+}
 void FASTCALL gdrom_get_cdda(s16* sector)
 {
 	//silence ! :p
@@ -538,12 +555,9 @@ void gd_process_spi_cmd()
 		{
 			#define readcmd packet_cmd.GDReadBlock
 
-			if( readcmd.head ||readcmd.subh || readcmd.other || (!readcmd.data) )	// assert
-				logWrite("GDROM: *FIXME* ADD MORE CD READ SETTINGS %d %d %d %d 0x%01X\n",readcmd.head,readcmd.subh,readcmd.other,readcmd.data,readcmd.expdtype);
-
 			read_params.start_sector = GetFAD(&readcmd.b[2],readcmd.prmtype);
 			read_params.remaining_sectors = (readcmd.b[8]<<16) | (readcmd.b[9]<<8) | (readcmd.b[10]);
-			read_params.sector_type = ((readcmd.head == 1) && (readcmd.subh == 1) && (readcmd.data == 1) && (readcmd.expdtype == 3) && (readcmd.other == 0)) ? 2340 : 2048;
+			read_params.sector_type = gdrom_get_sector_type(packet_cmd);
 
 			printf_spicmd("SPI_CD_READ sec=%d sz=%d/%d dma=%d\n",read_params.start_sector,read_params.remaining_sectors,read_params.sector_type,Features.CDRead.DMA);
 
