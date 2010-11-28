@@ -9,7 +9,7 @@ static inline const char* getFilename(const char* path)
 {
 	register u32 ptr;
 	
-	if(*(path + 0) != '\\' || *(path + 0) != '/')
+	if(*(path + 0) != '\\' && *(path + 0) != '/')
 		return path;
 
 	ptr = strlen(path) - 1;

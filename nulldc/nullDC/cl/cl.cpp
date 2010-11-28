@@ -50,9 +50,10 @@ int setconfig(wchar** arg,int cl)
 	{
 		if (cl<1)
 		{
-			logWrite("-config : invalid number of parameters, format is section:key=value\n");
+			printf("-config : invalid number of parameters, format is section:key=value\n");
 			return rv;
 		}
+		
 		wchar* sep=wcsstr(arg[1],L":");
 		if (sep==0)
 		{
@@ -75,12 +76,13 @@ int setconfig(wchar** arg,int cl)
 
 		if (sect==0 || key==0)
 		{
-			logWrite("-config : invalid parameter, format is section:key=value\n");
+			printf("-config : invalid parameter, format is section:key=value\n");
 			return rv;
 		}
 
 		if (value==0)
 			value=L"";
+			
 		wprintf(L"Virtual cfg %s:%s=%s\n",sect,key,value);
 
 		cfgSetVitual(sect,key,value);
@@ -102,7 +104,7 @@ int setconfigfile(wchar** arg,int cl)
 {
 	if (cl<1)
 	{
-		logWrite("-configfile : invalid number of parameters, format is -configfile <file>\n");
+		printf("-configfile : invalid number of parameters, format is -configfile <file>\n");
 		return 0;
 	}
 	wcscpy(cfgPath,arg[1]);
