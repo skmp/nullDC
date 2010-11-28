@@ -1431,7 +1431,7 @@ void __fastcall shil_compile_readm(shil_opcode* op)
 	}*/
 	
 	old_offset=x86e->x86_indx-old_offset;
-	//x86_Label* patch_point= x86e->CreateLabel(true,0);
+	x86_Label* patch_point= x86e->CreateLabel(true,0);
 	x86_Label* p4_handler = x86e->CreateLabel(false,0);
 	//Ram Only Mem Lookup
 	roml(reg_addr,p4_handler,&old_offset,fast_reg,fast_reg_offset);
