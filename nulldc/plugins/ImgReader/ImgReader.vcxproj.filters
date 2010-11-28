@@ -10,6 +10,12 @@
     <Filter Include="UI">
       <UniqueIdentifier>{d07a0dca-0a95-4f57-bc9c-a34803e70a82}</UniqueIdentifier>
     </Filter>
+    <Filter Include="deps">
+      <UniqueIdentifier>{42c9d7af-ffe7-48c0-a819-a51d8e059c32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="deps\zlib">
+      <UniqueIdentifier>{1b1a4343-60b7-42c5-903e-d107bc8ed344}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
@@ -29,9 +35,6 @@
     <ClCompile Include="ioctl.cpp">
       <Filter>Drivers</Filter>
     </ClCompile>
-    <ClCompile Include="iso9660.cpp">
-      <Filter>Drivers</Filter>
-    </ClCompile>
     <ClCompile Include="mds.cpp">
       <Filter>Drivers</Filter>
     </ClCompile>
@@ -40,6 +43,60 @@
     </ClCompile>
     <ClCompile Include="ui.cpp">
       <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="chd.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="gdi.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\adler32.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\compress.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\crc32.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\deflate.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\example.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\gzio.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\infback.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\inffast.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\inflate.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\inftrees.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\trees.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\uncompr.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\zlib\zutil.c">
+      <Filter>deps\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\md5.cpp">
+      <Filter>deps</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\sha1.cpp">
+      <Filter>deps</Filter>
+    </ClCompile>
+    <ClCompile Include="deps\chdr.cpp">
+      <Filter>deps</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -56,9 +113,6 @@
       <Filter>Drivers</Filter>
     </ClInclude>
     <ClInclude Include="ioctl.h">
-      <Filter>Drivers</Filter>
-    </ClInclude>
-    <ClInclude Include="iso9660.h">
       <Filter>Drivers</Filter>
     </ClInclude>
     <ClInclude Include="mds.h">
@@ -78,6 +132,57 @@
     </ClInclude>
     <ClInclude Include="ui.h">
       <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="chd.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="gdi.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\chd.h">
+      <Filter>deps</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\md5.h">
+      <Filter>deps</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\sha1.h">
+      <Filter>deps</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\crc32.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\deflate.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\inffast.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\inffixed.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\inflate.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\inftrees.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\trees.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\zconf.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\zconf.in.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\zlib.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\zlib\zutil.h">
+      <Filter>deps\zlib</Filter>
+    </ClInclude>
+    <ClInclude Include="deps\coretypes.h">
+      <Filter>deps</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

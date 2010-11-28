@@ -119,7 +119,7 @@ int GetFile(TCHAR *szFileName, TCHAR *szParse,u32 flags)
 {
 	fileflags=flags;
 	if (szParse==0)
-		szParse=L"CD/GD Images (*.cdi;*.mds;*.nrg;*.gdi) \0*.cdi;*.mds;*.nrg;*.gdi\0\0";
+		szParse=L"CD/GD Images (*.cdi;*.mds;*.nrg;*.gdi;*.chd) \0*.cdi;*.mds;*.nrg;*.gdi;*.chd\0\0";
 	wcscpy(SelectedFile,szFileName);
 	
 	TCHAR* dst=FileFormats;

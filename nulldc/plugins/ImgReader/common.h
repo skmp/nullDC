@@ -204,6 +204,29 @@ struct Disc
 		for (size_t i=0;i<tracks.size();i++)
 			tracks[i].Destroy();
 	};
+
+	void FillGDSession()
+	{
+		Session ses;
+
+		//session 1 : start @ track 1, and its fad
+		ses.FirstTrack=1;
+		ses.StartFAD=tracks[0].StartFAD;
+		sessions.push_back(ses);
+
+		//session 2 : start @ track 3, and its fad
+		ses.FirstTrack=3;
+		ses.StartFAD=tracks[0].StartFAD;
+		sessions.push_back(ses);
+
+		//this isn't always true for gdroms, depens on area look @ the get-toc code
+		type=GdRom;
+		LeadOut.ADDR=0;
+		LeadOut.CTRL=0;
+		LeadOut.StartFAD=549300;
+
+		EndFAD=549300;
+	}
 };
 
 extern Disc* disc;
