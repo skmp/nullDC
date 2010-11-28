@@ -1,7 +1,8 @@
 #include "common.h"
 #include "cdi.h"
 #include "mds.h"
-#include "iso9660.h"
+#include "gdi.h"
+#include "chd.h"
 #include "ioctl.h"
 
 #include <memory.h>
@@ -13,6 +14,7 @@ Disc*(*drivers[])(wchar* path)=
 	gdi_parse,
 	cdi_parse,
 	ioctl_parse,
+	chd_parse,
 	0
 };
 

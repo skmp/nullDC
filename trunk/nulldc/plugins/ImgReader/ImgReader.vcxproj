@@ -55,7 +55,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;NULLGDR_EXPORTS;X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -83,7 +83,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WholeProgramOptimization>true</WholeProgramOptimization>
-      <AdditionalIncludeDirectories>$(SolutionDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir);$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;NULLGDR_EXPORTS;X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -113,22 +113,55 @@
     <None Include="exports.def" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="chd.cpp" />
+    <ClCompile Include="deps\chdr.cpp" />
+    <ClCompile Include="deps\md5.cpp" />
+    <ClCompile Include="deps\sha1.cpp" />
+    <ClCompile Include="deps\zlib\adler32.c" />
+    <ClCompile Include="deps\zlib\compress.c" />
+    <ClCompile Include="deps\zlib\crc32.c" />
+    <ClCompile Include="deps\zlib\deflate.c" />
+    <ClCompile Include="deps\zlib\example.c" />
+    <ClCompile Include="deps\zlib\gzio.c" />
+    <ClCompile Include="deps\zlib\infback.c" />
+    <ClCompile Include="deps\zlib\inffast.c" />
+    <ClCompile Include="deps\zlib\inflate.c" />
+    <ClCompile Include="deps\zlib\inftrees.c" />
+    <ClCompile Include="deps\zlib\trees.c" />
+    <ClCompile Include="deps\zlib\uncompr.c" />
+    <ClCompile Include="deps\zlib\zutil.c" />
     <ClCompile Include="ImgReader.cpp" />
     <ClCompile Include="cdi.cpp" />
     <ClCompile Include="common.cpp" />
     <ClCompile Include="ioctl.cpp" />
-    <ClCompile Include="iso9660.cpp" />
+    <ClCompile Include="gdi.cpp" />
     <ClCompile Include="mds.cpp" />
     <ClCompile Include="mds_reader.cpp" />
     <ClCompile Include="ui.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="chd.h" />
+    <ClInclude Include="deps\chd.h" />
+    <ClInclude Include="deps\coretypes.h" />
+    <ClInclude Include="deps\md5.h" />
+    <ClInclude Include="deps\sha1.h" />
+    <ClInclude Include="deps\zlib\crc32.h" />
+    <ClInclude Include="deps\zlib\deflate.h" />
+    <ClInclude Include="deps\zlib\inffast.h" />
+    <ClInclude Include="deps\zlib\inffixed.h" />
+    <ClInclude Include="deps\zlib\inflate.h" />
+    <ClInclude Include="deps\zlib\inftrees.h" />
+    <ClInclude Include="deps\zlib\trees.h" />
+    <ClInclude Include="deps\zlib\zconf.h" />
+    <ClInclude Include="deps\zlib\zconf.in.h" />
+    <ClInclude Include="deps\zlib\zlib.h" />
+    <ClInclude Include="deps\zlib\zutil.h" />
     <ClInclude Include="ImgReader.h" />
     <ClInclude Include="cdi.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="gd_driver.h" />
     <ClInclude Include="ioctl.h" />
-    <ClInclude Include="iso9660.h" />
+    <ClInclude Include="gdi.h" />
     <ClInclude Include="mds.h" />
     <ClInclude Include="mds_reader.h" />
     <ClInclude Include="pfctoc.h" />
