@@ -72,7 +72,7 @@ void UpdateTMUCounts(u32 reg)
 	InterruptPend(tmu_intID[reg],tmu_regs_CR[reg] & tmu_underflow);
 	InterruptMask(tmu_intID[reg],tmu_regs_CR[reg] & tmu_UNIE);
 
-	if (old_mode[reg]==(tmu_regs_CR[reg] & 0x7))
+	if (old_mode[reg]==(u32)(tmu_regs_CR[reg] & 0x7))
 		return;
 	else
 		old_mode[reg]=(tmu_regs_CR[reg] & 0x7);

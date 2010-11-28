@@ -1,11 +1,13 @@
-#include "log.hpp"
+#include "logging.h"
 #include <iostream>
 
 static CLogger gActiveLogger;
+static const char* extractFilename(const char* path);
 
 CLogger::CLogger() 
 		:mMode(LOG_MODE_SILENT),
 		 mFirstRun(true),
+		 mDisplayFilenameOnly(true),
 		 mBuf0(0),
 		 mBuf1(0),
 		 mFile(0)
@@ -14,11 +16,7 @@ CLogger::CLogger()
 
 CLogger::~CLogger()
 {
-	if(mFile)
-	{
-		mFile->close();
-		delete mFile;
-	}
+	invalidateStream();
 	
 	delete mBuf0;
 	delete mBuf1;
@@ -32,6 +30,11 @@ void CLogger::invalidateStream()
 	mFile->close();
 	delete mFile;
 	mFile = 0;
+}
+
+void CLogger::setFilenameOnly(const bool filenameOnly)
+{
+	mDisplayFilenameOnly = filenameOnly;
 }
 
 void CLogger::setMode(const ELogMode mode,const char* arg0)
@@ -91,6 +94,8 @@ void CLogger::dump(const char* field,const char* function,const char* sourceFile
 			return;
 	}
 
+	sourceFile = (mDisplayFilenameOnly) ? extractFilename(sourceFile) : sourceFile;
+	
 	mBuf0[0] = mBuf1[0] = '\0';
 	
 	va_list ap;
@@ -151,4 +156,24 @@ void CLogger::dump(const char* field,const char* function,const char* sourceFile
 CLogger* getActiveLogger()
 {
 	return &gActiveLogger;
+}
+
+static const char* extractFilename(const char* path)
+{
+	register u32 ptr;
+	
+	if(*path != '/')
+		return path;
+
+	ptr = strlen(path) - 1;
+
+	while(ptr)
+	{
+		if(*(path + ptr) == '/')
+			return (path + (ptr + 1));
+
+		--ptr;
+	}
+
+	return path; //not good
 }

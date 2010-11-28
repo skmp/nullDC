@@ -16,7 +16,7 @@ _vmem v2.5 :
 
 #include "_vmem.h"
 #include "dc/aica/aica_if.h"
-#include "log\\log_interface.hpp"
+#include "log/logging_interface.h"
 
 //top registed handler
 _vmem_handler			_vmem_lrp;
@@ -60,16 +60,16 @@ T __fastcall _vmem_readt(u32 addr)
 	if (_vmem_translate(addr,data_ptr))
 	{
 		if (sizeof(T)==1)
-			return (*(_vmem_ReadMem8FP**)((u8*)_vmem_RF8+data_ptr))(addr);
+			return (u8)(*(_vmem_ReadMem8FP**)((u8*)_vmem_RF8+data_ptr))(addr);
 		else if (sizeof(T)==2)
-			return (*(_vmem_ReadMem16FP**)((u8*)_vmem_RF16+data_ptr))(addr);
+			return (u16)(*(_vmem_ReadMem16FP**)((u8*)_vmem_RF16+data_ptr))(addr);
 		else if (sizeof(T)==4)
-			return (*(_vmem_ReadMem32FP**)((u8*)_vmem_RF32+data_ptr))(addr);
+			return (u32)(*(_vmem_ReadMem32FP**)((u8*)_vmem_RF32+data_ptr))(addr);
 		else if (sizeof(T)==8)
 		{
 			//VS2k10: REALLY BAD CODE GENERATED
 			_vmem_ReadMem32FP* handler=*(_vmem_ReadMem32FP**)((u8*)_vmem_RF32+data_ptr);
-			return handler(addr) | (((u64)handler(addr+4))<<32);
+			return (u64)(handler(addr) | (((u64)handler(addr+4))<<32));
 		}
 	}
 	else
@@ -122,31 +122,31 @@ void fastcall _vmem_WriteMem64(u32 addr,u64 data) { _vmem_writet(addr,data); }
 //defualt read handlers
 u8 fastcall _vmem_ReadMem8_not_mapped(u32 addresss)
 {
-	logWrite("[sh4]Read8 from 0x%X, not mapped [_vmem default handler]\n",addresss);
+	log("[sh4]Read8 from 0x%X, not mapped [_vmem default handler]\n",addresss);
 	return (u8)MEM_ERROR_RETURN_VALUE;
 }
 u16 fastcall _vmem_ReadMem16_not_mapped(u32 addresss)
 {
-	logWrite("[sh4]Read16 from 0x%X, not mapped [_vmem default handler]\n",addresss);
+	log("[sh4]Read16 from 0x%X, not mapped [_vmem default handler]\n",addresss);
 	return (u16)MEM_ERROR_RETURN_VALUE;
 }
 u32 fastcall _vmem_ReadMem32_not_mapped(u32 addresss)
 {
-	logWrite("[sh4]Read32 from 0x%X, not mapped [_vmem default handler]\n",addresss);
+	log("[sh4]Read32 from 0x%X, not mapped [_vmem default handler]\n",addresss);
 	return (u32)MEM_ERROR_RETURN_VALUE;
 }
 //defualt write handers
 void fastcall _vmem_WriteMem8_not_mapped(u32 addresss,u8 data)
 {
-	logWrite("[sh4]Write8 to 0x%X=0x%X, not mapped [_vmem default handler]\n",addresss,data);
+	log("[sh4]Write8 to 0x%X=0x%X, not mapped [_vmem default handler]\n",addresss,data);
 }
 void fastcall _vmem_WriteMem16_not_mapped(u32 addresss,u16 data)
 {
-	logWrite("[sh4]Write16 to 0x%X=0x%X, not mapped [_vmem default handler]\n",addresss,data);
+	log("[sh4]Write16 to 0x%X=0x%X, not mapped [_vmem default handler]\n",addresss,data);
 }
 void fastcall _vmem_WriteMem32_not_mapped(u32 addresss,u32 data)
 {
-	logWrite("[sh4]Write32 to 0x%X=0x%X, not mapped [_vmem default handler]\n",addresss,data);
+	log("[sh4]Write32 to 0x%X=0x%X, not mapped [_vmem default handler]\n",addresss,data);
 }
 //code to register handlers
 //0 is considered error :)

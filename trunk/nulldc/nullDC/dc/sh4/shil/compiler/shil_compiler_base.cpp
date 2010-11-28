@@ -264,13 +264,14 @@ bool nvmem_GetPointer(void* &ptr,u32 addr,u32 rw,u32 sz)
 			die("invalid write size");
 	}
 
-	unat tptr;
+	unat tptr = 0;
+
 	if (_vmem_translate(addr,tptr))
 	{
-		ptr=((void**)p_RWF_table)[tptr/4];	//direct value, no need to derefernce
+		ptr=((void**)p_RWF_table)[tptr >> 2];	//direct value, no need to derefernce
 		return false;
 	}
-	else
+	//else
 	{
 		ptr=(void*)tptr;				//pointer, needs to be readed
 		return true;
@@ -281,7 +282,7 @@ bool nvmem_GetPointer(void* &ptr,u32 addr,u32 rw,u32 sz)
 void emit_vmem_op_compat_const(x86_block* x86e,u32 rw,u32 sz,u32 addr,u32 reg)
 {
 	if (sz==FLAG_64)
-		reg=GetSingleFromDouble(reg);
+		reg=GetSingleFromDouble((u8)reg);
 
 	void* ptr;
 	if (nvmem_GetPointer(ptr,addr,rw,sz))
@@ -965,8 +966,8 @@ void __fastcall shil_compile_mov(shil_opcode* op)
 		assert(size==FLAG_64);//32 or 64 b
 		assert(0==(op->flags & (FLAG_IMM1|FLAG_IMM2)));//no imm can be used
 		//printf("mov64 not supported\n");
-		u8 dest=GetSingleFromDouble(op->reg1);
-		u8 source=GetSingleFromDouble(op->reg2);
+		u8 dest=GetSingleFromDouble((u8)op->reg1);
+		u8 source=GetSingleFromDouble((u8)op->reg2);
 
 		//x86e->Emit(op_mov32,EAX,GetRegPtr(source));
 		//x86e->Emit(op_mov32,ECX,GetRegPtr(source+1));
@@ -1634,7 +1635,7 @@ void apply_roml_patches()
 			}
 			x86e->Emit(op_jmp,roml_patch_list[i].exit_point);
 			x86e->MarkLabel(normal_write);
-			*(u8*)&x86e->x86_buff[offset]=(u8)x86e->x86_indx-offset-2;
+			*(u8*)&x86e->x86_buff[offset]=(u8)( (u32)(x86e->x86_indx-offset-2) );
 			//printf("patch offset: %d\n",x86e->x86_indx-offset-2);
 		}
 		else
@@ -1906,16 +1907,16 @@ void __fastcall shil_compile_mul(shil_opcode* op)
 			if (op->flags & FLAG_SX)
 			{
 				//x86e->Emit(op_movsx16to32, EAX,(u16*)GetRegPtr(op->reg1));
-				load_with_se16(EAX,op->reg1);
+				load_with_se16(EAX,(u8)op->reg1);
 				//x86e->Emit(op_movsx16to32, ECX,(u16*)GetRegPtr(op->reg2));
-				load_with_se16(ECX,op->reg2);
+				load_with_se16(ECX,(u8)op->reg2);
 			}
 			else
 			{
 				//x86e->Emit(op_movzx16to32, EAX,(u16*)GetRegPtr(op->reg1));
-				load_with_ze16(EAX,op->reg1);
+				load_with_ze16(EAX,(u8)op->reg1);
 				//x86e->Emit(op_movzx16to32, ECX,(u16*)GetRegPtr(op->reg2));
-				load_with_ze16(ECX,op->reg2);
+				load_with_ze16(ECX,(u8)op->reg2);
 			}
 		}
 		else
@@ -1958,7 +1959,6 @@ u32 FASTCALL sh4_div1(u32 rn,u32 rm);
 template<bool sgn>
 u64 FASTCALL shil_helper_slowdiv32(u32 r3,u32 r2, u32 r1)
 {
-
 	if (sgn)
 		sh4_div0s(r2,r3);
 	else
@@ -1977,8 +1977,8 @@ void __fastcall shil_compile_div32(shil_opcode* op)
 	assert(0==(op->flags & (FLAG_IMM2)));
 
 	//x86e->Emit(op_int3);
-	u8 rQuotient=op->reg1;
-	u8 rDivisor=op->reg2;
+	u8 rQuotient=(u8)op->reg1;
+	u8 rDivisor=(u8)op->reg2;
 	u8 rDividend=(u8)op->imm1;
 	//Q=Dend/Dsor
 
@@ -2236,7 +2236,7 @@ void __fastcall shil_compile_fneg(shil_opcode* op)
 	{
 		assert(sz==FLAG_64);
 		assert(IsReg64((Sh4RegType)op->reg1));
-		u32 reg=GetSingleFromDouble(op->reg1);
+		u32 reg=GetSingleFromDouble((u8)op->reg1);
 		x86e->Emit(op_xor32,GetRegPtr(reg+0),0x80000000);
 	}
 }
@@ -2264,7 +2264,7 @@ void __fastcall shil_compile_fabs(shil_opcode* op)
 	{
 		assert(sz==FLAG_64);
 		assert(IsReg64((Sh4RegType)op->reg1));
-		u32 reg=GetSingleFromDouble(op->reg1);
+		u32 reg=GetSingleFromDouble((u8)op->reg1);
 		x86e->Emit(op_and32,GetRegPtr(reg),0x7FFFFFFF);
 	}
 }
@@ -2276,8 +2276,9 @@ void __fastcall shil_compile_pref(shil_opcode* op)
 	assert(0==(op->flags & (FLAG_REG2|FLAG_IMM2)));
 	assert(op->flags & (FLAG_REG1|FLAG_IMM1));
 	
-	u32 sz=op->flags & 3;
-	assert(sz==FLAG_32);
+//	u32 sz=op->flags & 3;
+//	assert(sz==FLAG_32);
+	assert((op->flags & 3)==FLAG_32);
 
 	if (op->flags&FLAG_REG1)
 	{

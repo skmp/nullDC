@@ -23,9 +23,9 @@ DMAC_DMAOR_type DMAC_DMAOR;
 
 void DMAC_Ch2St()
 {
-	u32 chcr	= DMAC_CHCR[2].full,
-		dmaor	= DMAC_DMAOR.full,
-		dmatcr	= DMAC_DMATCR[2];
+	//u32 chcr	= DMAC_CHCR[2].full,
+	u32 dmaor	= DMAC_DMAOR.full;//,
+		//dmatcr	= DMAC_DMATCR[2];
 
 	u32	src		= DMAC_SAR[2],
 		dst		= SB_C2DSTAT,

@@ -106,7 +106,7 @@ struct MemChip
 	u32 Read(u32 addr,u32 sz) 
 	{ 
 
-		if (size==0x20000 & patchRB==0 & DC_PLATFORM==DC_PLATFORM_NORMAL)
+		if ((size==0x20000) & (patchRB==0) & (DC_PLATFORM==DC_PLATFORM_NORMAL))
 		{
 		PatchRandB(data,sz);
 		patchRB=1;

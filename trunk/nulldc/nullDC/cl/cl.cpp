@@ -10,7 +10,7 @@
 #include <string.h>
 #include "config/config.h"
 #include "serial_ipc/serial_ipc_client.h"
-#include "log\\log_interface.hpp"
+#include "log/logging_interface.h"
 
 wchar* trim_ws(wchar* str)
 {
