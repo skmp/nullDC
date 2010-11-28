@@ -4,7 +4,7 @@
 #include "dc/sh4/sh4_opcode_list.h"
 #include "dc/sh4/sh4_registers.h"
 #include "dc/sh4/shil/shil.h"
-#include "log\log_interface.hpp"
+#include "log\logging_interface.h"
 #include <assert.h>
 
 #undef sh4op
@@ -341,7 +341,7 @@ bool __fastcall MatchDiv32u(u32 op,u32 pc)
 	u32 match=MatchDiv32(pc+2,div_som_reg1,div_som_reg2,div_som_reg3);
 
 
-	//logWrite("DIV32U matched %d%% @ 0x%X\n",match*100/65,pc);
+	//log("DIV32U matched %d%% @ 0x%X\n",match*100/65,pc);
 	if (match==65)
 	{
 		//DIV32U was perfectly matched :)
@@ -361,7 +361,7 @@ bool __fastcall MatchDiv32s(u32 op,u32 pc)
 	div_som_reg3=(Sh4RegType)n;
 
 	u32 match=MatchDiv32(pc+2,div_som_reg1,div_som_reg2,div_som_reg3);
-	logWrite("DIV32S matched %d%% @ 0x%X\n",match*100/65,pc);
+	log("DIV32S matched %d%% @ 0x%X\n",match*100/65,pc);
 	
 	if (match==65)
 	{
@@ -391,7 +391,7 @@ sh4op(i0010_nnnn_mmmm_0111)
 		//DIV32S was perfectly matched :)
 		bb->flags.SynthOpcode=BLOCK_SOM_SIZE_128;
 		ilst->div(div_som_reg1,div_som_reg2,div_som_reg3,FLAG_SX|FLAG_32);
-		logWrite("div32s %d/%d/%d\n",div_som_reg1,div_som_reg2,div_som_reg3);
+		log("div32s %d/%d/%d\n",div_som_reg1,div_som_reg2,div_som_reg3);
 		//shil_interpret(op);
 	}
 	else //fallback to interpreter (16b div propably)
@@ -1406,7 +1406,7 @@ void DoDslot(u32 pc,BasicBlock* bb)
 	u16 opcode=ReadMem16(pc+2);
 
 	if (opcode==0 || opcode==0)
-		logWrite("0 on delayslot , ingoring it ..\n");
+		log("0 on delayslot , ingoring it ..\n");
 	else
 		RecOpPtr[opcode](opcode,pc+2,bb);
 		bb->flags.HasDelaySlot=true;

@@ -601,7 +601,7 @@ CompiledBlockInfo* bm_ReverseLookup(void* code_ptr)
 	{
 		CompiledBlockInfo* b=all_block_list[i];
 
-		if ((c-(u8*)b->Code) < b->size)
+		if ( (u32)(c-(u8*)b->Code) < b->size)
 		{
 			return b;
 		}
@@ -614,7 +614,7 @@ CompiledBlockInfo* bm_ReverseLookup(void* code_ptr)
 	{
 		CompiledBlockInfo* b=SuspendedBlocks[i];
 
-		if ((c-(u8*)b->Code) < b->size)
+		if ( (u32)(c-(u8*)b->Code) < b->size)
 		{
 			return b;
 		}

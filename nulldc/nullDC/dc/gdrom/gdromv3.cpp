@@ -4,7 +4,7 @@
 */
 
 #include "gdromv3.h"
-#include "..\\..\\log\\log_interface.hpp"
+#include "../../log/logging_interface.h"
 #include "plugins\plugin_manager.h"
 #include "dc/mem/sh4_mem.h"
 #include "dc/mem/memutil.h"
@@ -166,7 +166,7 @@ u32 FASTCALL gdrom_get_sector_type(const packet_cmd_t& cmd)
 		return 2340;
 	else if( cmd.GDReadBlock.head || cmd.GDReadBlock.subh || cmd.GDReadBlock.other || (!cmd.GDReadBlock.data) )
 	{
-		logWrite("GDROM: *FIXME* ADD MORE CD READ SETTINGS %d %d %d %d 0x%01X\n",
+		log("GDROM: *FIXME* ADD MORE CD READ SETTINGS %d %d %d %d 0x%01X\n",
 			cmd.GDReadBlock.head,cmd.GDReadBlock.subh,
 			cmd.GDReadBlock.other,cmd.GDReadBlock.data,
 			cmd.GDReadBlock.expdtype);
@@ -411,7 +411,7 @@ u32 GetFAD(u8* data,bool msf)
 {
 	if( msf )	
 	{
-		logWrite("GDROM: MSF FORMAT\n");
+		log("GDROM: MSF FORMAT\n");
 		return ((data[0]*60*75) + (data[1]*75) + (data[2]));
 	}
 	else
@@ -490,7 +490,7 @@ void gd_process_ata_cmd()
 
 	case ATA_EXEC_DIAG:
 		printf_ata("ATA_EXEC_DIAG\n");
-		logWrite("ATA_EXEC_DIAG -- not implemented\n");
+		log("ATA_EXEC_DIAG -- not implemented\n");
 		break;
 
 	case ATA_SPI_PACKET:
@@ -583,7 +583,7 @@ void gd_process_spi_cmd()
 		//seems like a non data command :)
 	case 0x70:
 		printf_spicmd("SPI : unknown ? [0x70]\n");
-		logWrite("SPI : unknown ? [0x70]\n");
+		log("SPI : unknown ? [0x70]\n");
 		/*GDStatus.full=0x50; //FIXME
 		RaiseInterrupt(holly_GDROM_CMD);*/
 
@@ -600,7 +600,7 @@ void gd_process_spi_cmd()
 		{
 			extern u32 reply_71_sz;
 			printf_spicmd("SPI : unknown ? [0x71]\n");
-			logWrite("SPI : unknown ? [0x71]\n");
+			log("SPI : unknown ? [0x71]\n");
 			
 			gd_spi_pio_end((u8*)&reply_71[0],reply_71_sz);//uCount
 			SecNumber.Status = ((libGDR.GetDiscType() == GdRom) || (libGDR.GetDiscType()==CdRom_XA)) ? GD_PAUSE : GD_STANDBY;
@@ -624,7 +624,7 @@ void gd_process_spi_cmd()
 
 	case SPI_CD_READ2:
 		printf_spicmd("SPI_CD_READ2\n");
-		logWrite("GDROM: Unhandled Sega SPI frame: SPI_CD_READ2\n");
+		log("GDROM: Unhandled Sega SPI frame: SPI_CD_READ2\n");
 
 		gd_set_state(gds_procpacketdone);
 		break;
@@ -665,7 +665,7 @@ void gd_process_spi_cmd()
 	case SPI_REQ_ERROR:
 	{
 		printf_spicmd("SPI_REQ_ERROR\n");
-		logWrite("GDROM: Unhandled Sega SPI frame: SPI_REQ_ERROR\n");
+		log("GDROM: Unhandled Sega SPI frame: SPI_REQ_ERROR\n");
 		
 		u8 resp[10];
 		resp[0]=0xF0;
@@ -693,7 +693,7 @@ void gd_process_spi_cmd()
 
 	case SPI_CD_OPEN:
 		printf_spicmd("SPI_CD_OPEN\n");
-		logWrite("GDROM: Unhandled Sega SPI frame: SPI_CD_OPEN\n");
+		log("GDROM: Unhandled Sega SPI frame: SPI_CD_OPEN\n");
 		
 		
 		gd_set_state(gds_procpacketdone);
@@ -702,14 +702,14 @@ void gd_process_spi_cmd()
 	case SPI_CD_PLAY:
 		{
 			printf_spicmd("SPI_CD_PLAY\n");
-			logWrite("GDROM: Unhandled Sega SPI frame: SPI_CD_PLAY\n");
+			log("GDROM: Unhandled Sega SPI frame: SPI_CD_PLAY\n");
 			//cdda.CurrAddr.FAD=60000;
 
 			cdda.playing=true;
 			SecNumber.Status=GD_PLAY;
 
 			u32 param_type=packet_cmd.data_8[1]&0x7;
-			logWrite("param_type=%d\n",param_type);
+			log("param_type=%d\n",param_type);
 			if (param_type==1)
 			{
 				cdda.StartAddr.FAD=cdda.CurrAddr.FAD=GetFAD(&packet_cmd.data_8[2],0);
@@ -731,11 +731,11 @@ void gd_process_spi_cmd()
 				die("SPI_CD_SEEK  : not known parameter..");
 			}
 			cdda.repeats=packet_cmd.data_8[6]&0xF;
-			logWrite("cdda.StartAddr=%d\n",cdda.StartAddr.FAD);
-			logWrite("cdda.EndAddr=%d\n",cdda.EndAddr.FAD);
-			logWrite("cdda.repeats=%d\n",cdda.repeats);
-			logWrite("cdda.playing=%d\n",cdda.playing);
-			logWrite("cdda.CurrAddr=%d\n",cdda.CurrAddr.FAD);
+			log("cdda.StartAddr=%d\n",cdda.StartAddr.FAD);
+			log("cdda.EndAddr=%d\n",cdda.EndAddr.FAD);
+			log("cdda.repeats=%d\n",cdda.repeats);
+			log("cdda.playing=%d\n",cdda.playing);
+			log("cdda.CurrAddr=%d\n",cdda.CurrAddr.FAD);
 
 			gd_set_state(gds_procpacketdone);
 		}
@@ -744,13 +744,13 @@ void gd_process_spi_cmd()
 	case SPI_CD_SEEK:
 		{
 			printf_spicmd("SPI_CD_SEEK\n");
-			logWrite("GDROM: Unhandled Sega SPI frame: SPI_CD_SEEK\n");
+			log("GDROM: Unhandled Sega SPI frame: SPI_CD_SEEK\n");
 
 			SecNumber.Status=GD_PAUSE;
 			cdda.playing=false;
 
 			u32 param_type=packet_cmd.data_8[1]&0x7;
-			logWrite("param_type=%d\n",param_type);
+			log("param_type=%d\n",param_type);
 			if (param_type==1)
 			{
 				cdda.StartAddr.FAD=cdda.CurrAddr.FAD=GetFAD(&packet_cmd.data_8[2],0);
@@ -777,11 +777,11 @@ void gd_process_spi_cmd()
 				die("SPI_CD_SEEK  : not known parameter..");
 			}
 
-			logWrite("cdda.StartAddr=%d\n",cdda.StartAddr.FAD);
-			logWrite("cdda.EndAddr=%d\n",cdda.EndAddr.FAD);
-			logWrite("cdda.repeats=%d\n",cdda.repeats);
-			logWrite("cdda.playing=%d\n",cdda.playing);
-			logWrite("cdda.CurrAddr=%d\n",cdda.CurrAddr.FAD);
+			log("cdda.StartAddr=%d\n",cdda.StartAddr.FAD);
+			log("cdda.EndAddr=%d\n",cdda.EndAddr.FAD);
+			log("cdda.repeats=%d\n",cdda.repeats);
+			log("cdda.playing=%d\n",cdda.playing);
+			log("cdda.CurrAddr=%d\n",cdda.CurrAddr.FAD);
 
 
 			gd_set_state(gds_procpacketdone);
@@ -790,7 +790,7 @@ void gd_process_spi_cmd()
 
 	case SPI_CD_SCAN:
 		printf_spicmd("SPI_CD_SCAN\n");
-		logWrite("GDROM: Unhandled Sega SPI frame: SPI_CD_SCAN\n");
+		log("GDROM: Unhandled Sega SPI frame: SPI_CD_SCAN\n");
 		
 
 		gd_set_state(gds_procpacketdone);
@@ -878,7 +878,7 @@ void gd_process_spi_cmd()
 		break;
 
 	default:
-		logWrite("GDROM: Unhandled Sega SPI frame: %X\n", packet_cmd.data_8[0]);
+		log("GDROM: Unhandled Sega SPI frame: %X\n", packet_cmd.data_8[0]);
 
 		gd_set_state(gds_procpacketdone);
 		break;
@@ -909,12 +909,12 @@ u32 ReadMem_gdrom(u32 Addr, u32 sz)
 
 	case GD_DATA:
 		if(2!=sz)
-			logWrite("GDROM: Bad size on DATA REG Read\n");
+			log("GDROM: Bad size on DATA REG Read\n");
 
 		if (gd_state == gds_pio_send_data)
 		{
 			if (pio_buff.index==pio_buff.size)
-				logWrite("GDROM: Illegal Read From DATA (underflow)\n");
+				log("GDROM: Illegal Read From DATA (underflow)\n");
 			else
 			{
 				u32 rv= pio_buff.data[pio_buff.index];
@@ -931,7 +931,7 @@ u32 ReadMem_gdrom(u32 Addr, u32 sz)
 
 		}
 		else
-			logWrite("GDROM: Illegal Read From DATA (wrong mode)\n");
+			log("GDROM: Illegal Read From DATA (wrong mode)\n");
 
 		return 0;
 
@@ -952,7 +952,7 @@ u32 ReadMem_gdrom(u32 Addr, u32 sz)
 		return SecNumber.full;
 
 	default:
-		logWrite("GDROM: Unhandled Read From %X sz:%X\n",Addr,sz);
+		log("GDROM: Unhandled Read From %X sz:%X\n",Addr,sz);
 		return 0;
 	}
 }
@@ -975,7 +975,7 @@ void WriteMem_gdrom(u32 Addr, u32 data, u32 sz)
 	case GD_DATA: 
 		{
 			if(2!=sz)
-				logWrite("GDROM: Bad size on DATA REG\n");
+				log("GDROM: Bad size on DATA REG\n");
 			if (gd_state == gds_waitpacket)
 			{
 				packet_cmd.data_16[packet_cmd.index]=(u16)data;
@@ -994,15 +994,15 @@ void WriteMem_gdrom(u32 Addr, u32 data, u32 sz)
 				}
 			}
 			else
-				logWrite("GDROM: Illegal Write to DATA\n");
+				log("GDROM: Illegal Write to DATA\n");
 			return;
 		}
 	case GD_DEVCTRL_Write:
-		logWrite("GDROM: Write GD_DEVCTRL ( Not implemented on dc)\n");
+		log("GDROM: Write GD_DEVCTRL ( Not implemented on dc)\n");
 		break;
 
 	case GD_DRVSEL: 
-		logWrite("GDROM: Write to GD_DRVSEL\n");
+		log("GDROM: Write to GD_DRVSEL\n");
 		DriveSel = data; 
 		break;
 
@@ -1017,12 +1017,12 @@ void WriteMem_gdrom(u32 Addr, u32 data, u32 sz)
 		break;
 
 	case GD_SECTCNT_Write:
-		logWrite("GDROM: Write to SecCount = %X\n", data);
+		log("GDROM: Write to SecCount = %X\n", data);
 		SecCount.full =(u8) data;
 		break;
 
 	case GD_SECTNUM	:
-		logWrite("GDROM: Write to SecNum; not possible = %X\n", data);
+		log("GDROM: Write to SecNum; not possible = %X\n", data);
 		break;
 
 	case GD_COMMAND_Write:
@@ -1037,7 +1037,7 @@ void WriteMem_gdrom(u32 Addr, u32 data, u32 sz)
 	break;
 
 	default:
-		logWrite("\nGDROM:\tUnhandled Write to %X <= %X sz:%X\n",Addr,data,sz);
+		log("\nGDROM:\tUnhandled Write to %X <= %X sz:%X\n",Addr,data,sz);
 		break;
 	}
 }
@@ -1058,7 +1058,7 @@ void UpdateGDRom()
 	
 	if(SB_GDLEN & 0x1F) 
 	{
-		logWrite("\n!\tGDROM: SB_GDLEN has invalid size (%X) !\n", len);
+		log("\n!\tGDROM: SB_GDLEN has invalid size (%X) !\n", len);
 		return;
 	}
 
@@ -1072,12 +1072,12 @@ void UpdateGDRom()
 	len=min(len,(u32)32);
 	// do we need to do this for gdrom dma ?
 	if(0x8201 != (dmaor &DMAOR_MASK)) {
-		logWrite("\n!\tGDROM: DMAOR has invalid settings (%X) !\n", dmaor);
+		log("\n!\tGDROM: DMAOR has invalid settings (%X) !\n", dmaor);
 		//return;
 	}
 
 	if(0 == len) 
-		logWrite("\n!\tGDROM: Len: %X, Abnormal Termination !\n", len);
+		log("\n!\tGDROM: Len: %X, Abnormal Termination !\n", len);
 
 	u32 len_backup=len;
 
@@ -1137,7 +1137,7 @@ void GDROM_DmaStart(u32 data)
 {
 	if (SB_GDEN==0)
 	{
-		logWrite("Invalid GD-DMA start, SB_GDEN=0.Ingoring it.\n");
+		log("Invalid GD-DMA start, SB_GDEN=0.Ingoring it.\n");
 		return;
 	}
 	SB_GDST|=data&1;

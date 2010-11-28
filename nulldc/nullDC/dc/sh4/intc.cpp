@@ -4,6 +4,8 @@
 #include "tmu.h"
 #include "ccn.h"
 #include "sh4_Registers.h"
+#include "log/logging_interface.h"
+
 /*
 	Interrupt controller emulation
 	Sh4 has a very configurable intc, supporting variable priority per interrupt source
@@ -16,7 +18,7 @@
 #include "dc/asic/asic.h"
 #include "dc/maple/maple_if.h"
 
-#define printf_except(x) 
+#define printf_except(...)
 
 //#define COUNT_INTERRUPT_UPDATES
 //Return interrupt priority level
@@ -182,14 +184,18 @@ void fastcall VirtualInterrupt(u32 id)
 			{
 				if (InterruptSourceList[isrc].GetPrLvl()==ilevel)
 				{
-					InterruptEnvId[cnt]=InterruptSourceList[isrc].IntEvnCode;
-					bool p=InterruptBit[isrc]&vpend;
-					bool m=InterruptBit[isrc]&vmask;
+					InterruptEnvId[cnt]=(u16)InterruptSourceList[isrc].IntEvnCode;
+					bool p=(InterruptBit[isrc]&vpend) != 0;
+					bool m=(InterruptBit[isrc]&vmask) != 0;
+
 					InterruptBit[isrc]=1<<cnt;
+
 					if (p)
 						interrupt_vpend|=InterruptBit[isrc];
+
 					if (m)
 						interrupt_vmask|=InterruptBit[isrc];
+
 					cnt++;
 				}
 			}

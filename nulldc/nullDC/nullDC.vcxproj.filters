@@ -514,7 +514,7 @@
     <ClInclude Include="stdclass.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="log\log.hpp" />
-    <ClInclude Include="log\log_interface.hpp" />
+    <ClInclude Include="log\logging_interface.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="gui\ndc_icon.ico">

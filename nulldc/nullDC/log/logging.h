@@ -2,7 +2,7 @@
 
 #include <stdarg.h>
 #include <fstream>
-#include "..\\types.h"
+#include "../types.h"
 
 enum ELogMode
 {
@@ -26,7 +26,7 @@ class CLogger
 		char* mBuf0;
 		char* mBuf1;
 		
-	private://Consts
+	private://Consts/Enums
 		ELogMode mMode;
 		
 	private://Classes
@@ -34,6 +34,7 @@ class CLogger
 		
 	private://Flags
 		bool mFirstRun;
+		bool mDisplayFilenameOnly;
 		
 	private://Funcs
 		void invalidateStream();
@@ -42,8 +43,11 @@ class CLogger
 		CLogger();
 		~CLogger();
 	
-	public://Funcs
+	public://Setters
 		void setMode(const ELogMode mode,const char* arg0 = 0);
+		void setFilenameOnly(const bool filenameOnly);
+		
+	public://Utils
 		void dump(const char* field,const char* function,const char* sourceFile,const u32 line,const char* format,...);
 		
 	public://Getters

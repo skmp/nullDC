@@ -133,7 +133,7 @@ sh4op(i0000_0000_0011_1000)
 //ocbi @<REG_N>                 
 sh4op(i0000_nnnn_1001_0011)
 {
-	u32 n = GetN(op);
+	//u32 n = GetN(op);
 	//printf("ocbi @0x%08X \n",r[n]);
 } 
 
@@ -141,7 +141,7 @@ sh4op(i0000_nnnn_1001_0011)
 //ocbp @<REG_N>                 
 sh4op(i0000_nnnn_1010_0011)
 {
-	u32 n = GetN(op);
+	//u32 n = GetN(op);
 	//printf("ocbp @0x%08X \n",r[n]);
 } 
 
@@ -149,7 +149,7 @@ sh4op(i0000_nnnn_1010_0011)
 //ocbwb @<REG_N>                
 sh4op(i0000_nnnn_1011_0011)
 {
-	u32 n = GetN(op);
+	//u32 n = GetN(op);
 	//printf("ocbwb @0x%08X \n",r[n]);
 } 
 

@@ -168,7 +168,7 @@ void YUV_data(u32* data , u32 count)
 		//wtf ? not inited
 		YUV_init();
 	}
-	u32 TA_YUV_TEX_BASE=pvr_readreg_TA(0x5F8148,4);
+	//u32 TA_YUV_TEX_BASE=pvr_readreg_TA(0x5F8148,4);
 	u32 TA_YUV_TEX_CTRL=pvr_readreg_TA(0x5F814C,4);
 
 	//printf("Yuv Converter : size %d\n",count);
