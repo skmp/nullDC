@@ -13,7 +13,7 @@
 
 emu_info host;
 
-#define _WIN32_WINNT 0x500
+#define _WIN32_WINNT 0x501
 
 #include <windowsx.h>
 #include <winsock2.h>
@@ -21,7 +21,6 @@ emu_info host;
 #include <time.h>
 
 #include <ws2tcpip.h>
-#include <windowsx.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +36,8 @@ emu_info host;
 	#pragma comment(lib, "lgLcd.lib")
 
 #endif
+
+RAWINPUTDEVICE Rid[1];	
 
 u16 kcode[4]={0xFFFF,0xFFFF,0xFFFF,0xFFFF};
 u32 vks[4]={0};
@@ -354,7 +355,7 @@ void kb_down(u8 kc)
 	}
 }
 void kb_up(u8 kc)
-{
+{		
 	if (kc==VK_SHIFT)
 		kb_shift&=~(0x02 | 0x20); //both shifts ;p
 	kc=(u8)(kb_map[kc & 0xFF]);
@@ -383,63 +384,58 @@ s32 old_pos_y=0;
 
 int g_ShowVMU;
 bool mouseCapture = false;
-int mouseSensitivity;
+float mouseSensitivity;
+
 
 INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
-{
+{	
+		
 	switch(uMsg)
 	{
+	case WM_INPUT:
+		{
+			UINT dwSize = 40;
+			static BYTE lpb[40];		
+    
+			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, 
+							lpb, &dwSize, sizeof(RAWINPUTHEADER));
+    
+			RAWINPUT* raw = (RAWINPUT*)lpb;
 
-	// Mouse Buttons Down
-	case WM_LBUTTONDOWN: mo_buttons &= ~mo_Left; break;	
-	case WM_MBUTTONDOWN: mo_buttons &= ~mo_Middle; break;
-	case WM_RBUTTONDOWN: mo_buttons &= ~mo_Right; break;
-
-	// Buttons Buttons UP
-	case WM_LBUTTONUP: mo_buttons |= mo_Left; break;
-	case WM_MBUTTONUP: mo_buttons |= mo_Middle; break;
-	case WM_RBUTTONUP: mo_buttons |= mo_Right; break;
-
-	case WM_MOUSEMOVE:
-		{									
-			s32 curr_pos_x, curr_pos_y;		
-
-			// Lets center the mouse in the middle, to have deltas all the time.							
-			if(mouseCapture) 
-			{							
-				POINT Cursor;
-				RECT Window;
-				GetWindowRect(hWnd, &Window);		
-
-				curr_pos_x = (Window.left+Window.right)/2;
-				curr_pos_y = (Window.top+Window.bottom)/2;
-
-				GetCursorPos(&Cursor);						
-
-				mo_x_delta += ((Cursor.x - curr_pos_x) * mouseSensitivity)/100;
-				mo_y_delta += ((Cursor.y - curr_pos_y) * mouseSensitivity)/100;					
-									
-				SetCursorPos(curr_pos_x,curr_pos_y);				
-			}
-			else
+			raw->data.mouse.usFlags = MOUSE_MOVE_RELATIVE;
+    
+			if (raw->header.dwType == RIM_TYPEMOUSE) 
 			{
-				curr_pos_x = GET_X_LPARAM(lParam);
-				curr_pos_y = GET_Y_LPARAM(lParam);
+				switch(raw->data.mouse.usButtonFlags)
+				{
+					// Mouse Buttons Down
+					case RI_MOUSE_LEFT_BUTTON_DOWN:   mo_buttons &= ~mo_Left; break;	
+					case RI_MOUSE_MIDDLE_BUTTON_DOWN: mo_buttons &= ~mo_Middle; break;
+					case RI_MOUSE_RIGHT_BUTTON_DOWN:  mo_buttons &= ~mo_Right; break;
 
-				mo_x_delta += curr_pos_x - old_pos_x;
-				mo_y_delta += curr_pos_y - old_pos_y;			
+					// Buttons Buttons UP
+					case RI_MOUSE_LEFT_BUTTON_UP:   mo_buttons |= mo_Left; break;
+					case RI_MOUSE_MIDDLE_BUTTON_UP: mo_buttons |= mo_Middle; break;
+					case RI_MOUSE_RIGHT_BUTTON_UP:  mo_buttons |= mo_Right; break;
 
-				old_pos_x = curr_pos_x;
-				old_pos_y = curr_pos_y;
-			}
-
+					// Wheel
+					case RI_MOUSE_WHEEL:
+					{
+						u16 raw_wheel = raw->data.mouse.usButtonData;
+						
+						if(raw_wheel>>15) mo_wheel_delta = -(u16)~raw_wheel-1;
+						else			  mo_wheel_delta =  (u16) raw_wheel;																		
+					}
+					break;
+					
+					default: break;
+				}
+				
+				
+				mo_x_delta = (int)(raw->data.mouse.lLastX * mouseSensitivity);
+				mo_y_delta = (int)(raw->data.mouse.lLastY * mouseSensitivity);				
+			}         
 		}
-		break;
-
-	case WM_MOUSEWHEEL: 
-		
-		// Inverted.
-		mo_wheel_delta -= GET_WHEEL_DELTA_WPARAM(wParam)/WHEEL_DELTA;
 		break;
 
 	case WM_KEYDOWN:
@@ -803,6 +799,13 @@ s32 FASTCALL Load(emu_info* emu)
 		HandleError(gD0, _T("lgLcdInit"));
 
 	#endif
+
+	Rid[0].usUsagePage = 0x01;
+	Rid[0].usUsage = 0x02;
+	Rid[0].dwFlags = 0;
+	Rid[0].hwndTarget = NULL;
+
+	RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
 
 	return rv_ok;
 }
@@ -3590,7 +3593,7 @@ void LoadSettings()
 	wcstombs(server_port,temp,sizeof(temp));
 
 	g_ShowVMU = host.ConfigLoadInt(L"drkMaple",L"VMU.Show",1);
-	mouseSensitivity = host.ConfigLoadInt(L"drkMaple",L"Mouse.Sensitivity",100);
+	mouseSensitivity = (float)host.ConfigLoadInt(L"drkMaple",L"Mouse.Sensitivity",100)/100.0f;
 }
 
 void SaveSettings()
