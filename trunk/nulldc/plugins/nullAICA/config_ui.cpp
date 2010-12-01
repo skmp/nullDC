@@ -1,4 +1,5 @@
 #include "config_ui.h"
+#include <CommCtrl.h>
 void UpdateMenuSelections();
 u32 config_scmi=0,config_stami=0,config_stami2=0;
 void Cofnig_UpdateMenuSelections()
@@ -7,7 +8,7 @@ void Cofnig_UpdateMenuSelections()
 	eminf.SetMenuItemStyle(config_stami2,settings.LimitFPS==2?MIS_Checked:0,MIS_Checked);
 }
 INT_PTR CALLBACK ConfigDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
-{
+{		
 	switch( uMsg )
 	{
 	case WM_INITDIALOG:
@@ -50,7 +51,13 @@ INT_PTR CALLBACK ConfigDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				hideo=false;
 			}
 			if (hideo)
-				ShowWindow(GetDlgItem(hWnd,IDC_RADIO7), SW_HIDE);
+				ShowWindow(GetDlgItem(hWnd,IDC_RADIO7), SW_HIDE);			
+			
+			HWND hSlider = GetDlgItem(hWnd,IDC_SLIDER1);
+
+			SendMessage(hSlider, TBM_SETRANGE, 0, MAKELONG(0, 100));				
+		    SendMessage(hSlider, TBM_SETTICFREQ, 25, 0);
+			SendMessage(hSlider, TBM_SETPOS, 1, 100 - settings.Volume);			
 		}
 		return true;
 
@@ -88,6 +95,9 @@ INT_PTR CALLBACK ConfigDlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				settings.HW_mixing=IsDlgButtonChecked(hWnd,IDC_HWMIX);
 				settings.GlobalFocus=IsDlgButtonChecked(hWnd,IDC_GFOCUS);
 				settings.LimitFPS=IsDlgButtonChecked(hWnd,IDC_FSYNC);
+
+				HWND hSlider = GetDlgItem(hWnd,IDC_SLIDER1);
+				settings.Volume = 100 - SendMessage(hSlider,TBM_GETPOS,0,0);
 				
 				SaveSettings();
 			}

@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by sdlAICA.rc
+// Used by nullAICA.rc
 //
 #define IDD_SETTINGS                    101
 #define IDD_DIALOG1                     102
@@ -13,6 +13,7 @@
 #define IDC_HWMIX                       1007
 #define IDC_GFOCUS                      1009
 #define IDC_FSYNC                       1010
+#define IDC_SLIDER1                     1011
 #define IDC_RADIO6                      1016
 #define IDC_RADIO7                      1018
 
@@ -22,7 +23,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        103
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1011
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

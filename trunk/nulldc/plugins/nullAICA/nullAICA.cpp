@@ -209,12 +209,15 @@ void LoadSettings()
 	settings.BufferCount=cfgGetInt("BufferCount",1);
 	settings.CDDAMute=cfgGetInt("CDDAMute",0);
 	settings.GlobalMute=cfgGetInt("GlobalMute",0);
-	settings.DSPEnabled=cfgGetInt("DSPEnabled",0);
+	settings.DSPEnabled=cfgGetInt("DSPEnabled",0);		
+
+	settings.Volume = max(0,min(cfgGetInt("Volume",90),100));
 }
 
 void SaveSettings()
 {
 	Cofnig_UpdateMenuSelections();
+
 	//load default settings before init
 	cfgSetInt("BufferSize",settings.BufferSize);
 	cfgSetInt("LimitFPS",settings.LimitFPS);
@@ -225,6 +228,8 @@ void SaveSettings()
 	cfgSetInt("CDDAMute",settings.CDDAMute);
 	cfgSetInt("GlobalMute",settings.GlobalMute);
 	cfgSetInt("DSPEnabled",settings.DSPEnabled);
+	
+	cfgSetInt("Volume",max(0,min(settings.Volume,100)));
 }
 
 //Windoze Code implementation of commong classes from here and after ..

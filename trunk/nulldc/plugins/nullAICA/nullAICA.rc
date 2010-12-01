@@ -7,22 +7,17 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "windows.h"
-#ifndef IDC_STATIC
-#define IDC_STATIC (-1)
-#endif
+#include "afxres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Greek resources
+// Greek (Greece) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ELL)
-#ifdef _WIN32
 LANGUAGE LANG_GREEK, SUBLANG_DEFAULT
 #pragma code_page(1253)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -55,29 +50,32 @@ END
 // Dialog
 //
 
-IDD_SETTINGS DIALOGEX 0, 0, 268, 210
+IDD_SETTINGS DIALOGEX 0, 0, 328, 244
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "nullAica Settings"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK",IDOK,7,189,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,211,189,50,14
-    LTEXT           "This option will sync the emulator to the audio output.  This will result in much better audio quality, but it will limit the speed to 100%.  It is recommended to have this setting enabled.",IDC_STATIC,14,64,247,25
-    LTEXT           "Buffer size :",IDC_STATIC,8,8,40,8
-    CONTROL         "884",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,57,9,25,10
-    CONTROL         "1024",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,82,9,28,10
-    CONTROL         "1536",IDC_RADIO3,"Button",BS_AUTORADIOBUTTON,111,9,28,10
-    CONTROL         "1768",IDC_RADIO4,"Button",BS_AUTORADIOBUTTON,140,9,28,10
-    CONTROL         "2048",IDC_RADIO5,"Button",BS_AUTORADIOBUTTON,169,9,27,10
-    CONTROL         "4096",IDC_RADIO6,"Button",BS_AUTORADIOBUTTON,197,9,28,10
-    CONTROL         "Other",IDC_RADIO7,"Button",BS_AUTORADIOBUTTON,226,9,35,10
-    CONTROL         "Use Hardware Mixing",IDC_HWMIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,128,83,10
-    CONTROL         "Global Focus",IDC_GFOCUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,94,56,10
-    CONTROL         "Sync to audio",IDC_FSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,54,59,10
-    LTEXT           "If set, the sound will play even if the emu is on the background.  It doesnt affect the emulation in any way.",IDC_STATIC,13,104,248,20
-    LTEXT           "If set, the hardware mixer will be used.  This usually results in bad sound, but may speed things up a bit.  On x64 versions of windows it has no effect.  It is recommended to have this setting disabled.",IDC_STATIC,13,138,246,26
-    LTEXT           "This sets the size of the sound buffer.  If the sound is choppy, increase it.  If the sound is laggy/late, decrease it.  It is recommended to adjust this setting and see what is best for your PC.  The default setting is 1024.  For Windows Vista, use 2048.",IDC_STATIC,13,18,247,35
-    LTEXT           "Note: If the emulation is started, some of these settings won't take effect until you restart the emulator.",IDC_STATIC,7,170,254,19
+    DEFPUSHBUTTON   "OK",IDOK,7,223,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,219,223,50,14
+    LTEXT           "This option will sync the emulator to the audio output.  This will result in much better audio quality, but it will limit the speed to 100%.  It is recommended to have this setting enabled.",IDC_STATIC,21,83,239,25
+    LTEXT           "Buffer size :",IDC_STATIC,10,21,40,8
+    CONTROL         "884",IDC_RADIO1,"Button",BS_AUTORADIOBUTTON,53,21,25,10
+    CONTROL         "1024",IDC_RADIO2,"Button",BS_AUTORADIOBUTTON,79,21,28,10
+    CONTROL         "1536",IDC_RADIO3,"Button",BS_AUTORADIOBUTTON,109,21,28,10
+    CONTROL         "1768",IDC_RADIO4,"Button",BS_AUTORADIOBUTTON,138,21,28,10
+    CONTROL         "2048",IDC_RADIO5,"Button",BS_AUTORADIOBUTTON,167,21,27,10
+    CONTROL         "4096",IDC_RADIO6,"Button",BS_AUTORADIOBUTTON,196,21,28,10
+    CONTROL         "Other",IDC_RADIO7,"Button",BS_AUTORADIOBUTTON,226,21,35,10
+    CONTROL         "Use Hardware Mixing",IDC_HWMIX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,153,83,10
+    CONTROL         "Global Focus",IDC_GFOCUS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,116,56,10
+    CONTROL         "Sync to audio",IDC_FSYNC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,10,73,59,10
+    LTEXT           "If set, the sound will play even if the emu is on the background.  It doesnt affect the emulation in any way.",IDC_STATIC,21,127,240,20
+    LTEXT           "If set, the hardware mixer will be used.  This usually results in bad sound, but may speed things up a bit.  On x64 versions of windows it has no effect.  It is recommended to have this setting disabled.",IDC_STATIC,21,163,244,28
+    LTEXT           "This sets the size of the sound buffer.  If the sound is choppy, increase it.  If the sound is laggy/late, decrease it.  It is recommended to adjust this setting and see what is best for your PC.  The default setting is 1024.  For Windows Vista, use 2048.",IDC_STATIC,21,31,235,36
+    LTEXT           "Note: If the emulation is started, some of these settings won't take effect until you restart the emulator.",IDC_STATIC,19,200,237,19,WS_DISABLED
+    CONTROL         "",IDC_SLIDER1,"msctls_trackbar32",TBS_AUTOTICKS | TBS_VERT | TBS_BOTH | WS_TABSTOP,281,18,28,211
+    GROUPBOX        "Settings",IDC_STATIC,7,7,261,214
+    GROUPBOX        "Volume",IDC_STATIC,272,7,48,230
 END
 
 IDD_DEBUGGER DIALOGEX 0, 0, 187, 95
@@ -97,14 +95,14 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_SETTINGS, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 261
+        RIGHTMARGIN, 320
         TOPMARGIN, 7
-        BOTTOMMARGIN, 203
+        BOTTOMMARGIN, 237
     END
 
     IDD_DEBUGGER, DIALOG
@@ -117,7 +115,7 @@ BEGIN
 END
 #endif    // APSTUDIO_INVOKED
 
-#endif    // Greek resources
+#endif    // Greek (Greece) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
