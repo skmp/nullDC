@@ -61,6 +61,7 @@ struct setts
 	u32 CDDAMute;
 	u32 GlobalMute;
 	u32 DSPEnabled;		//0 -> no, 1 -> yes
+	u32 Volume;		    //0-100
 };
 
 extern setts settings;
