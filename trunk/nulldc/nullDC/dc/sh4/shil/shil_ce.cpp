@@ -349,6 +349,7 @@ u32 shil_optimise_pass_ce_main(BasicBlock* bb)
 
 
 	bool old_re_run=ce_re_run;
+	il.opcodes.reserve(bb->ilst.opcodes.size());
 
 	for (size_t i=0;i<bb->ilst.opcodes.size();i++)
 	{
@@ -372,7 +373,8 @@ u32 shil_optimise_pass_ce_main(BasicBlock* bb)
 	if (rv)
 	{
 		bb->ilst.opcodes.clear();
-		
+		bb->ilst.opcodes.reserve(il.opcodes.size());
+
 		for (size_t i=0;i<il.opcodes.size();i++)
 			bb->ilst.opcodes.push_back(il.opcodes[i]);
 		

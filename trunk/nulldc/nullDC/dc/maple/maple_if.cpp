@@ -62,17 +62,23 @@ void maple_SB_MSHTCL_Write(u32 data)
 	if (data&1)
 		maple_ddt_pending_reset=false;
 }
-s32 maple_pending_dma;
+
+u32 maple_pending_dma = 0;
 
 void maple_periodical(u32 cycl)
 {
-	if (maple_pending_dma>0)
+	if ((s32)maple_pending_dma > 0)
 	{
 		verify(SB_MDST==1);
+
+		cycl = (cycl > maple_pending_dma) ? maple_pending_dma : cycl;
 		maple_pending_dma-=cycl;
-		if (maple_pending_dma<=0)
+
+		if ((s32)maple_pending_dma <= 0)
 		{
+			//log("%u %d\n",cycl,(s32)maple_pending_dma);
 			asic_RaiseInterrupt(holly_MAPLE_DMA);
+			maple_pending_dma = 0;
 			SB_MDST=0;
 		}
 	}
@@ -238,7 +244,7 @@ void DoMapleDma()
 	}
 //dma_end:
 
-	maple_pending_dma=total_bytes*200000000/262144+1;
+	maple_pending_dma= ((total_bytes*200000000)/262144)+1;
 	SB_MDST=1;
 }
 

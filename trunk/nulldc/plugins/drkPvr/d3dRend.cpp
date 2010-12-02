@@ -2141,10 +2141,11 @@ __error_out:
 		u8* fog_table=(u8*)FOG_TABLE;
 		for (int i=0;i<128;i++)
 		{
-			tex[i*4+0]=0;//B
-			tex[i*4+1]=fog_table[i*4+0];//G
-			tex[i*4+2]=fog_table[i*4+1];//R
-			tex[i*4+3]=0;//A
+			const register u32 offs = i << 2;
+			tex[offs+0]=0;//B
+			tex[offs+1]=fog_table[offs+0];//G
+			tex[offs+2]=fog_table[offs+1];//R
+			tex[offs+3]=0;//A
 		}
 		fog_texture->UnlockRect(0);
 	}

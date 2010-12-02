@@ -430,12 +430,6 @@ void Sh4_int_SetRegister(Sh4RegType reg,u32 regdata)
 	}
 }
 
-
-
-
-
-
-
 //more coke .. err code
 //TODO : Check for valid delayslot instruction
 bool ExecuteDelayslot()
@@ -482,9 +476,9 @@ void FreeSuspendedBlocks();
 void DynaPrintCycles();
 
 //General update
-s32 rtc_cycles=0;
-u32 update_cnt;
-
+s32 rtc_cycles = 0;
+u32 update_cnt = 0;
+u32 aica_sample_cycles=0;
 
 //typicaly, 446428 calls/second (448 cycles/call)
 //fast update is 448 cycles
@@ -525,9 +519,7 @@ void __fastcall SlowUpdate()
 void __fastcall MediumUpdate()
 {
 	void maple_periodical(u32 cycl);
-	maple_periodical(3584);
 
-	static int aica_sample_cycles=0;
 	aica_sample_cycles+=3584*AICA_SAMPLE_GCM;
 
 	if (aica_sample_cycles>=AICA_SAMPLE_CYCLES)
@@ -536,8 +528,11 @@ void __fastcall MediumUpdate()
 		UpdateAica(1);
 		aica_sample_cycles-=AICA_SAMPLE_CYCLES;
 	}
+
 	libExtDevice.UpdateExtDevice(3584);
+	maple_periodical(3584);
 	UpdateDMA();
+
 	if (!(update_cnt&0x8))
 		SlowUpdate();
 }

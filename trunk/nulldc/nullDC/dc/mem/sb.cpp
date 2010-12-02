@@ -29,300 +29,300 @@ Array<RegisterStruct> sb_regs(0x540);
 
 
 //0x005F6800	SB_C2DSTAT	RW	ch2-DMA destination address 
- u32 SB_C2DSTAT;
+ u32 SB_C2DSTAT = 0;
 //0x005F6804	SB_C2DLEN	RW	ch2-DMA length 
- u32 SB_C2DLEN;
+ u32 SB_C2DLEN = 0;
 //0x005F6808	SB_C2DST	RW	ch2-DMA start 
- u32 SB_C2DST;
+ u32 SB_C2DST = 0;
 			
 //0x005F6810	SB_SDSTAW	RW	Sort-DMA start link table address 
- u32 SB_SDSTAW;
+ u32 SB_SDSTAW = 0;
 //0x005F6814	SB_SDBAAW	RW	Sort-DMA link base address 
- u32 SB_SDBAAW;
+ u32 SB_SDBAAW = 0;
 //0x005F6818	SB_SDWLT	RW	Sort-DMA link address bit width 
- u32 SB_SDWLT;
+ u32 SB_SDWLT = 0;
 //0x005F681C	SB_SDLAS	RW	Sort-DMA link address shift control 
- u32 SB_SDLAS;
+ u32 SB_SDLAS = 0;
 //0x005F6820	SB_SDST	RW	Sort-DMA start 
- u32 SB_SDST;
+ u32 SB_SDST = 0;
 		
 //0x005F6860 SB_SDDIV R(?) Sort-DMA LAT index (guess)
-u32 SB_SDDIV;
+u32 SB_SDDIV = 0;
 
 //0x005F6840	SB_DBREQM	RW	DBREQ# signal mask control 
- u32 SB_DBREQM;
+ u32 SB_DBREQM = 0;
 //0x005F6844	SB_BAVLWC	RW	BAVL# signal wait count 
- u32 SB_BAVLWC;
+ u32 SB_BAVLWC = 0;
 //0x005F6848	SB_C2DPRYC	RW	DMA (TA/Root Bus) priority count 
- u32 SB_C2DPRYC;
+ u32 SB_C2DPRYC = 0;
 //0x005F684C	SB_C2DMAXL	RW	ch2-DMA maximum burst length 
- u32 SB_C2DMAXL;
+ u32 SB_C2DMAXL = 0;
 			
 //0x005F6880	SB_TFREM	R	TA FIFO remaining amount 
- u32 SB_TFREM;
+ u32 SB_TFREM = 0;
 //0x005F6884	SB_LMMODE0	RW	Via TA texture memory bus select 0 
- u32 SB_LMMODE0;
+ u32 SB_LMMODE0 = 0;
 //0x005F6888	SB_LMMODE1	RW	Via TA texture memory bus select 1 
- u32 SB_LMMODE1;
+ u32 SB_LMMODE1 = 0;
 //0x005F688C	SB_FFST	R	FIFO status 
  u32 SB_FFST;
 //0x005F6890	SB_SFRES	W	System reset 
- u32 SB_SFRES;
+ u32 SB_SFRES = 0;
 			
 //0x005F689C	SB_SBREV	R	System bus revision number 
- u32 SB_SBREV;
+ u32 SB_SBREV = 0;
 //0x005F68A0	SB_RBSPLT	RW	SH4 Root Bus split enable 
- u32 SB_RBSPLT;
+ u32 SB_RBSPLT = 0;
 			
 //0x005F6900	SB_ISTNRM	RW	Normal interrupt status 
- u32 SB_ISTNRM;
+ u32 SB_ISTNRM = 0;
 //0x005F6904	SB_ISTEXT	R	al interrupt status 
- u32 SB_ISTEXT;
+ u32 SB_ISTEXT = 0;
 //0x005F6908	SB_ISTERR	RW	Error interrupt status 
- u32 SB_ISTERR;
+ u32 SB_ISTERR = 0;
 			
 //0x005F6910	SB_IML2NRM	RW	Level 2 normal interrupt mask 
- u32 SB_IML2NRM;
+ u32 SB_IML2NRM = 0;
 //0x005F6914	SB_IML2EXT	RW	Level 2 al interrupt mask 
- u32 SB_IML2EXT;
+ u32 SB_IML2EXT = 0;
 //0x005F6918	SB_IML2ERR	RW	Level 2 error interrupt mask 
- u32 SB_IML2ERR;
+ u32 SB_IML2ERR = 0;
 			
 //0x005F6920	SB_IML4NRM	RW	Level 4 normal interrupt mask 
- u32 SB_IML4NRM;
+ u32 SB_IML4NRM = 0;
 //0x005F6924	SB_IML4EXT	RW	Level 4 al interrupt mask 
- u32 SB_IML4EXT;
+ u32 SB_IML4EXT = 0;
 //0x005F6928	SB_IML4ERR	RW	Level 4 error interrupt mask 
- u32 SB_IML4ERR;
+ u32 SB_IML4ERR = 0;
 			
 //0x005F6930	SB_IML6NRM	RW	Level 6 normal interrupt mask 
- u32 SB_IML6NRM;
+ u32 SB_IML6NRM = 0;
 //0x005F6934	SB_IML6EXT	RW	Level 6 al interrupt mask 
- u32 SB_IML6EXT;
+ u32 SB_IML6EXT = 0;
 //0x005F6938	SB_IML6ERR	RW	Level 6 error interrupt mask 
- u32 SB_IML6ERR;
+ u32 SB_IML6ERR = 0;
 			
 //0x005F6940	SB_PDTNRM	RW	Normal interrupt PVR-DMA startup mask 
- u32 SB_PDTNRM;
+ u32 SB_PDTNRM = 0;
 //0x005F6944	SB_PDTEXT	RW	al interrupt PVR-DMA startup mask 
- u32 SB_PDTEXT;
+ u32 SB_PDTEXT = 0;
 			
 //0x005F6950	SB_G2DTNRM	RW	Normal interrupt G2-DMA startup mask 
- u32 SB_G2DTNRM;
+ u32 SB_G2DTNRM = 0;
 //0x005F6954	SB_G2DTEXT	RW	al interrupt G2-DMA startup mask 
- u32 SB_G2DTEXT;
+ u32 SB_G2DTEXT = 0;
 			
 //0x005F6C04	SB_MDSTAR	RW	Maple-DMA command table address 
- u32 SB_MDSTAR;
+ u32 SB_MDSTAR = 0;
 			
 //0x005F6C10	SB_MDTSEL	RW	Maple-DMA trigger select 
- u32 SB_MDTSEL;
+ u32 SB_MDTSEL = 0;
 //0x005F6C14	SB_MDEN	RW	Maple-DMA enable 
- u32 SB_MDEN;
+ u32 SB_MDEN = 0;
 //0x005F6C18	SB_MDST	RW	Maple-DMA start 
- u32 SB_MDST;
+ u32 SB_MDST = 0;
 			
 //0x005F6C80	SB_MSYS	RW	Maple system control 
- u32 SB_MSYS;
+ u32 SB_MSYS = 0;
 //0x005F6C84	SB_MST	R	Maple status 
- u32 SB_MST;
+ u32 SB_MST = 0;
 //0x005F6C88	SB_MSHTCL	W	Maple-DMA hard trigger clear 
- u32 SB_MSHTCL;
+ u32 SB_MSHTCL = 0;
 //0x005F6C8C	SB_MDAPRO	W	Maple-DMA address range 
- u32 SB_MDAPRO;
+ u32 SB_MDAPRO = 0;
 			
 //0x005F6CE8	SB_MMSEL	RW	Maple MSB selection 
- u32 SB_MMSEL;
+ u32 SB_MMSEL = 0;
 			
 //0x005F6CF4	SB_MTXDAD	R	Maple Txd address counter 
- u32 SB_MTXDAD;
+ u32 SB_MTXDAD = 0;
 //0x005F6CF8	SB_MRXDAD	R	Maple Rxd address counter 
- u32 SB_MRXDAD;
+ u32 SB_MRXDAD = 0;
 //0x005F6CFC	SB_MRXDBD	R	Maple Rxd base address 
- u32 SB_MRXDBD;
+ u32 SB_MRXDBD = 0;
 
 
 
 
 
 //0x005F7404	SB_GDSTAR	RW	GD-DMA start address 
- u32 SB_GDSTAR;
+ u32 SB_GDSTAR = 0;
 //0x005F7408	SB_GDLEN	RW	GD-DMA length 
- u32 SB_GDLEN;
+ u32 SB_GDLEN = 0;
 //0x005F740C	SB_GDDIR	RW	GD-DMA direction 
- u32 SB_GDDIR;
+ u32 SB_GDDIR = 0;
 			
 //0x005F7414	SB_GDEN	RW	GD-DMA enable 
- u32 SB_GDEN;
+ u32 SB_GDEN = 0;
 //0x005F7418	SB_GDST	RW	GD-DMA start 
- u32 SB_GDST;
+ u32 SB_GDST = 0;
 			
 //0x005F7480	SB_G1RRC	W	System ROM read access timing 
- u32 SB_G1RRC;
+ u32 SB_G1RRC = 0;
 //0x005F7484	SB_G1RWC	W	System ROM write access timing 
- u32 SB_G1RWC;
+ u32 SB_G1RWC = 0;
 //0x005F7488	SB_G1FRC	W	Flash ROM read access timing 
- u32 SB_G1FRC;
+ u32 SB_G1FRC = 0;
 //0x005F748C	SB_G1FWC	W	Flash ROM write access timing 
- u32 SB_G1FWC;
+ u32 SB_G1FWC = 0;
 //0x005F7490	SB_G1CRC	W	GD PIO read access timing 
- u32 SB_G1CRC;
+ u32 SB_G1CRC = 0;
 //0x005F7494	SB_G1CWC	W	GD PIO write access timing 
- u32 SB_G1CWC;
+ u32 SB_G1CWC = 0;
 			
 //0x005F74A0	SB_G1GDRC	W	GD-DMA read access timing 
- u32 SB_G1GDRC;
+ u32 SB_G1GDRC = 0;
 //0x005F74A4	SB_G1GDWC	W	GD-DMA write access timing 
- u32 SB_G1GDWC;
+ u32 SB_G1GDWC = 0;
 			
 //0x005F74B0	SB_G1SYSM	R	System mode 
- u32 SB_G1SYSM;
+ u32 SB_G1SYSM = 0;
 //0x005F74B4	SB_G1CRDYC	W	G1IORDY signal control 
- u32 SB_G1CRDYC;
+ u32 SB_G1CRDYC = 0;
 //0x005F74B8	SB_GDAPRO	W	GD-DMA address range 
- u32 SB_GDAPRO;
+ u32 SB_GDAPRO = 0;
 			
 //0x005F74F4	SB_GDSTARD	R	GD-DMA address count (on Root Bus) 
- u32 SB_GDSTARD;
+ u32 SB_GDSTARD = 0;
 //0x005F74F8	SB_GDLEND	R	GD-DMA transfer counter 
- u32 SB_GDLEND;
+ u32 SB_GDLEND = 0;
 			
 //0x005F7800	SB_ADSTAG	RW	AICA:G2-DMA G2 start address 
- u32 SB_ADSTAG;
+ u32 SB_ADSTAG = 0;
 //0x005F7804	SB_ADSTAR	RW	AICA:G2-DMA system memory start address 
- u32 SB_ADSTAR;
+ u32 SB_ADSTAR = 0;
 //0x005F7808	SB_ADLEN	RW	AICA:G2-DMA length 
- u32 SB_ADLEN;
+ u32 SB_ADLEN = 0;
 //0x005F780C	SB_ADDIR	RW	AICA:G2-DMA direction 
- u32 SB_ADDIR;
+ u32 SB_ADDIR = 0;
 //0x005F7810	SB_ADTSEL	RW	AICA:G2-DMA trigger select 
- u32 SB_ADTSEL;
+ u32 SB_ADTSEL = 0;
 //0x005F7814	SB_ADEN	RW	AICA:G2-DMA enable 
- u32 SB_ADEN;
+ u32 SB_ADEN = 0;
 
 //0x005F7818	SB_ADST	RW	AICA:G2-DMA start 
- u32 SB_ADST;
+ u32 SB_ADST = 0;
 //0x005F781C	SB_ADSUSP	RW	AICA:G2-DMA suspend 
- u32 SB_ADSUSP;
+ u32 SB_ADSUSP = 0;
 			
 //0x005F7820	SB_E1STAG	RW	Ext1:G2-DMA G2 start address 
- u32 SB_E1STAG;
+ u32 SB_E1STAG = 0;
 //0x005F7824	SB_E1STAR	RW	Ext1:G2-DMA system memory start address 
- u32 SB_E1STAR;
+ u32 SB_E1STAR = 0;
 //0x005F7828	SB_E1LEN	RW	Ext1:G2-DMA length 
- u32 SB_E1LEN;
+ u32 SB_E1LEN = 0;
 //0x005F782C	SB_E1DIR	RW	Ext1:G2-DMA direction 
- u32 SB_E1DIR;
+ u32 SB_E1DIR = 0;
 //0x005F7830	SB_E1TSEL	RW	Ext1:G2-DMA trigger select 
- u32 SB_E1TSEL;
+ u32 SB_E1TSEL = 0;
 //0x005F7834	SB_E1EN	RW	Ext1:G2-DMA enable 
- u32 SB_E1EN;
+ u32 SB_E1EN = 0;
 //0x005F7838	SB_E1ST	RW	Ext1:G2-DMA start 
- u32 SB_E1ST;
+ u32 SB_E1ST = 0;
 //0x005F783C	SB_E1SUSP	RW	Ext1: G2-DMA suspend 
- u32 SB_E1SUSP;
+ u32 SB_E1SUSP = 0;
 			
 //0x005F7840	SB_E2STAG	RW	Ext2:G2-DMA G2 start address 
- u32 SB_E2STAG;
+ u32 SB_E2STAG = 0;
 //0x005F7844	SB_E2STAR	RW	Ext2:G2-DMA system memory start address 
- u32 SB_E2STAR;
+ u32 SB_E2STAR = 0;
 //0x005F7848	SB_E2LEN	RW	Ext2:G2-DMA length 
- u32 SB_E2LEN;
+ u32 SB_E2LEN = 0;
 //0x005F784C	SB_E2DIR	RW	Ext2:G2-DMA direction 
- u32 SB_E2DIR;
+ u32 SB_E2DIR = 0;
 //0x005F7850	SB_E2TSEL	RW	Ext2:G2-DMA trigger select 
- u32 SB_E2TSEL;
+ u32 SB_E2TSEL = 0;
 //0x005F7854	SB_E2EN	RW	Ext2:G2-DMA enable 
- u32 SB_E2EN;
+ u32 SB_E2EN = 0;
 //0x005F7858	SB_E2ST	RW	Ext2:G2-DMA start 
- u32 SB_E2ST;
+ u32 SB_E2ST = 0;
 //0x005F785C	SB_E2SUSP	RW	Ext2: G2-DMA suspend 
- u32 SB_E2SUSP;
+ u32 SB_E2SUSP = 0;
 			
 //0x005F7860	SB_DDSTAG	RW	Dev:G2-DMA G2 start address 
- u32 SB_DDSTAG;
+ u32 SB_DDSTAG = 0;
 //0x005F7864	SB_DDSTAR	RW	Dev:G2-DMA system memory start address 
- u32 SB_DDSTAR;
+ u32 SB_DDSTAR = 0;
 //0x005F7868	SB_DDLEN	RW	Dev:G2-DMA length 
- u32 SB_DDLEN;
+ u32 SB_DDLEN = 0;
 //0x005F786C	SB_DDDIR	RW	Dev:G2-DMA direction 
- u32 SB_DDDIR;
+ u32 SB_DDDIR = 0;
 //0x005F7870	SB_DDTSEL	RW	Dev:G2-DMA trigger select 
- u32 SB_DDTSEL;
+ u32 SB_DDTSEL = 0;
 //0x005F7874	SB_DDEN	RW	Dev:G2-DMA enable 
- u32 SB_DDEN;
+ u32 SB_DDEN = 0;
 //0x005F7878	SB_DDST	RW	Dev:G2-DMA start 
- u32 SB_DDST;
+ u32 SB_DDST = 0;
 //0x005F787C	SB_DDSUSP	RW	Dev: G2-DMA suspend 
- u32 SB_DDSUSP;
+ u32 SB_DDSUSP = 0;
 			
 //0x005F7880	SB_G2ID	R	G2 bus version 
- u32 SB_G2ID;
+ u32 SB_G2ID = 0;
 			
 //0x005F7890	SB_G2DSTO	RW	G2/DS timeout 
- u32 SB_G2DSTO;
+ u32 SB_G2DSTO = 0;
 //0x005F7894	SB_G2TRTO	RW	G2/TR timeout 
- u32 SB_G2TRTO;
+ u32 SB_G2TRTO = 0;
 //0x005F7898	SB_G2MDMTO	RW	Modem unit wait timeout 
- u32 SB_G2MDMTO;
+ u32 SB_G2MDMTO = 0;
 //0x005F789C	SB_G2MDMW	RW	Modem unit wait time 
- u32 SB_G2MDMW;
+ u32 SB_G2MDMW = 0;
 			
 //0x005F78BC	SB_G2APRO	W	G2-DMA address range 
- u32 SB_G2APRO;
+ u32 SB_G2APRO = 0;
 			
 //0x005F78C0	SB_ADSTAGD	R	AICA-DMA address counter (on AICA) 
- u32 SB_ADSTAGD;
+ u32 SB_ADSTAGD = 0;
 //0x005F78C4	SB_ADSTARD	R	AICA-DMA address counter (on root bus) 
- u32 SB_ADSTARD;
+ u32 SB_ADSTARD = 0;
 //0x005F78C8	SB_ADLEND	R	AICA-DMA transfer counter 
- u32 SB_ADLEND;
+ u32 SB_ADLEND = 0;
 			
 //0x005F78D0	SB_E1STAGD	R	Ext-DMA1 address counter (on Ext) 
- u32 SB_E1STAGD;
+ u32 SB_E1STAGD = 0;
 //0x005F78D4	SB_E1STARD	R	Ext-DMA1 address counter (on root bus) 
- u32 SB_E1STARD;
+ u32 SB_E1STARD = 0;
 //0x005F78D8	SB_E1LEND	R	Ext-DMA1 transfer counter 
- u32 SB_E1LEND;
+ u32 SB_E1LEND = 0;
 			
 //0x005F78E0	SB_E2STAGD	R	Ext-DMA2 address counter (on Ext) 
- u32 SB_E2STAGD;
+ u32 SB_E2STAGD = 0;
 //0x005F78E4	SB_E2STARD	R	Ext-DMA2 address counter (on root bus) 
- u32 SB_E2STARD;
+ u32 SB_E2STARD = 0;
 //0x005F78E8	SB_E2LEND	R	Ext-DMA2 transfer counter 
- u32 SB_E2LEND;
+ u32 SB_E2LEND = 0;
 			
 //0x005F78F0	SB_DDSTAGD	R	Dev-DMA address counter (on Ext) 
- u32 SB_DDSTAGD;
+ u32 SB_DDSTAGD = 0;
 //0x005F78F4	SB_DDSTARD	R	Dev-DMA address counter (on root bus) 
- u32 SB_DDSTARD;
+ u32 SB_DDSTARD = 0;
 //0x005F78F8	SB_DDLEND	R	Dev-DMA transfer counter 
- u32 SB_DDLEND;
+ u32 SB_DDLEND = 0;
 			
 //0x005F7C00	SB_PDSTAP	RW	PVR-DMA PVR start address 
- u32 SB_PDSTAP;
+ u32 SB_PDSTAP = 0;
 //0x005F7C04	SB_PDSTAR	RW	PVR-DMA system memory start address 
- u32 SB_PDSTAR;
+ u32 SB_PDSTAR = 0;
 //0x005F7C08	SB_PDLEN	RW	PVR-DMA length 
- u32 SB_PDLEN;
+ u32 SB_PDLEN = 0;
 //0x005F7C0C	SB_PDDIR	RW	PVR-DMA direction 
- u32 SB_PDDIR;
+ u32 SB_PDDIR = 0;
 //0x005F7C10	SB_PDTSEL	RW	PVR-DMA trigger select 
- u32 SB_PDTSEL;
+ u32 SB_PDTSEL = 0;
 //0x005F7C14	SB_PDEN	RW	PVR-DMA enable 
- u32 SB_PDEN;
+ u32 SB_PDEN = 0;
 //0x005F7C18	SB_PDST	RW	PVR-DMA start 
- u32 SB_PDST;
+ u32 SB_PDST = 0;
 			
 //0x005F7C80	SB_PDAPRO	W	PVR-DMA address range 
- u32 SB_PDAPRO;
+ u32 SB_PDAPRO = 0;
 			
 //0x005F7CF0	SB_PDSTAPD	R	PVR-DMA address counter (on Ext) 
- u32 SB_PDSTAPD;
+ u32 SB_PDSTAPD = 0;
 //0x005F7CF4	SB_PDSTARD	R	PVR-DMA address counter (on root bus) 
- u32 SB_PDSTARD;
+ u32 SB_PDSTARD = 0;
 //0x005F7CF8	SB_PDLEND	R	PVR-DMA transfer counter 
- u32 SB_PDLEND;
+ u32 SB_PDLEND = 0;
 
 u32 sb_ReadMem(u32 addr,u32 sz)
 {	
