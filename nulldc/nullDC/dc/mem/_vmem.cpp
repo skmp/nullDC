@@ -39,20 +39,17 @@ u8* sh4_mem_marks;	//used for marking ;p
 
 bool _vmem_translate(u32 addr,unat& entry_or_fptr)
 {
-	u32 page=addr>>16;
-	unat data_ptr=(unat)_vmem_MemInfo[page]+addr;
+	entry_or_fptr = (unat)_vmem_MemInfo[(u16)((u32)(addr >> 16))]+addr;
 
-	if ((s32)data_ptr<0)
+	if ((s32)entry_or_fptr < 0)
 	{
-		entry_or_fptr=(data_ptr>>16)-0x8001;
+		entry_or_fptr=(entry_or_fptr>>16)-0x8001;
 		return true;
 	}
-	else
-	{
-		entry_or_fptr=data_ptr;
-		return false;
-	}
+
+	return false;
 }
+/*
 template<typename T>
 T __fastcall _vmem_readt(u32 addr)
 {
@@ -100,19 +97,95 @@ void __fastcall _vmem_writet(u32 addr,T data)
 	else
 		*(T*)data_ptr=data;
 }
+*/
 
 //ReadMem/WriteMem functions
 //ReadMem
-u8 fastcall _vmem_ReadMem8(u32 addr) { return _vmem_readt<u8>(addr); }
-u16 fastcall _vmem_ReadMem16(u32 addr) { return _vmem_readt<u16>(addr); }
-u32 fastcall _vmem_ReadMem32(u32 addr) { return _vmem_readt<u32>(addr); }
-u64 fastcall _vmem_ReadMem64(u32 addr) { return _vmem_readt<u64>(addr); }
+u8 fastcall _vmem_ReadMem8(u32 addr) 
+{
+	unat data_ptr;
+	return (_vmem_translate(addr,data_ptr)) ? (u8)(*(_vmem_ReadMem8FP**)((u8*)_vmem_RF8+data_ptr))(addr) : *(u8*)data_ptr;
+}
+
+u16 fastcall _vmem_ReadMem16(u32 addr)
+{ 
+	unat data_ptr;
+	return (_vmem_translate(addr,data_ptr)) ? (u16)(*(_vmem_ReadMem16FP**)((u8*)_vmem_RF16+data_ptr))(addr) : *(u16*)data_ptr;
+}
+
+u32 fastcall _vmem_ReadMem32(u32 addr)
+{ 
+	unat data_ptr;
+	return (_vmem_translate(addr,data_ptr)) ? (u32)(*(_vmem_ReadMem32FP**)((u8*)_vmem_RF32+data_ptr))(addr) : *(u32*)data_ptr;
+}
+
+u64 fastcall _vmem_ReadMem64(u32 addr)
+{
+	unat data_ptr;
+
+	if(_vmem_translate(addr,data_ptr))
+	{
+		_vmem_ReadMem32FP* handler=*(_vmem_ReadMem32FP**)((u8*)_vmem_RF32+data_ptr);
+		return (u64)(handler(addr) | (((u64)handler(addr+4))<<32));
+	}
+
+	return *(u64*)data_ptr;
+}
 
 //WriteMem
-void fastcall _vmem_WriteMem8(u32 addr,u8 data) { _vmem_writet(addr,data); }
-void fastcall _vmem_WriteMem16(u32 addr,u16 data) { _vmem_writet(addr,data); }
-void fastcall _vmem_WriteMem32(u32 addr,u32 data) { _vmem_writet(addr,data); }
-void fastcall _vmem_WriteMem64(u32 addr,u64 data) { _vmem_writet(addr,data); }
+void fastcall _vmem_WriteMem8(u32 addr,u8 data)
+{
+	unat data_ptr;
+
+	if (_vmem_translate(addr,data_ptr))
+	{
+		(*(_vmem_WriteMem8FP**)((u8*)_vmem_WF8+data_ptr))(addr,data);
+		return;
+	}
+
+	*(u8*)data_ptr = data;
+}
+
+void fastcall _vmem_WriteMem16(u32 addr,u16 data)
+{
+	unat data_ptr;
+
+	if (_vmem_translate(addr,data_ptr))
+	{
+		(*(_vmem_WriteMem16FP**)((u8*)_vmem_WF16+data_ptr))(addr,data);
+		return;
+	}
+
+	*(u16*)data_ptr = data;
+}
+
+void fastcall _vmem_WriteMem32(u32 addr,u32 data)
+{
+	unat data_ptr;
+
+	if (_vmem_translate(addr,data_ptr))
+	{
+		(*(_vmem_WriteMem32FP**)((u8*)_vmem_WF32+data_ptr))(addr,data);
+		return;
+	}
+
+	*(u32*)data_ptr = data;
+}
+
+void fastcall _vmem_WriteMem64(u32 addr,u64 data)
+{
+	unat data_ptr;
+
+	if (_vmem_translate(addr,data_ptr))
+	{
+		_vmem_WriteMem32FP* handler=*(_vmem_WriteMem32FP**)((u8*)_vmem_WF32+data_ptr);
+		handler(addr,(u32)data);
+		handler(addr+4,data>>32);
+		return;
+	}
+
+	*(u64*)data_ptr = data;
+}
 
 //0xDEADC0D3 or 0
 #define MEM_ERROR_RETURN_VALUE 0xDEADC0D3
