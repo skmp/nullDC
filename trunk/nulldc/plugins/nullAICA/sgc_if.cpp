@@ -325,11 +325,18 @@ struct ChannelEx
 	void (FASTCALL* StepStream)(ChannelEx* ch);
 	void (FASTCALL* StepStreamInitial)(ChannelEx* ch);
 	
-	struct
+	struct//todo : make a proper object
 	{
 		s32 val;
 		__forceinline s32 GetValue() { return val>>AEG_STEP_BITS;}
-		void SetValue(u32 aegb) { val=aegb<<AEG_STEP_BITS; }
+		__forceinline _EG_state GetState() const { return state; }
+		__forceinline u32 GetAttackRate() const { return AttackRate; }
+		__forceinline u32 GetDecay1Rate() const { return Decay1Rate; }
+		__forceinline u32 GetDecay2Rate() const { return Decay2Rate; }
+		__forceinline u32 GetReleaseRate() const { return ReleaseRate; }
+		__forceinline u32 GetDecayValue() const { return Decay2Value; }
+
+		__forceinline void SetValue(u32 aegb) { val=aegb<<AEG_STEP_BITS; }
 
 		_EG_state state;
 
@@ -403,7 +410,7 @@ struct ChannelEx
 		u32 ofsatt=lfo.alfo+(AEG.GetValue()>>2);
 		ofsatt=min(ofsatt,255);//make sure it never gets more 255 -- it can happen with some alfo/aeg combinations
 
-		u32 const max_att=(16<<4)-1-ofsatt;
+		u32 const max_att=((16<<4)-1)-ofsatt;
 
 		s32* logtable=ofsatt+tl_lut;
 
@@ -425,6 +432,34 @@ struct ChannelEx
 		*VolMix.DSPOut+=oDsp;
 		mixl+=oLeft;
 		mixr+=oRight;
+
+		if( (s64)(this->ccd->DL + mixl + mixr + *VolMix.DSPOut) == 0)
+		{
+			switch(this->AEG.GetState())
+			{
+				case EG_Decay1:
+				{
+					if(this->AEG.GetAttackRate() > this->AEG.GetDecay1Rate())
+					{
+						//printf("Promote 1\n");
+						this->SetAegState(EG_Attack);
+					}
+
+					break;
+				}
+
+				case EG_Decay2:
+				{
+					if(this->AEG.GetAttackRate() > this->AEG.GetDecay2Rate())
+					{
+						//printf("Promote 2\n");
+						this->SetAegState(EG_Attack);
+					}
+
+					break;
+				}
+			}
+		}
 
 		StepAEG(this);
 		StepFEG(this);
