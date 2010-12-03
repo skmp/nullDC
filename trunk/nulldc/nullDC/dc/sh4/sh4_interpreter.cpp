@@ -535,6 +535,9 @@ void __fastcall MediumUpdate()
 	maple_periodical(3584);
 	libExtDevice.UpdateExtDevice(3584);
 	UpdateDMA();
+
+	if (!(update_cnt&0x8))
+		SlowUpdate();
 }
 
 //448 Cycles
@@ -546,8 +549,6 @@ int __fastcall UpdateSystem()
 
 	if (!(update_cnt&0x7))
 		MediumUpdate();
-	else if (!(update_cnt&0x8))
-		SlowUpdate();
 
 	update_cnt++;
 

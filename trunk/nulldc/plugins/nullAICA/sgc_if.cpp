@@ -325,17 +325,10 @@ struct ChannelEx
 	void (FASTCALL* StepStream)(ChannelEx* ch);
 	void (FASTCALL* StepStreamInitial)(ChannelEx* ch);
 	
-	struct//todo : make a proper object
+	struct
 	{
 		s32 val;
 		__forceinline s32 GetValue() { return val>>AEG_STEP_BITS;}
-		__forceinline _EG_state GetState() const { return state; }
-		__forceinline u32 GetAttackRate() const { return AttackRate; }
-		__forceinline u32 GetDecay1Rate() const { return Decay1Rate; }
-		__forceinline u32 GetDecay2Rate() const { return Decay2Rate; }
-		__forceinline u32 GetReleaseRate() const { return ReleaseRate; }
-		__forceinline u32 GetDecayValue() const { return Decay2Value; }
-
 		__forceinline void SetValue(u32 aegb) { val=aegb<<AEG_STEP_BITS; }
 
 		_EG_state state;
@@ -422,6 +415,12 @@ struct ChannelEx
 		SampleType oRight=FPMul(sample,logtable[dr],15);
 		SampleType oDsp=FPMul(sample,logtable[ds],15);
 
+		if((AEG.state != EG_Attack) && (AEG.state != EG_Release))//temp
+		{
+			if((this->AEG.Decay2Value == 0) && ((s64)(oLeft + oRight + oDsp) == 0))
+				this->SetAegState(EG_Attack);
+		}
+
 		clip_verify(((s16)oLeft)==oLeft);
 		clip_verify(((s16)oRight)==oRight);
 		clip_verify(((s16)oDsp)==oDsp);
@@ -432,34 +431,6 @@ struct ChannelEx
 		*VolMix.DSPOut+=oDsp;
 		mixl+=oLeft;
 		mixr+=oRight;
-
-		if( (s64)(this->ccd->DL + mixl + mixr + *VolMix.DSPOut) == 0)
-		{
-			switch(this->AEG.GetState())
-			{
-				case EG_Decay1:
-				{
-					if(this->AEG.GetAttackRate() > this->AEG.GetDecay1Rate())
-					{
-						//printf("Promote 1\n");
-						this->SetAegState(EG_Attack);
-					}
-
-					break;
-				}
-
-				case EG_Decay2:
-				{
-					if(this->AEG.GetAttackRate() > this->AEG.GetDecay2Rate())
-					{
-						//printf("Promote 2\n");
-						this->SetAegState(EG_Attack);
-					}
-
-					break;
-				}
-			}
-		}
 
 		StepAEG(this);
 		StepFEG(this);
@@ -563,13 +534,13 @@ struct ChannelEx
 	//
 	u32 AEG_EffRate(u32 re)
 	{
-		s32 rv=ccd->KRS+(ccd->FNS>>9) + re*2;
+		s32 rv=ccd->KRS+(ccd->FNS>>9) + (re<<1);
 		if (ccd->KRS==0xF)
 			rv-=0xF;
 		if (ccd->OCT&8)
-			rv-=(16-ccd->OCT)*2;
+			rv-=(16-ccd->OCT)<<1;
 		else
-			rv+=ccd->OCT*2;
+			rv+=ccd->OCT<<1;
 
 		if (rv<0)
 			rv=0;
@@ -666,10 +637,12 @@ struct ChannelEx
 	{
 		switch(offset)
 		{
+	//	default : printf("@sgc:Unhandled regwrite at addr %x\n",offset); break;
 		case 0x00:	//yay ?
 			UpdateStreamStep();
 			UpdateSA();
 			break;
+ 
 		case 0x01:	//yay ?
 			UpdateStreamStep();
 			UpdateSA();
@@ -761,13 +734,11 @@ struct ChannelEx
 
 __forceinline SampleType DecodeADPCM(u32 sample,s32 prev,s32& quant)
 {
-	s32 sign=1-2*(sample/8);
-
+	s32 sign=1-((sample>>3) << 1);
 	u32 data=sample&7;
 
 	/*(1 - 2 * L4) * (L3 + L2/2 +L1/4 + 1/8) * quantized width (ƒΆn) + decode value (Xn - 1) */
-	SampleType rv = prev + sign*((quant*adpcm_scale[data])>>3);
-
+	SampleType rv = prev + (sign*((quant*adpcm_scale[data])>>3));
 	quant = (quant * adpcm_qs[data])>>8;
 
 	clip(quant,127,24576);
@@ -823,7 +794,7 @@ __forceinline void FASTCALL StepDecodeSample(ChannelEx* ch,u32 CA)
 			u8 ad1=uptr8[CA>>1];
 			u8 ad2=uptr8[(CA+1)>>1];
 
-			u8 sf=(CA&1)*4;
+			u8 sf=(CA&1)<<2;
 			ad1>>=sf;
 			ad2>>=4-sf;
 		
@@ -873,7 +844,6 @@ void FASTCALL StreamStep(ChannelEx* ch)
 		{
 			if ((ch->AEG.state==EG_Attack) && (CA>=ch->loop.LSA))
 			{
-				
 				step_printf("[%d]LPSLNK : Switching to EG_Decay1 %X\n",Channel,AEG.GetValue());
 				ch->SetAegState(EG_Decay1);
 			}
