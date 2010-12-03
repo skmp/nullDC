@@ -179,9 +179,18 @@ void FASTCALL gdrom_get_cdda(s16* sector)
 	//silence ! :p
 	if (cdda.playing)
 	{
+		if((cdda.CurrAddr.FAD == 0) && (cdda.StartAddr.FAD == 0) )
+		{
+			log("CDDA : Force-Shutup\n");
+			cdda.playing=false;
+			cdda.repeats = 0;
+			SecNumber.Status=GD_STANDBY;
+			goto cleanup_cdda;
+		}
+
 		libGDR.ReadSector((u8*)sector,cdda.CurrAddr.FAD,1,2352);
 		cdda.CurrAddr.FAD++;
-		if (cdda.CurrAddr.FAD==cdda.EndAddr.FAD)
+		if (cdda.CurrAddr.FAD>=cdda.EndAddr.FAD)
 		{
 			if (cdda.repeats <= 0)
 			{
@@ -201,7 +210,8 @@ void FASTCALL gdrom_get_cdda(s16* sector)
 		
 		return;
 	}
-	//else
+	
+	cleanup_cdda:
 	{
 		register const u64 zeroReg = 0x0000000000000000;
 		register u64* sec = (u64*)sector;
@@ -308,6 +318,7 @@ void gd_set_state(gd_states state)
 					sector_count=27;
 					next_state=gds_readsector_pio;
 				}
+
 				libGDR.ReadSector((u8*)&pio_buff.data[0],read_params.start_sector,sector_count,
 											read_params.sector_type);
 				read_params.start_sector+=sector_count;

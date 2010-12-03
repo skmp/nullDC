@@ -349,7 +349,7 @@ u32 shil_optimise_pass_ce_main(BasicBlock* bb)
 
 
 	bool old_re_run=ce_re_run;
-	il.opcodes.reserve(bb->ilst.opcodes.size());
+	//il.opcodes.reserve(bb->ilst.opcodes.size());
 
 	for (size_t i=0;i<bb->ilst.opcodes.size();i++)
 	{

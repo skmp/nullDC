@@ -63,18 +63,18 @@ void maple_SB_MSHTCL_Write(u32 data)
 		maple_ddt_pending_reset=false;
 }
 
-u32 maple_pending_dma = 0;
+s32 maple_pending_dma = 0;
 
 void maple_periodical(u32 cycl)
 {
-	if ((s32)maple_pending_dma > 0)
+	if (maple_pending_dma > 0)
 	{
 		verify(SB_MDST==1);
 
-		cycl = (cycl > maple_pending_dma) ? maple_pending_dma : cycl;
+		cycl = (maple_pending_dma <= 0) ? 0 : cycl;
 		maple_pending_dma-=cycl;
 
-		if ((s32)maple_pending_dma <= 0)
+		if (maple_pending_dma <= 0)
 		{
 			//log("%u %d\n",cycl,(s32)maple_pending_dma);
 			asic_RaiseInterrupt(holly_MAPLE_DMA);
@@ -169,7 +169,7 @@ void DoMapleDma()
 			u32* p_out=(u32*)GetMemPtr(header_2,4);
 			u32 outlen=0;
 
-			u32* p_data =(u32*) GetMemPtr(addr + 8,(plen)*sizeof(u32));
+			u32* p_data =(u32*) GetMemPtr(addr + 8,(plen << 2)/**sizeof(u32)*/);
 			//Command / Response code 
 			//Recipient address 
 			//Sender address 
@@ -181,7 +181,7 @@ void DoMapleDma()
 			u32 send=(p_data[0] >> 16) & 0xFF;
 			u32 inlen=(p_data[0]>>24) & 0xFF;
 			u32 resp=0;
-			inlen*=4;
+			inlen <<= 2;
 			//device=wtfport;
 
 			if (MapleDevices[device].connected && (subport==5 || MapleDevices[device].subdevices[subport].connected))
@@ -219,8 +219,8 @@ void DoMapleDma()
 				verify(resp==(u8)resp);
 				verify(send==(u8)send);
 				verify(reci==(u8)reci);
-				verify((outlen/4)==(u8)(outlen/4));
-				p_out[0]=(resp<<0)|(send<<8)|(reci<<16)|((outlen/4)<<24);
+				verify((outlen>>2)==(u8)(outlen>>2));
+				p_out[0]=(resp<<0)|(send<<8)|(reci<<16)|((outlen>>2)<<24);
 				outlen+=4;
 			}
 			else
@@ -235,7 +235,7 @@ void DoMapleDma()
 			//NotifyMemWrite(header_2,outlen);
 
 			//goto next command
-			addr += 2 * 4 + plen * 4;
+			addr += (2 << 2) + (plen << 2);
 		}
 		else
 		{

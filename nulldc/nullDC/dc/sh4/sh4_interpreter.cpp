@@ -431,21 +431,24 @@ void Sh4_int_SetRegister(Sh4RegType reg,u32 regdata)
 }
 
 //more coke .. err code
-//TODO : Check for valid delayslot instruction
+
 bool ExecuteDelayslot()
 {
 	exec_cycles+=CPU_RATIO;
-
 	pc+=2;
+
 	u32 op=IReadMem16(pc);
+
 	if (sh4_exept_raised)
 	{
 		exept_was_dslot=true;
 		return false;
 	}
+
 	//verify(sh4_exept_raised==false);
 	if (op!=0)
 		ExecuteOpcode(op);
+
 	if(sh4_exept_raised)
 	{
 		exept_was_dslot=true;
@@ -529,25 +532,24 @@ void __fastcall MediumUpdate()
 		aica_sample_cycles-=AICA_SAMPLE_CYCLES;
 	}
 
-	libExtDevice.UpdateExtDevice(3584);
 	maple_periodical(3584);
+	libExtDevice.UpdateExtDevice(3584);
 	UpdateDMA();
-
-	if (!(update_cnt&0x8))
-		SlowUpdate();
 }
 
 //448 Cycles
 //as of 7/2/2k8 this is fixed to 448 cycles
 int __fastcall UpdateSystem()
-{
-	if (!(update_cnt&0x7))
-		MediumUpdate();
-	
-	update_cnt++;
-	
+{		
 	UpdateTMU(448);
 	UpdatePvr(448);
-	
+
+	if (!(update_cnt&0x7))
+		MediumUpdate();
+	else if (!(update_cnt&0x8))
+		SlowUpdate();
+
+	update_cnt++;
+
 	return UpdateINTC();
 }

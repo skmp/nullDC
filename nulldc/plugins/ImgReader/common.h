@@ -151,7 +151,9 @@ struct Disc
 	//functions !
 	bool ReadSector(u32 FAD,u8* dst,SectorFormat* sector_type,u8* subcode,SubcodeFormat* subcode_type)
 	{
-		for (size_t i=tracks.size();i-->0;)
+		size_t i = tracks.size();
+		
+		while((--i) > 0)
 		{
 			*subcode_type=SUBFMT_NONE;
 			if (tracks[i].Read(FAD,dst,sector_type,subcode,subcode_type))
