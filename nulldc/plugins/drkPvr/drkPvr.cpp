@@ -169,7 +169,7 @@ void UpdateRRect()
 		oldmode=-1;
 	}
 
-	float win_wh[2]={sx,sy};
+	float win_wh[2]={(float)sx,(float)sy};
 
 	CalcRect(dc_wh,win_wh);
 

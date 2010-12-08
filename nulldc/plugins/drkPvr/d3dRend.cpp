@@ -871,21 +871,23 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 				//this is wayyyy wayy way way way more complicated than it needs, its what psy calls razimaths(tm)
 				//it actually works
 				void CalcRect(float* dst,float* src);
-				float rdf[2]={rs.right,rs.bottom};
-				float rsf[2]={ppar.BackBufferWidth,ppar.BackBufferHeight};
+				float rdf[2]={(float)rs.right,(float)rs.bottom};
+				float rsf[2]={(float)ppar.BackBufferWidth,(float)ppar.BackBufferHeight};
 				RECT rd;
 				CalcRect(rdf,rsf);
-				rd.right=0.5f+rs.right/rdf[0]*rsf[0];
-				rd.bottom=0.5f+rs.bottom/rdf[1]*rsf[1];
-				rd.left=abs((LONG)ppar.BackBufferWidth-rd.right)/2;
-				rd.top=abs((LONG)ppar.BackBufferHeight-rd.bottom)/2;
+				rd.right=(LONG)(0.5f+rs.right/rdf[0]*rsf[0]);
+				rd.bottom=(LONG)(0.5f+rs.bottom/rdf[1]*rsf[1]);
+				rd.left=(LONG)(abs((LONG)ppar.BackBufferWidth-rd.right)/2);
+				rd.top=(LONG)(abs((LONG)ppar.BackBufferHeight-rd.bottom)/2);
 				
 				rd.right+=rd.left;
 				rd.bottom+=rd.top;
-				if (rd.right>ppar.BackBufferWidth)
-					rd.right=ppar.BackBufferWidth;
-				if (rd.bottom>ppar.BackBufferHeight)
-					rd.bottom=ppar.BackBufferHeight;
+				if (rd.right>(LONG)ppar.BackBufferWidth)
+					rd.right=(LONG)ppar.BackBufferWidth;
+
+				if (rd.bottom>(LONG)ppar.BackBufferHeight)
+					rd.bottom=(LONG)ppar.BackBufferHeight;
+
 				dev->StretchRect(surf,&rs,backbuffer,&rd, D3DTEXF_LINEAR);	//add an option for D3DTEXF_POINT for pretty pixels?
 			}
 
@@ -2733,8 +2735,8 @@ __error_out:
 		
 		case 2: //640x480
 			{
-				float ar=((float)win_width/win_height);
-				win_width=480*ar;
+				float ar=((float)win_width/(float)win_height);
+				win_width=(s32)(480*ar);
 				win_height=480;
 			}
 			break;

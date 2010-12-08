@@ -77,8 +77,8 @@ u32 vramlock_ConvAddrtoOffset64(u32 Address)
 //
 void vramlock_list_remove(vram_block* block)
 {
-	u32 base = block->start/PAGE_SIZE;
-	u32 end = block->end/PAGE_SIZE;
+	u32 base = block->start >> 12; // /PAGE_SIZE;
+	u32 end = block->end >> 12; // /PAGE_SIZE;
 
 	for (u32 i=base;i<=end;i++)
 	{
@@ -95,8 +95,8 @@ void vramlock_list_remove(vram_block* block)
  
 void vramlock_list_add(vram_block* block)
 {
-	u32 base = block->start/PAGE_SIZE;
-	u32 end = block->end/PAGE_SIZE;
+	u32 base = block->start >> 12; // /PAGE_SIZE;
+	u32 end = block->end >> 12; // /PAGE_SIZE;
 
 
 	for (u32 i=base;i<=end;i++)
@@ -192,7 +192,7 @@ bool VramLockedWrite(u8* address)
 
 	if (offset<VRAM_SIZE)
 	{
-		size_t addr_hash = offset/PAGE_SIZE;
+		size_t addr_hash = offset >> 12; // /PAGE_SIZE;
 		vector<vram_block*>* list=&VramLocks[addr_hash];
 			
 		for (size_t i=0;i<list->size();i++)

@@ -544,7 +544,7 @@ bool parse_nrg(wchar*nrg_filename,bool verbose)
 				sessions[sess].tracks[entry].track=entry+1;
 				sessions[sess].tracks[entry].sector=sector;
 				sessions[sess].tracks[entry].sectorsize=2048;
-				sessions[sess].tracks[entry].sectors=size>>11; // size/2048 (user data sectors)
+				sessions[sess].tracks[entry].sectors=(s32)(size>>11); // size/2048 (user data sectors)
 				sessions[sess].tracks[entry].offset=offset;
 			}
 			sessions[sess].ntracks=tracks_in_session;

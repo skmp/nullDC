@@ -5,6 +5,10 @@
 const bool SUPPORT_NOFL=false;
 
 __declspec(align(4096)) dsp_t dsp;
+#ifdef assert
+#undef assert
+#endif
+
 #define assert verify
 
 #pragma warning(disable:4311)
