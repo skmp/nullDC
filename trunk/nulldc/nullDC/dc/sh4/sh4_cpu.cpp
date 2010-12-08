@@ -592,12 +592,14 @@ sh4op(i0011_nnnn_mmmm_1111)
 	//s64 br=(s64)(s32)r[n]+(s64)(s32)r[m];
 	u32 rm=r[m];
 	u32 rn=r[n];
+	const u8 setoImm8 = (u8)sr.T;
+
 	__asm 
 	{
 		mov eax,rm;
 		mov ecx,rn;
 		add eax,ecx;
-		seto sr.T;
+		seto setoImm8;
 		mov rn,eax;
 	};
 	r[n]=rn;
@@ -658,12 +660,15 @@ sh4op(i0011_nnnn_mmmm_1011)
 	//r[n]-=r[m];
 	u32 rm=r[m];
 	u32 rn=r[n];
+
+	const u8 setoImm8 = (u8)sr.T;
+
 	__asm 
 	{
 		mov eax,rm;
 		mov ecx,rn;
 		sub eax,ecx;
-		seto sr.T;
+		seto setoImm8;
 		mov rn,eax;
 	};
 	r[n]=rn;

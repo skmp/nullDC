@@ -273,7 +273,7 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 		{
 			u32 entry=(addr>>8)&3;
 			ITLB[entry].Address.reg_data=data & 0xFFFFFCFF;
-			ITLB[entry].Data.V=(data>>8) & 1;
+			ITLB[entry].Data.V=((u32)data>>8) & 1;
 			ITLB_Sync(entry);
 			return;
 		}
@@ -346,8 +346,8 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 				u32 entry=(addr>>8)&63;
 				UTLB_SyncUnmap(entry);
 				UTLB[entry].Address.reg_data=data & 0xFFFFFCFF;
-				UTLB[entry].Data.D=(data>>9)&1;
-				UTLB[entry].Data.V=(data>>8)&1;
+				UTLB[entry].Data.D=((u32)data>>9)&1;
+				UTLB[entry].Data.V=((u32)data>>8)&1;
 				UTLB_SyncMap(entry);
 			}
 			return;

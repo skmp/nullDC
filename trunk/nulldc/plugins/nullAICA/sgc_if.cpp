@@ -1716,7 +1716,7 @@ void AICA_Sample()
 	//MVOL !
 	//we want to make sure mix* is *At least* 23 bits wide here, so 64 bit mul !
 	u32 mvol=CommonData->MVOL;
-	s32 val=volume_lut[mvol] * settings.Volume/100.0f;	
+	s32 val=(s32)(volume_lut[mvol] * settings.Volume/100.0f);	
 
 	mixl=(s32)FPMul((s64)mixl,val,15);					
 	mixr=(s32)FPMul((s64)mixr,val,15);					

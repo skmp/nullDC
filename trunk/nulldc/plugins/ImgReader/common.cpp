@@ -274,7 +274,7 @@ void GetDriveToc(u32* to,DiskArea area)
 	else
 		to[101]=CreateTrackInfo(disc->LeadOut.CTRL,disc->LeadOut.ADDR,disc->LeadOut.StartFAD);
 
-	for (int i=first_track-1;i<last_track;i++)
+	for (u32 i=first_track-1;i<last_track;i++)
 	{
 		to[i]=CreateTrackInfo(disc->tracks[i].CTRL,disc->tracks[i].ADDR,disc->tracks[i].StartFAD); 
 	}
