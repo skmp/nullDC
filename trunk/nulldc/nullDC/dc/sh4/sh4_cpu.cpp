@@ -592,17 +592,28 @@ sh4op(i0011_nnnn_mmmm_1111)
 	//s64 br=(s64)(s32)r[n]+(s64)(s32)r[m];
 	u32 rm=r[m];
 	u32 rn=r[n];
-	const u8 setoImm8 = (u8)sr.T;
 
-	__asm 
+	__asm //over
 	{
+		mov sr.T,0
 		mov eax,rm;
 		mov ecx,rn;
 		add eax,ecx;
-		seto setoImm8;
+		adc sr.T,0; //0 + carry ( use adc instead seto since rm/rn are both unsigned )
 		mov rn,eax;
-	};
-	r[n]=rn;
+		lea eax,r; //@(r)
+		mov ebx,n;
+		#ifndef X64 //inc by native type size
+		shl ebx,2; //ptr = 32bits 
+		#else
+		shl ebx,3; //64
+		#endif
+		add eax,ebx;
+		mov ebx,rn;
+		mov [eax],ebx;//*(t*)p = rn
+	};//kill :|
+
+	//r[n]=rn;
 	/*
 	if (br >=0x80000000)
 		sr.T=1;
@@ -661,17 +672,27 @@ sh4op(i0011_nnnn_mmmm_1011)
 	u32 rm=r[m];
 	u32 rn=r[n];
 
-	const u8 setoImm8 = (u8)sr.T;
-
-	__asm 
+	__asm //over
 	{
+		mov sr.T,0
 		mov eax,rm;
 		mov ecx,rn;
 		sub eax,ecx;
-		seto setoImm8;
+		adc sr.T,0; //0 + carry ( use adc instead seto since rm/rn are both unsigned )
 		mov rn,eax;
-	};
-	r[n]=rn;
+		lea eax,r; //@(r)
+		mov ebx,n;
+		#ifndef X64 //inc by native type size
+		shl ebx,2; //ptr = 32bits 
+		#else
+		shl ebx,3; //64
+		#endif
+		add eax,ebx;
+		mov ebx,rn;
+		mov [eax],ebx;//*(t*)p = rn
+	};//kill :|
+
+	//r[n]=rn;
 }
 //dt <REG_N>                    
 sh4op(i0100_nnnn_0001_0000)
