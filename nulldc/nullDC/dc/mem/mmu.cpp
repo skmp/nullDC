@@ -535,19 +535,18 @@ u32 __fastcall mmu_ReadMem32(u32 adr)
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DREAD);
 }
-void __fastcall mmu_ReadMem64(u32 adr,u32* reg)
+u64 __fastcall mmu_ReadMem64(u32 adr)
 {
 	if (adr&7)
 	{
 		mmu_raise_exeption(MMU_ERROR_BADADDR,adr,MMU_TT_DREAD);
-		return;
+		return 0;
 	}
 	u32 addr;
 	u32 tv=mmu_data_translation<MMU_TT_DREAD>(adr,addr);
 	if (tv==0)
 	{
-		reg[0]=_vmem_ReadMem32(addr);
-		reg[1]=_vmem_ReadMem32(addr+4);
+		return _vmem_ReadMem64(addr);
 	}
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DREAD);
@@ -599,7 +598,7 @@ void __fastcall mmu_WriteMem32(u32 adr,u32 data)
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DWRITE);
 }
-void __fastcall mmu_WriteMem64(u32 adr,u32* data)
+void __fastcall mmu_WriteMem64(u32 adr,u64 data)
 {
 	if (adr&7)
 	{
@@ -610,8 +609,7 @@ void __fastcall mmu_WriteMem64(u32 adr,u32* data)
 	u32 tv=mmu_data_translation<MMU_TT_DWRITE>(adr,addr);
 	if (tv==0)
 	{
-		_vmem_WriteMem32(addr,data[0]);
-		_vmem_WriteMem32(addr+4,data[1]);
+		_vmem_WriteMem64(addr,data);
 		return;
 	}
 	else
