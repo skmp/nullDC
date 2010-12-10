@@ -521,6 +521,8 @@ void __fastcall SlowUpdate()
 
 void __fastcall MediumUpdate()
 {
+	void aica_periodical(u32 cycl);
+
 	void maple_periodical(u32 cycl);
 
 	aica_sample_cycles+=3584*AICA_SAMPLE_GCM;
@@ -532,7 +534,10 @@ void __fastcall MediumUpdate()
 		aica_sample_cycles-=AICA_SAMPLE_CYCLES;
 	}
 
+	aica_periodical(3584);
+
 	maple_periodical(3584);
+
 	libExtDevice.UpdateExtDevice(3584);
 	UpdateDMA();
 
