@@ -114,7 +114,7 @@ void __fastcall sh4_int_RaiseExeption(u32 ExeptionCode,u32 VectorAddress)
 {
 	if (sh4_exept_raised)
 	{
-		printf("WARNING : DOUBLE EXEPTION RAISED , IGNORING SECOND EXEPTION\n");
+		log("WARNING : DOUBLE EXEPTION RAISED , IGNORING SECOND EXEPTION\n");
 		dbgbreak;
 		return;
 	}
@@ -206,7 +206,7 @@ void Sh4_int_Step()
 {
 	if (sh4_int_bCpuRun)
 	{
-		printf("Sh4 Is running , can't step\n");
+		log("Sh4 Is running , can't step\n");
 	}
 	else
 	{
@@ -220,7 +220,7 @@ void Sh4_int_Skip()
 {
 	if (sh4_int_bCpuRun)
 	{
-		printf("Sh4 Is running , can't Skip\n");
+		log("Sh4 Is running , can't Skip\n");
 	}
 	else
 	{
@@ -232,7 +232,7 @@ void Sh4_int_Reset(bool Manual)
 {
 	if (sh4_int_bCpuRun)
 	{
-		printf("Sh4 Is running , can't Reset\n");
+		log("Sh4 Is running , can't Reset\n");
 	}
 	else
 	{
@@ -253,7 +253,7 @@ void Sh4_int_Reset(bool Manual)
 		UpdateFPSCR();
 		
 		//Any more registers have default value ?
-		printf("Sh4 Reset\n");
+		log("Sh4 Reset\n");
 		patchRB=0;
 	}
 }
@@ -262,13 +262,13 @@ void Sh4_int_Init()
 {
 	BuildOpcodeTables();
 	GenerateSinCos();
-	printf("Sh4 Init\n");
+	log("Sh4 Init\n");
 }
 
 void Sh4_int_Term() 
 {
 	Sh4_int_Stop();
-	printf("Sh4 Term\n");
+	log("Sh4 Term\n");
 }
 
 bool Sh4_int_IsCpuRunning() 

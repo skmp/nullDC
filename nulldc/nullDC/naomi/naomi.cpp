@@ -360,13 +360,13 @@ u32  _ReadMem_naomi(u32 Addr, u32 sz)
 {
 	verify(sz!=1);
 
-	printf("naomi?WTF? ReadMem: %X, %d\n", Addr, sz);
+	log("naomi?WTF? ReadMem: %X, %d\n", Addr, sz);
 	return 1;
 
 }
 void _WriteMem_naomi(u32 Addr, u32 data, u32 sz)
 {
-	printf("naomi?WTF? WriteMem: %X <= %X, %d\n", Addr, data, sz);
+	log("naomi?WTF? WriteMem: %X <= %X, %d\n", Addr, data, sz);
 }
 
 
@@ -404,43 +404,43 @@ u32 reg_dimm_4c=0x11;	//status/control reg ?
 
 void naomi_process(u32 r3c,u32 r40,u32 r44, u32 r48)
 {
-	printf("Naomi process 0x%04X 0x%04X 0x%04X 0x%04X\n",r3c,r40,r44,r48);
-	printf("Possible format 0 %d 0x%02X 0x%04X\n",r3c>>15,(r3c&0x7e00)>>9,r3c&0x1FF);
-	printf("Possible format 1 0x%02X 0x%02X\n",(r3c&0xFF00)>>8,r3c&0xFF);
+	log("Naomi process 0x%04X 0x%04X 0x%04X 0x%04X\n",r3c,r40,r44,r48);
+	log("Possible format 0 %d 0x%02X 0x%04X\n",r3c>>15,(r3c&0x7e00)>>9,r3c&0x1FF);
+	log("Possible format 1 0x%02X 0x%02X\n",(r3c&0xFF00)>>8,r3c&0xFF);
 
 	u32 param=(r3c&0xFF);
 	if (param==0xFF)
 	{
-		printf("invalid opcode or smth ?");
+		log("invalid opcode or smth ?");
 	}
 	static int opcd=0;
 	//else if (param!=3)
 	if (opcd<255)
 	{
 		reg_dimm_3c=0x8000 | (opcd%12<<9) | (0x0);
-		printf("new reg is 0x%X\n",reg_dimm_3c);
+		log("new reg is 0x%X\n",reg_dimm_3c);
 		asic_RaiseInterrupt(holly_EXP_PCI);
-		printf("Interrupt raised\n");
+		log("Interrupt raised\n");
 		opcd++;
 	}
 }
 u32  ReadMem_naomi(u32 Addr, u32 sz)
 {
 	verify(sz!=1);
-//	printf("+naomi?WTF? ReadMem: %X, %d\n", Addr, sz);
+//	log("+naomi?WTF? ReadMem: %X, %d\n", Addr, sz);
 	switch(Addr&255)
 	{
 	case 0x3c:
-		printf("naomi GD? READ: %X, %d\n", Addr, sz);
+		log("naomi GD? READ: %X, %d\n", Addr, sz);
 		return reg_dimm_3c;
 	case 0x40:
-		printf("naomi GD? READ: %X, %d\n", Addr, sz);
+		log("naomi GD? READ: %X, %d\n", Addr, sz);
 		return reg_dimm_40;
 	case 0x44:
-		printf("naomi GD? READ: %X, %d\n", Addr, sz);
+		log("naomi GD? READ: %X, %d\n", Addr, sz);
 		return reg_dimm_44;
 	case 0x48:
-		printf("naomi GD? READ: %X, %d\n", Addr, sz);
+		log("naomi GD? READ: %X, %d\n", Addr, sz);
 		return reg_dimm_48;
 
 		//These are known to be valid on normal ROMs and DIMM board
@@ -468,12 +468,12 @@ u32  ReadMem_naomi(u32 Addr, u32 sz)
 		//What should i do to emulate 'nothing' ?
 	case NAOMI_COMM_OFFSET_addr&255:
 		#ifdef NAOMI_COMM
-		printf("naomi COMM offs READ: %X, %d\n", Addr, sz);
+		log("naomi COMM offs READ: %X, %d\n", Addr, sz);
 		return CommOffset;
 		#endif
 	case NAOMI_COMM_DATA_addr&255:
 		#ifdef NAOMI_COMM
-		printf("naomi COMM data read: %X, %d\n", CommOffset, sz);
+		log("naomi COMM data read: %X, %d\n", CommOffset, sz);
 		if (CommSharedMem)
 		{
 			return CommSharedMem[CommOffset&0xF];
@@ -489,27 +489,27 @@ u32  ReadMem_naomi(u32 Addr, u32 sz)
 		return DmaOffset&0xFFFF;
 
 	case NAOMI_BOARDID_WRITE_addr&255:
-		printf("naomi ReadMem: %X, %d\n", Addr, sz);
+		log("naomi ReadMem: %X, %d\n", Addr, sz);
 		return 1;
 
 	case 0x04C:
-		printf("naomi GD? READ: %X, %d\n", Addr, sz);
+		log("naomi GD? READ: %X, %d\n", Addr, sz);
 		return reg_dimm_4c;
 
 	case 0x18:
-		printf("naomi reg 0x18 : returning random data\n");
+		log("naomi reg 0x18 : returning random data\n");
 		return 0x4000^rand();
 		break;
 
 	default: break;
 	}
-	printf("naomi?WTF? ReadMem: %X, %d\n", Addr, sz);
+	log("naomi?WTF? ReadMem: %X, %d\n", Addr, sz);
 	return 0;
 
 }
 void WriteMem_naomi(u32 Addr, u32 data, u32 sz)
 {
-//	printf("+naomi WriteMem: %X <= %X, %d\n", Addr, data, sz);
+//	log("+naomi WriteMem: %X <= %X, %d\n", Addr, data, sz);
 	switch(Addr&255)
 	{
 	case 0x3c:
@@ -521,20 +521,20 @@ void WriteMem_naomi(u32 Addr, u32 data, u32 sz)
 			 reg_dimm_4c|=1;*/
 		 }
 		 reg_dimm_3c=data;
-		 printf("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
+		 log("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
 		 return;
 
 	case 0x40:
 		reg_dimm_40=data;
-		printf("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
+		log("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
 		return;
 	case 0x44:
 		reg_dimm_44=data;
-		printf("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
+		log("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
 		return;
 	case 0x48:
 		reg_dimm_48=data;
-		printf("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
+		log("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
 		return;
 
 	case 0x4C:
@@ -551,7 +551,7 @@ void WriteMem_naomi(u32 Addr, u32 data, u32 sz)
 			naomi_process(reg_dimm_3c,reg_dimm_40,reg_dimm_44,reg_dimm_48);
 		}
 		reg_dimm_4c=data&~0x100;
-		printf("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
+		log("naomi GD? Write: %X <= %X, %d\n", Addr, data, sz);
 		return;
 
 		//These are known to be valid on normal ROMs and DIMM board
@@ -566,7 +566,7 @@ void WriteMem_naomi(u32 Addr, u32 data, u32 sz)
 		return;
 
 	case NAOMI_ROM_DATA_addr&255:
-		printf("naomi WriteMem:Write to rom ? sure ? no , i dont think so %%) %X <= %X, %d\n", Addr, data, sz);
+		log("naomi WriteMem:Write to rom ? sure ? no , i dont think so %%) %X <= %X, %d\n", Addr, data, sz);
 		return;
 
 	case NAOMI_DMA_OFFSETH_addr&255:
@@ -591,14 +591,14 @@ void WriteMem_naomi(u32 Addr, u32 data, u32 sz)
 		//What should i do to emulate 'nothing' ?
 	case NAOMI_COMM_OFFSET_addr&255:
 #ifdef NAOMI_COMM
-		printf("naomi COMM ofset Write: %X <= %X, %d\n", Addr, data, sz);
+		log("naomi COMM ofset Write: %X <= %X, %d\n", Addr, data, sz);
 		CommOffset=data&0xFFFF;
 #endif
 		return;
 
 	case NAOMI_COMM_DATA_addr&255:
 		#ifdef NAOMI_COMM
-		printf("naomi COMM data Write: %X <= %X, %d\n", CommOffset, data, sz);
+		log("naomi COMM data Write: %X <= %X, %d\n", CommOffset, data, sz);
 		if (CommSharedMem)
 		{
 			CommSharedMem[CommOffset&0xF]=data;
@@ -608,12 +608,12 @@ void WriteMem_naomi(u32 Addr, u32 data, u32 sz)
 
 		//This should be valid
 	case NAOMI_BOARDID_READ_addr&255:
-		printf("naomi WriteMem: %X <= %X, %d\n", Addr, data, sz);
+		log("naomi WriteMem: %X <= %X, %d\n", Addr, data, sz);
 		return;
 
 	default: break;
 	}
-	printf("naomi?WTF? WriteMem: %X <= %X, %d\n", Addr, data, sz);
+	log("naomi?WTF? WriteMem: %X <= %X, %d\n", Addr, data, sz);
 }
 
 
@@ -638,7 +638,7 @@ OPENFILENAME ofn;
 bool naomi_LoadRom(wchar* file)
 {
 	
-	printf("\nnullDC-Naomi rom loader v1.2\n");
+	log("\nnullDC-Naomi rom loader v1.2\n");
 
 	size_t folder_pos=wcslen(file)-1;
 	while(folder_pos>1 && file[folder_pos]!='\\')
@@ -695,7 +695,7 @@ bool naomi_LoadRom(wchar* file)
 	}
 	fclose(fl);
 
-	printf("+%d romfiles, %.2f MB set size, %.2f MB set address space\n",files.size(),setsize/1024.f/1024.f,max_load_addr/1024.f/1024.f);
+	log("+%d romfiles, %.2f MB set size, %.2f MB set address space\n",files.size(),setsize/1024.f/1024.f,max_load_addr/1024.f/1024.f);
 
 	if (RomCacheMap)
 	{
@@ -743,13 +743,14 @@ bool naomi_LoadRom(wchar* file)
 		verify(RomCacheMap[i]!=INVALID_HANDLE_VALUE);
 		wprintf(L"-Preparing \"%s\" at 0x%08X, size 0x%08X\n",files[i].c_str(),fstart[i],fsize[i]);
 		
-		verify(CloseHandle(RomCache));
+		CloseHandle(RomCache);
 	}
 
 	//We have all file mapping objects, we start to map the ram
-	printf("+Mapping ROM\n");
+	log("+Mapping ROM\n");
+	
 	//Release the segment we reserved so we can map the files there
-	verify(VirtualFree(RomPtr,0,MEM_RELEASE));
+	VirtualFree(RomPtr,0,MEM_RELEASE);
 
 	//Map the files into the segment of the ram that was reserved
 	for (size_t i=0;i<RomCacheMapCount;i++)
@@ -759,14 +760,15 @@ bool naomi_LoadRom(wchar* file)
 		if (RomCacheMap[i]==INVALID_HANDLE_VALUE)
 		{
 			wprintf(L"-Reserving ram at 0x%08X, size 0x%08X\n",fstart[i],fsize[i]);
-			verify(VirtualAlloc(RomDest,fsize[i],MEM_RESERVE,PAGE_NOACCESS));
+			u8* test = VirtualAlloc(RomDest,fsize[i],MEM_RESERVE,PAGE_NOACCESS);
+			verify(0 != test);
 		}
 		else
 		{
 			wprintf(L"-Mapping \"%s\" at 0x%08X, size 0x%08X\n",files[i].c_str(),fstart[i],fsize[i]);
 			if (RomDest!=MapViewOfFileEx(RomCacheMap[i],FILE_MAP_READ,0,0,fsize[i],RomDest))
 			{
-				printf("-Mapping ROM FAILED\n");
+				log("-Mapping ROM FAILED\n");
 				//unmap file
 				return false;
 			}
@@ -774,7 +776,7 @@ bool naomi_LoadRom(wchar* file)
 	}
 
 	//done :)
-	printf("\nMapped ROM Successfully !\n\n");
+	log("\nMapped ROM Successfully !\n\n");
 	
 	
 	return true;
@@ -815,7 +817,7 @@ void Naomi_DmaStart(u32 data)
 {
 	if (SB_GDEN==0)
 	{
-		printf("Invalid (NAOMI)GD-DMA start, SB_GDEN=0.Ingoring it.\n");
+		log("Invalid (NAOMI)GD-DMA start, SB_GDEN=0.Ingoring it.\n");
 		return;
 	}
 	SB_GDST|=data&1;
@@ -840,7 +842,7 @@ void Naomi_DmaEnable(u32 data)
 	SB_GDEN=data&1;
 	if (SB_GDEN==0 && SB_GDST==1)
 	{
-		printf("(NAOMI)GD-DMA aborted\n");
+		log("(NAOMI)GD-DMA aborted\n");
 		SB_GDST=0;
 	}
 }
@@ -872,7 +874,7 @@ void naomi_reg_Init()
 	}
 	else
 	{
-		printf("NAOMI: Created \"Global\\nullDC_103_naomi_comm\"\n");
+		log("NAOMI: Created \"Global\\nullDC_103_naomi_comm\"\n");
 		CommSharedMem = (u32*) MapViewOfFile(CommMapFile,   // handle to map object
 			FILE_MAP_ALL_ACCESS, // read/write permission
 			0,                   
@@ -888,7 +890,7 @@ void naomi_reg_Init()
 			CommMapFile=INVALID_HANDLE_VALUE;
 		}
 		else
-			printf("NAOMI: Mapped CommSharedMem\n");
+			log("NAOMI: Mapped CommSharedMem\n");
 	}
 	#endif
 	NaomiInit();
@@ -943,17 +945,17 @@ void Update_naomi()
 	//len=min(len,(u32)32);
 	// do we need to do this for gdrom dma ?
 	if(0x8201 != (dmaor &DMAOR_MASK)) {
-		printf("\n!\tGDROM: DMAOR has invalid settings (%X) !\n", dmaor);
+		log("\n!\tGDROM: DMAOR has invalid settings (%X) !\n", dmaor);
 		//return;
 	}
 	if(len & 0x1F) {
-		printf("\n!\tGDROM: SB_GDLEN has invalid size (%X) !\n", len);
+		log("\n!\tGDROM: SB_GDLEN has invalid size (%X) !\n", len);
 		return;
 	}
 
 	if(0 == len) 
 	{
-		printf("\n!\tGDROM: Len: %X, Abnormal Termination !\n", len);
+		log("\n!\tGDROM: Len: %X, Abnormal Termination !\n", len);
 	}
 	u32 len_backup=len;
 	if( 1 == SB_GDDIR ) 
@@ -973,7 +975,7 @@ void Update_naomi()
 
 	if (SB_GDLEND==SB_GDLEN)
 	{
-		//printf("Streamed GDMA end - %d bytes trasnfered\n",SB_GDLEND);
+		//log("Streamed GDMA end - %d bytes trasnfered\n",SB_GDLEND);
 		SB_GDST=0;//done
 		// The DMA end interrupt flag
 		asic_RaiseInterrupt(holly_GDROM_DMA);

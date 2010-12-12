@@ -127,6 +127,9 @@
     <Filter Include="cl">
       <UniqueIdentifier>{611ee843-243e-4590-97ab-eca771039b35}</UniqueIdentifier>
     </Filter>
+    <Filter Include="logging">
+      <UniqueIdentifier>{107d1ef0-5c0c-4c46-ba68-0f7b37a46d70}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dc\dc.cpp">
@@ -294,7 +297,9 @@
     <ClCompile Include="debug_mem.cpp" />
     <ClCompile Include="nullDC.cpp" />
     <ClCompile Include="stdclass.cpp" />
-    <ClCompile Include="log\log.cpp" />
+    <ClCompile Include="log\logging.cpp">
+      <Filter>logging</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dc\dc.h">
@@ -513,8 +518,12 @@
     <ClInclude Include="basic_types.h" />
     <ClInclude Include="stdclass.h" />
     <ClInclude Include="types.h" />
-    <ClInclude Include="log\log.hpp" />
-    <ClInclude Include="log\logging_interface.h" />
+    <ClInclude Include="log\logging_interface.h">
+      <Filter>logging</Filter>
+    </ClInclude>
+    <ClInclude Include="log\logging.h">
+      <Filter>logging</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="gui\ndc_icon.ico">

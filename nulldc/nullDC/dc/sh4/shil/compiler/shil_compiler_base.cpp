@@ -782,7 +782,7 @@ void emit_vmem_write(x86_reg reg_addr,u8 reg_data,u32 sz)
 //Default handler , should never be called
 void __fastcall shil_compile_nimp(shil_opcode* op)
 {
-	printf("*********SHIL \"%s\" not recompiled*********\n",GetShilName((shil_opcodes)op->opcode));
+	log("*********SHIL \"%s\" not recompiled*********\n",GetShilName((shil_opcodes)op->opcode));
 }
 
 //mov32/64 reg,reg/imm
@@ -933,7 +933,7 @@ void __fastcall shil_compile_mov(shil_opcode* op)
 			break;
 		case IMMtoXMM:
 			{
-				//printf("impossible mov IMMtoXMM [%X]\n",flags);
+				//log("impossible mov IMMtoXMM [%X]\n",flags);
 				//__asm int 3;
 				//write back to ram
 				x86e->Emit(op_mov32,GetRegPtr(op->reg1),op->imm1);
@@ -956,7 +956,7 @@ void __fastcall shil_compile_mov(shil_opcode* op)
 			break;
 
 		default:
-			printf("unknown mov %X\n",flags);
+			log("unknown mov %X\n",flags);
 			__asm int 3;
 			break;
 		}
@@ -965,7 +965,7 @@ void __fastcall shil_compile_mov(shil_opcode* op)
 	{
 		assert(size==FLAG_64);//32 or 64 b
 		assert(0==(op->flags & (FLAG_IMM1|FLAG_IMM2)));//no imm can be used
-		//printf("mov64 not supported\n");
+		//log("mov64 not supported\n");
 		u8 dest=GetSingleFromDouble((u8)op->reg1);
 		u8 source=GetSingleFromDouble((u8)op->reg2);
 
@@ -1083,7 +1083,7 @@ void __fastcall shil_compile_swap(shil_opcode* op)
 	else
 	{
 		assert(size==FLAG_16);//has to be 16 bit
-		//printf("Shil : wswap not implemented\n");
+		//log("Shil : wswap not implemented\n");
 		
 		//use rotate ?
 		x86_gpr_reg r1 = LoadReg(EAX,op->reg1);
@@ -1380,7 +1380,7 @@ void roml(x86_reg reg,x86_Label* lbl,u32* offset_Edit,x86_reg fast_reg,u32 fast_
 	{
 		//fast_reg has the reg before adding the imm and moving to ecx
 		x86e->Emit(op_cmp32,fast_reg,0xE0000000-fast_offset);
-		//printf("fast reG !!!%X\n",fast_offset);
+		//log("fast reG !!!%X\n",fast_offset);
 	}
 	else
 	{
@@ -1610,7 +1610,7 @@ void apply_roml_patches()
 		u32 offset=x86e->x86_indx;
 		x86e->write8(0);
 		x86e->write8(roml_patch_list[i].resume_offset);
-		//printf("Resume offset: %d\n",roml_patch_list[i].resume_offset);
+		//log("Resume offset: %d\n",roml_patch_list[i].resume_offset);
 		x86e->MarkLabel(roml_patch_list[i].p4_access);
 		if (roml_patch_list[i].type==1 && (roml_patch_list[i].asz>=FLAG_32))
 		{
@@ -1636,7 +1636,7 @@ void apply_roml_patches()
 			x86e->Emit(op_jmp,roml_patch_list[i].exit_point);
 			x86e->MarkLabel(normal_write);
 			*(u8*)&x86e->x86_buff[offset]=(u8)( (u32)(x86e->x86_indx-offset-2) );
-			//printf("patch offset: %d\n",x86e->x86_indx-offset-2);
+			//log("patch offset: %d\n",x86e->x86_indx-offset-2);
 		}
 		else
 		{
@@ -1854,12 +1854,12 @@ void __fastcall shil_compile_sub(shil_opcode* op)
 //left over from older code
 void __fastcall shil_compile_jcond(shil_opcode* op)
 {
-	printf("jcond ... heh not implemented\n");
+	log("jcond ... heh not implemented\n");
 	assert(false);
 }
 void __fastcall shil_compile_jmp(shil_opcode* op)
 {
-	printf("jmp ... heh not implemented\n");
+	log("jmp ... heh not implemented\n");
 }
 //helpers for mul
 void load_with_se16(x86_gpr_reg to,u8 from)
@@ -2713,11 +2713,11 @@ void SetH(shil_opcodes op,shil_compileFP* ha)
 {
 	if (op>(shilop_count-1))
 	{
-		printf("SHIL COMPILER ERROR\n");
+		log("SHIL COMPILER ERROR\n");
 	}
 	if (sclt[op]!=shil_compile_nimp)
 	{
-		printf("SHIL COMPILER ERROR [hash table overwrite]\n");
+		log("SHIL COMPILER ERROR [hash table overwrite]\n");
 	}
 
 	sclt[op]=ha;
@@ -2785,7 +2785,7 @@ void sclt_Init()
 			shil_nimp--;
 	}
 
-	//printf("lazy shil compiler stats : %d%% opcodes done\n",shil_nimp*100/shilop_count);
+	//log("lazy shil compiler stats : %d%% opcodes done\n",shil_nimp*100/shilop_count);
 	*/
 }
 
@@ -2794,7 +2794,7 @@ void shil_compile(shil_opcode* op)
 {
 	if (op->opcode>(shilop_count-1))
 	{
-		printf("SHIL COMPILER ERROR\n");
+		log("SHIL COMPILER ERROR\n");
 	}
 	sclt[op->opcode](op);
 }

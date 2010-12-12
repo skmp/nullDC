@@ -268,14 +268,14 @@ void CBBs_BlockSuspended(CompiledBlockInfo* block,u32* sp)
 
 	if(sp_inblock==sp)
 	{
-		//printf("Exeption within the same block !\n");
+		//log("Exeption within the same block !\n");
 	}
 	else
 	{
 		if (sp!=0)
 		{
-			//printf("Exeption possibly within the same block ; 0x%X\n",sp_inblock[-1]);
-			//printf("Block EP : 0x%X , sz : 0x%X\n",block->Code,block->size);
+			//log("Exeption possibly within the same block ; 0x%X\n",sp_inblock[-1]);
+			//log("Block EP : 0x%X , sz : 0x%X\n",block->Code,block->size);
 		}
 	}
 	*/
@@ -547,11 +547,11 @@ bool BasicBlock::Compile()
 			{
 				for (u32 j=i+1;j<list_sz;j++)
 				{
-					//printf("%d: %d\n",j,op[j-i].opcode);
+					//log("%d: %d\n",j,op[j-i].opcode);
 					if (op[j-i].opcode!=shilop_mov)
 						goto compile_normaly;
 				}
-				//printf("Flag promotion @ %d out of %d\n",i,(list_sz-1));
+				//log("Flag promotion @ %d out of %d\n",i,(list_sz-1));
 				exit_cond_direct=op[-1].imm1;
 				if (exit_cond_direct==CC_FPU_E)
 					exit_cond_direct=CC_NP;
@@ -682,7 +682,7 @@ compile_normaly:
 		{
 			if (cBB->TF_next_addr==cBB->start)
 			{
-				printf("Fast Link possible\n");
+				log("Fast Link possible\n");
 			}
 			else
 			{

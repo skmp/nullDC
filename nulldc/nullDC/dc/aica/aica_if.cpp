@@ -54,7 +54,7 @@ u32 ReadMem_aica_rtc(u32 addr,u32 sz)
 		return 0;
 	}
 
-	printf("ReadMem_aica_rtc : invalid address\n");
+	log("ReadMem_aica_rtc : invalid address\n");
 	return 0;
 }
 
@@ -127,12 +127,12 @@ void FASTCALL WriteMem_aica_reg(u32 addr,u32 data,u32 sz)
 		if (addr==0x2C01)
 		{
 			VREG=data;
-			printf("VREG = %02X\n",VREG);
+			log("VREG = %02X\n",VREG);
 		}
 		else if (addr==0x2C00)
 		{
 			ARMRST=data;
-			printf("ARMRST = %02X\n",ARMRST);
+			log("ARMRST = %02X\n",ARMRST);
 			ArmSetRST();
 		}
 		else
@@ -146,7 +146,7 @@ void FASTCALL WriteMem_aica_reg(u32 addr,u32 data,u32 sz)
 		{
 			VREG=(data>>8)&0xFF;
 			ARMRST=data&0xFF;
-			printf("VREG = %02X ARMRST %02X\n",VREG,ARMRST);
+			log("VREG = %02X ARMRST %02X\n",VREG,ARMRST);
 			ArmSetRST();
 		}
 		else
@@ -222,7 +222,7 @@ void Write_SB_ADST(u32 data)
 				u32 t=src;
 				src=dst;
 				dst=t;
-				printf("**AICA DMA : SB_ADDIR==1: Not sure this works, please report if broken/missing sound or crash\n**");
+				log("**AICA DMA : SB_ADDIR==1: Not sure this works, please report if broken/missing sound or crash\n**");
 			}
 
 
@@ -272,10 +272,10 @@ void Write_SB_E1ST(u32 data)
 				u32 t=src;
 				src=dst;
 				dst=t;
-				printf("G2-EXT1 DMA : SB_E1DIR==1 DMA Read to 0x%X from 0x%X %d bytes\n",dst,src,len);
+				log("G2-EXT1 DMA : SB_E1DIR==1 DMA Read to 0x%X from 0x%X %d bytes\n",dst,src,len);
 			}
 			else
-				printf("G2-EXT1 DMA : SB_E1DIR==0:DMA Write to 0x%X from 0x%X %d bytes\n",dst,src,len);
+				log("G2-EXT1 DMA : SB_E1DIR==0:DMA Write to 0x%X from 0x%X %d bytes\n",dst,src,len);
 
 			for (u32 i=0;i<len;i+=4)
 			{

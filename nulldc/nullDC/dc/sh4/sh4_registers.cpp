@@ -121,7 +121,7 @@ bool UpdateSR()
 	{
 		if (sr.RB)
 		{
-			printf("UpdateSR MD=0;RB=1 , this must not happen\n");
+			log("UpdateSR MD=0;RB=1 , this must not happen\n");
 			sr.RB =0;//error - must allways be 0
 			if (old_sr.RB)
 				ChangeGPR();//switch
@@ -135,12 +135,12 @@ bool UpdateSR()
 /*
 	if ((old_sr.IMASK!=0xF) && (sr.IMASK==0xF))
 	{
-		//printf("Interrupts disabled  , pc=0x%X\n",pc);
+		//log("Interrupts disabled  , pc=0x%X\n",pc);
 	}
 
 	if ((old_sr.IMASK==0xF) && (sr.IMASK!=0xF))
 	{
-		//printf("Interrupts enabled  , pc=0x%X\n",pc);
+		//log("Interrupts enabled  , pc=0x%X\n",pc);
 	}
 	
 	bool rv=old_sr.IMASK > sr.IMASK;
@@ -213,7 +213,7 @@ f64 GetDR(u32 n)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("DR_r INDEX OVERRUN %d >7",n);
+		log("DR_r INDEX OVERRUN %d >7",n);
 #endif
 	double t;
 	((u32*)(&t))[1]=fr_hex[(n<<1) | 0];
@@ -225,7 +225,7 @@ f64 GetXD(u32 n)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("XD_r INDEX OVERRUN %d >7",n);
+		log("XD_r INDEX OVERRUN %d >7",n);
 #endif
 	double t;
 	((u32*)(&t))[1]=xf_hex[(n<<1) | 0];
@@ -237,7 +237,7 @@ void SetDR(u32 n,f64 val)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("DR_w INDEX OVERRUN %d >7",n);
+		log("DR_w INDEX OVERRUN %d >7",n);
 #endif
 	fr_hex[(n<<1) | 1]=((u32*)(&val))[0];
 	fr_hex[(n<<1) | 0]=((u32*)(&val))[1];
@@ -247,7 +247,7 @@ void SetXD(u32 n,f64 val)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("XD_w INDEX OVERRUN %d >7",n);
+		log("XD_w INDEX OVERRUN %d >7",n);
 #endif
 
 	xf_hex[(n<<1) | 1]=((u32*)(&val))[0];

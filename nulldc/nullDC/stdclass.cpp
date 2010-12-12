@@ -18,7 +18,7 @@ u32 fastrand()
 	return fastrand_seed++;//if it got 0 , take good care of it :)
 }
 
-//Misc function to get relative source directory for printf's
+//Misc function to get relative source directory for log's
 wchar temp[1000];
 wchar* GetNullDCSoruceFileName(wchar* full)
 {
@@ -213,7 +213,7 @@ void cDllHandler::Unload()
 		u32 rv =FreeLibrary((HMODULE)lib);
 		if (!rv)
 		{
-			printf("FreeLibrary -- failed %d\n",GetLastError());
+			log("FreeLibrary -- failed %d\n",GetLastError());
 		}
 		lib=0;
 	}
@@ -329,14 +329,14 @@ int ExeptionHandler(u32 dwCode, void* pExceptionPointers)
 
 		if (!cbi)
 		{
-			printf("**DYNAREC_BUG: bm_ReverseLookup failed to resolve %08X, will blindly patch due to %08X**\n",pos,address);
-			printf("**PLEASE REPORT THIS IF NOT ON THE ISSUE TRACKER ALREADY --raz**\n");
+			log("**DYNAREC_BUG: bm_ReverseLookup failed to resolve %08X, will blindly patch due to %08X**\n",pos,address);
+			log("**PLEASE REPORT THIS IF NOT ON THE ISSUE TRACKER ALREADY --raz**\n");
 			return EXCEPTION_CONTINUE_SEARCH;
 		}
 
 #ifdef DEBUG
 		else
-			printf("Except in block %X | %X\n",cbi->Code,cbi);
+			log("Except in block %X | %X\n",cbi->Code,cbi);
 #endif
 
 		//cbb->Rewrite
@@ -346,13 +346,13 @@ int ExeptionHandler(u32 dwCode, void* pExceptionPointers)
 		*ptr_cmp=0xE9;
 		*(u32*) (ptr_cmp+1)=*ptr_jae_offset+7 + offset_2[0];
 		ep->ContextRecord->Eip=(pos-6-6-6- offset_2[1]);
-		//printf("Patched %08X,%08X<-%08X %d %d\n",ep->ContextRecord->Eip,ep->ContextRecord->Ecx,offset_2[0],offset_2[1]);
+		//log("Patched %08X,%08X<-%08X %d %d\n",ep->ContextRecord->Eip,ep->ContextRecord->Ecx,offset_2[0],offset_2[1]);
 		//		ep->ContextRecord->Ecx=ep->ContextRecord->Eax;
 		return EXCEPTION_CONTINUE_EXECUTION;
 	}
 	else
 	{
-		printf("[GPF]Unhandled access to : 0x%X\n",address);
+		log("[GPF]Unhandled access to : 0x%X\n",address);
 	}
 
 	return EXCEPTION_CONTINUE_SEARCH;

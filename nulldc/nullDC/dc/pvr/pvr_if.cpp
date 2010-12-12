@@ -142,7 +142,7 @@ INLINE void YUV_ConvertMacroBlock()
 	}
 	else
 	{
-		printf("YUV4:2:2 not supported (YUV converter)\n");
+		log("YUV4:2:2 not supported (YUV converter)\n");
 		/*u8* U0=(u8*)&YUV_tempdata[0];
 		u8* V0=(u8*)&YUV_tempdata[64/4];
 		u8* Y0=(u8*)&YUV_tempdata[(64+64)/4];
@@ -164,15 +164,15 @@ void YUV_data(u32* data , u32 count)
 {
 	if (YUV_blockcount==0)
 	{
-		printf("YUV_data : YUV decoder not inited , *WATCH*\n");
+		log("YUV_data : YUV decoder not inited , *WATCH*\n");
 		//wtf ? not inited
 		YUV_init();
 	}
 	//u32 TA_YUV_TEX_BASE=pvr_readreg_TA(0x5F8148,4);
 	u32 TA_YUV_TEX_CTRL=pvr_readreg_TA(0x5F814C,4);
 
-	//printf("Yuv Converter : size %d\n",count);
-	//printf("Yuv Format : %s , texture type %d ,  %d x %d [0x%X];",
+	//log("Yuv Converter : size %d\n",count);
+	//log("Yuv Format : %s , texture type %d ,  %d x %d [0x%X];",
 	//	(TA_YUV_TEX_CTRL & (1<<24))==0?"YUV420":"YUV422",
 	//	(TA_YUV_TEX_CTRL>>16 )&1,
 	//	(((TA_YUV_TEX_CTRL>>0)&0x3F)+1)*16,
@@ -181,12 +181,12 @@ void YUV_data(u32* data , u32 count)
 	
 //	if ((TA_YUV_TEX_CTRL & (1<<24))==0)
 //	{
-//		printf("%d blocks;",count*32/384);
+//		log("%d blocks;",count*32/384);
 //	}
 //	else
-//		printf("%d blocks;",count*32/512);
+//		log("%d blocks;",count*32/512);
 
-//	printf("Destination : 0x%X\n",TA_YUV_TEX_BASE);
+//	log("Destination : 0x%X\n",TA_YUV_TEX_BASE);
 
 
 	//YUV420 is 384 bytes , YUV422 is 512 bytes
@@ -248,7 +248,7 @@ void pvr_writereg_TA(u32 addr,u32 data,u32 sz)
 //read
 u8 __fastcall pvr_read_area1_8(u32 addr)
 {
-	printf("8 bit vram reads are not possible\n");
+	log("8 bit vram reads are not possible\n");
 	return 0;
 }
 
@@ -266,7 +266,7 @@ u32 __fastcall pvr_read_area1_32(u32 addr)
 //write
 void __fastcall pvr_write_area1_8(u32 addr,u8 data)
 {
-	printf("8 bit vram writes are not possible\n");
+	log("8 bit vram writes are not possible\n");
 }
 void __fastcall pvr_write_area1_16(u32 addr,u16 data)
 {
@@ -281,7 +281,7 @@ void __fastcall pvr_write_area1_32(u32 addr,u32 data)
 
 void FASTCALL TAWrite(u32 address,u32* data,u32 count)
 {
-	//printf("TAWrite 0x%08X %d\n",address,count);
+	//log("TAWrite 0x%08X %d\n",address,count);
 	u32 address_w=address&0x1FFFFFF;//correct ?
 	if (address_w<0x800000)//TA poly
 	{
@@ -294,7 +294,7 @@ void FASTCALL TAWrite(u32 address,u32* data,u32 count)
 	else //Vram Writef
 	{
 		//shoudn't realy get here (?) -> works on dc :D need to handle lmmodes
-		//printf("Vram Write 0x%X , size %d\n",address,count*32);
+		//log("Vram Write 0x%X , size %d\n",address,count*32);
 		memcpy(&vram.data[address&VRAM_MASK],data,count*32);
 	}
 }
@@ -312,7 +312,7 @@ void FASTCALL TAWriteSQ(u32 address,u32* data)
 	else //Vram Writef
 	{
 		//shoudn't realy get here (?)
-		//printf("Vram Write 0x%X , size %d\n",address,count*32);
+		//log("Vram Write 0x%X , size %d\n",address,count*32);
 		memcpy(&vram.data[address&VRAM_MASK],data,32);
 	}
 }

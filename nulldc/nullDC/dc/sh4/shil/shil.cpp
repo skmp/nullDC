@@ -197,7 +197,7 @@ void shil_stream::mov(Sh4RegType to,Sh4RegType from)
 	{
 		if (!(IsReg64(from) && IsReg64(from)))
 		{
-			printf("SHIL ERROR\n");
+			log("SHIL ERROR\n");
 		}
 		emitRegReg(shilop_mov,to,from,FLAG_64);
 	}
@@ -211,7 +211,7 @@ void shil_stream::mov(Sh4RegType to,u32 from)
 {
 	if (IsReg64(to))
 	{
-		printf("SHIL ERROR\n");
+		log("SHIL ERROR\n");
 	}
 	emit32(shilop_mov,to,from);
 	//emit(shilop_mov,to,from);
@@ -222,7 +222,7 @@ u16 GetBaseFlags(Sh4RegType base)
 {
 	if (base!=r0 && base!=reg_gbr )
 	{
-		printf("SHIL ERROR\n");
+		log("SHIL ERROR\n");
 		return 0;
 	}
 
@@ -843,7 +843,7 @@ char* GetShilName(shil_opcodes ops)
 {
 	if (ops>shilop_count)
 	{
-		printf("SHIL ERROR\n");
+		log("SHIL ERROR\n");
 	}
 	return shil_names[ops];
 }

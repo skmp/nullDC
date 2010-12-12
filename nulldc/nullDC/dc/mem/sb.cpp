@@ -440,9 +440,9 @@ void SB_SFRES_write32(u32 data)
 {
 	if ((u16)data==0x7611)
 	{
-		printf("SB/HOLLY : System reset requested\n");
+		log("SB/HOLLY : System reset requested\n");
 		if (!SoftReset_DC())
-			printf("SOFT RESET REQUEST FAILED\n");
+			log("SOFT RESET REQUEST FAILED\n");
 	}
 }
 void sb_Init()

@@ -121,7 +121,7 @@ u32 THREADCALL emulation_thead(void* ptar)
 					
 					if (!plugins_Init())
 					{ 
-						//printf("Emulation thread : Plugin init failed\n"); 	
+						//log("Emulation thread : Plugin init failed\n"); 	
 						plugins_Term();
 						emu_thread_rv=RV_ERROR;
 						break;
@@ -182,7 +182,7 @@ u32 THREADCALL emulation_thead(void* ptar)
 		}
 		__except( (EXCEPTION_CONTINUE_EXECUTION==ExeptionHandler( GetExceptionCode(), (GetExceptionInformation()))) ? EXCEPTION_CONTINUE_EXECUTION : EXCEPTION_CONTINUE_SEARCH )
 		{
-			printf("Unhandled exeption ; Emulation thread halted...\n");
+			log("Unhandled exeption ; Emulation thread halted...\n");
 			emu_thread_rv= RV_EXEPTION;
 		}
 	}
@@ -305,7 +305,8 @@ void Start_DC()
 		if (!dc_reseted)
 			Reset_DC(false);//hard reset kthx
 
-		verify(emu_rtc(EMU_CPU_START)==RV_OK);
+		u32 test = emu_rtc(EMU_CPU_START);
+		verify(test==RV_OK);
 	}
 }
 void Stop_DC()

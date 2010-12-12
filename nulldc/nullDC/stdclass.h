@@ -2,6 +2,7 @@
 #include "types.h"
 #include <memory.h>
 #include <vector>
+#include "log/logging_interface.h"
 
 #define PAGE_SIZE 4096
 #define PAGE_MASK (PAGE_SIZE-1)
@@ -65,7 +66,7 @@ public:
 		if  (data)
 		{
 			#ifdef MEM_ALLOC_TRACE
-			printf("WARNING : DESTRUCTOR WITH NON FREED ARRAY [arrayid:%d]\n",id);
+			log("WARNING : DESTRUCTOR WITH NON FREED ARRAY [arrayid:%d]\n",id);
 			#endif
 			Free();
 		}
@@ -84,7 +85,7 @@ public:
 			if (data)
 			{
 				#ifdef MEM_ALLOC_TRACE
-				printf("Freeing data -> resize to zero[Array:%d]\n",id);
+				log("Freeing data -> resize to zero[Array:%d]\n",id);
 				#endif
 				Free();
 			}
@@ -127,13 +128,13 @@ public:
 			if (data)
 				free(data);
 			else
-				printf("Data allready freed [Array:%d]\n",id);
+				log("Data allready freed [Array:%d]\n",id);
 			data=0;
 		}
 		else
 		{
 			if (data)
-				printf("Free : Size=0 , data ptr !=null [Array:%d]\n",id);
+				log("Free : Size=0 , data ptr !=null [Array:%d]\n",id);
 
 		}
 	}
@@ -144,7 +145,7 @@ public:
 #ifdef MEM_BOUND_CHECK
         if (i>=Size)
 		{
-			printf("Error: Array %d , index out of range (%d>%d)\n",id,i,Size-1);
+			log("Error: Array %d , index out of range (%d>%d)\n",id,i,Size-1);
 			MEM_DO_BREAK;
 		}
 #endif
@@ -156,7 +157,7 @@ public:
 #ifdef MEM_BOUND_CHECK
         if (!(i>=0 && i<(s32)Size))
 		{
-			printf("Error: Array %d , index out of range (%d > %d)\n",id,i,Size-1);
+			log("Error: Array %d , index out of range (%d > %d)\n",id,i,Size-1);
 			MEM_DO_BREAK;
 		}
 #endif
@@ -248,7 +249,7 @@ public:
 #ifdef MEM_BOUND_CHECK
         if (i>=size)
 		{
-			printf("Error: VArray2 , index out of range (%d>%d)\n",i,size-1);
+			log("Error: VArray2 , index out of range (%d>%d)\n",i,size-1);
 			MEM_DO_BREAK;
 		}
 #endif

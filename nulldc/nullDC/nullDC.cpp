@@ -43,12 +43,12 @@ int RunDC(int argc, wchar* argv[])
 	if(settings.dynarec.Enable)
 	{
 		sh4_cpu=Get_Sh4Recompiler();
-		printf("Using Recompiler\n");
+		log("Using Recompiler\n");
 	}
 	else
 	{
 		sh4_cpu=Get_Sh4Interpreter();
-		printf("Using Interpreter\n");
+		log("Using Interpreter\n");
 	}
 	
 	if (settings.emulator.AutoStart)
@@ -73,37 +73,37 @@ void EnumPlugins()
 	vector<PluginLoadInfo>* maple= GetPluginList(Plugin_Maple);
 	vector<PluginLoadInfo>* extdev= GetPluginList(Plugin_ExtDevice);
 
-	printf("PowerVR plugins :\n");
+	log("PowerVR plugins :\n");
 	for (u32 i=0;i<pvr->size();i++)
 	{
 		wprintf(L"*\tFound %s\n" ,(*pvr)[i].Name);
 	}
 
-	printf("\nGDRom plugins :\n");
+	log("\nGDRom plugins :\n");
 	for (u32 i=0;i<gdrom->size();i++)
 	{
 		wprintf(L"*\tFound %s\n" ,(*gdrom)[i].Name);
 	}
 
 	
-	printf("\nAica plugins :\n");
+	log("\nAica plugins :\n");
 	for (u32 i=0;i<aica->size();i++)
 	{
 		wprintf(L"*\tFound %s\n" ,(*aica)[i].Name);
 	}
 
-	printf("\nArm plugins :\n");
+	log("\nArm plugins :\n");
 	for (u32 i=0;i<arm->size();i++)
 	{
 		wprintf(L"*\tFound %s\n" ,(*arm)[i].Name);
 	}
 
-	printf("\nMaple plugins :\n");
+	log("\nMaple plugins :\n");
 	for (u32 i=0;i<maple->size();i++)
 	{
 		wprintf(L"*\tFound %s\n" ,(*maple)[i].Name);
 	}
-	printf("\nExtDevice plugins :\n");
+	log("\nExtDevice plugins :\n");
 	for (u32 i=0;i<extdev->size();i++)
 	{
 		wprintf(L"*\tFound %s\n" ,(*extdev)[i].Name);
@@ -120,7 +120,7 @@ int main___(int argc,wchar* argv[])
 {
 	if(ParseCommandLine(argc,argv))
 	{
-		printf("\n\n(Exiting due to command line, without starting nullDC)\n");
+		log("\n\n(Exiting due to command line, without starting nullDC)\n");
 		return 69;
 	}
 

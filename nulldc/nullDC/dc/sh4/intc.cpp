@@ -245,7 +245,7 @@ void RaiseExeption(u32 code,u32 vector)
 {
 	if (sr.BL!=0)
 	{
-		printf("RaiseExeption: sr.BL==1, pc=%08X\n",pc);
+		log("RaiseExeption: sr.BL==1, pc=%08X\n",pc);
 		verify(sr.BL == 0);
 	}
 		

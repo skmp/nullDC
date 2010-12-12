@@ -78,7 +78,7 @@ bool LoadELF( wchar* szFileName )
 
 	///////////////////////////////////////////////////////////////////////////////////////////
 
-	printf("-> ELF Load(): Opened: %s (%d bytes)\n", szFileName, flen );
+	log("-> ELF Load(): Opened: %s (%d bytes)\n", szFileName, flen );
 
 	Elf32_Ehdr *pEhdr = (Elf32_Ehdr *)pElf;
 
@@ -90,7 +90,7 @@ bool LoadELF( wchar* szFileName )
 		(pEhdr->e_type != ET_EXEC)	||
 		(pEhdr->e_machine != EM_SH)	||
 		(pEhdr->e_version != EV_CURRENT) ) {
-		printf("-> ELF ERROR: This ELF File is NOT for Hitachi SuperH Series Processors! (Dreamcast)\n");
+		log("-> ELF ERROR: This ELF File is NOT for Hitachi SuperH Series Processors! (Dreamcast)\n");
 		delete [] pElf;
 		return false;
 	}
@@ -108,7 +108,7 @@ bool LoadELF( wchar* szFileName )
 	Elf32_Shdr *pShdr = (Elf32_Shdr *)pElf + pEhdr->e_shoff;
 	//Elf32_Phdr *pPhdr = (Elf32_Phdr *)pElf + pEhdr->e_phoff; -> not used for now
 
-	printf("ELF: entry:%X shnum:%X shoff:%X \n", pEhdr->e_entry, pEhdr->e_shnum, pEhdr->e_shoff);
+	log("ELF: entry:%X shnum:%X shoff:%X \n", pEhdr->e_entry, pEhdr->e_shnum, pEhdr->e_shoff);
 
 
 	//	take care of symtab first
@@ -140,7 +140,7 @@ bool LoadELF( wchar* szFileName )
 			{
 				if(pShdr->sh_size < 0x80000) 
 				{
-					printf("ELF: Found .strtab!\n");
+					log("ELF: Found .strtab!\n");
 					memcpy(strtab,(pElf+pShdr->sh_offset),pShdr->sh_size);
 				}
 			} else
@@ -151,7 +151,7 @@ bool LoadELF( wchar* szFileName )
 				if(0==strcmp(szT,".shstrtab"))
 					if(pShdr->sh_size < 0x800) 
 					{
-						printf("ELF: Found .shstrtab!\n");
+						log("ELF: Found .shstrtab!\n");
 						memcpy(shstrtab,(pElf+pShdr->sh_offset),pShdr->sh_size);
 					}
 			}
@@ -164,7 +164,7 @@ bool LoadELF( wchar* szFileName )
 	{
 		pShdr = (Elf32_Shdr *)((u8*)pElf + pEhdr->e_shoff + pEhdr->e_shentsize * i);
 
-		printf("Segment[%i]: \"%s\" type:%X flags:%X offs:%X size:%X \n", i, 
+		log("Segment[%i]: \"%s\" type:%X flags:%X offs:%X size:%X \n", i, 
 			(char*)(shstrtab+pShdr->sh_name), pShdr->sh_type, pShdr->sh_flags, pShdr->sh_offset, pShdr->sh_size);
 
 		switch( pShdr->sh_type )
@@ -177,7 +177,7 @@ bool LoadELF( wchar* szFileName )
 		case SHT_PROGBITS:
 			if( pShdr->sh_flags & SHF_ALLOC )	// WRITE=1 | ALLOC=2 | EXECINSTR=4
 			{
-				printf("->\tLoaded To %X size:%X\n", pShdr->sh_addr, pShdr->sh_size);
+				log("->\tLoaded To %X size:%X\n", pShdr->sh_addr, pShdr->sh_size);
 
 				if( (pShdr->sh_addr & 0x0F000000) == 0x0C000000 )
 					for( u32 x=0; x<=pShdr->sh_size; x++ )	// +=2
@@ -204,7 +204,7 @@ bool LoadELF( wchar* szFileName )
 		//	if( (pShdr->sh_type >= SHT_LOPROC) && (pShdr->sh_type <= SHT_HIPROC) ) { break; }
 		//	if( (pShdr->sh_type >= SHT_LOUSER) && (pShdr->sh_type <= SHT_HIUSER) ) { break; }
 
-			printf("ELF File Unknown SecHead[%x].type:%X \n", i, pShdr->sh_type);
+			log("ELF File Unknown SecHead[%x].type:%X \n", i, pShdr->sh_type);
 		break;
 		}
 	}

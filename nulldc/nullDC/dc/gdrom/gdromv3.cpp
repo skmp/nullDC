@@ -582,7 +582,7 @@ void gd_process_spi_cmd()
 		{
 			u32 toc_gd[102];
 			printf_spicmd("SPI_GET_TOC\n");
-			//printf("SPI_GET_TOC - %d\n",(packet_cmd.data_8[4]) | (packet_cmd.data_8[3]<<8) );
+			//log("SPI_GET_TOC - %d\n",(packet_cmd.data_8[4]) | (packet_cmd.data_8[3]<<8) );
 			
 			//toc - dd/sd
 			libGDR.GetToc(&toc_gd[0],packet_cmd.data_8[1]&0x1);
@@ -644,7 +644,7 @@ void gd_process_spi_cmd()
 	case SPI_REQ_STAT:
 		{
 			printf_spicmd("SPI_REQ_STAT\n");
-			//printf("GDROM: Unhandled Sega SPI frame: SPI_REQ_STAT\n");
+			//log("GDROM: Unhandled Sega SPI frame: SPI_REQ_STAT\n");
 			static u8 stat[10];
 
 			//0	0	0	0	0	STATUS
@@ -810,7 +810,7 @@ void gd_process_spi_cmd()
 	case SPI_GET_SCD:
 		{
 			printf_spicmd("SPI_GET_SCD\n");
-			//printf("\nGDROM:\tUnhandled Sega SPI frame: SPI_GET_SCD\n");
+			//log("\nGDROM:\tUnhandled Sega SPI frame: SPI_GET_SCD\n");
 
 			u32 format;
 			format=packet_cmd.data_8[1]&0xF;
@@ -1041,7 +1041,7 @@ void WriteMem_gdrom(u32 Addr, u32 data, u32 sz)
 		verify(sz==1);
 		if ((data !=ATA_NOP) && (data != ATA_SOFT_RESET))
 			verify(gd_state==gds_waitcmd);
-		//printf("\nGDROM:\tCOMMAND: %X !\n", data);
+		//log("\nGDROM:\tCOMMAND: %X !\n", data);
 		ata_cmd.command=(u8)data;
 		gd_set_state(gds_procata);
 	}
@@ -1127,7 +1127,7 @@ void UpdateGDRom()
 
 	if (SB_GDLEND==SB_GDLEN)
 	{
-		//printf("Streamed GDMA end - %d bytes trasnfered\n",SB_GDLEND);
+		//log("Streamed GDMA end - %d bytes trasnfered\n",SB_GDLEND);
 		SB_GDST=0;//done
 		// The DMA end interrupt flag
 		asic_RaiseInterrupt(holly_GDROM_DMA);
@@ -1157,7 +1157,7 @@ void GDROM_DmaStart(u32 data)
 	{
 		SB_GDSTARD=SB_GDSTAR;
 		SB_GDLEND=0;
-		//printf("Streamed GDMA start\n");
+		//log("Streamed GDMA start\n");
 		UpdateGDRom();
 	}
 }

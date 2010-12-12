@@ -26,7 +26,7 @@ u8 GetSingleFromDouble(u8 dbl)
 		return (u8)(xf_0+(res<<1));
 	}
 
-	printf("GetSingleFromDouble : WRONG ID %X\n",dbl);
+	log("GetSingleFromDouble : WRONG ID %X\n",dbl);
 
 	return reg_xmtrx;//error :P
 }
