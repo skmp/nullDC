@@ -38,14 +38,14 @@ void CCN_MMUCR_write(u32 value)
 #ifdef NO_MMU
 	if ((temp.AT!=CCN_MMUCR.AT) && (temp.AT==1))
 	{
-		printf("<*******>MMU Enabled , OLNY SQ remaps work<*******>\n");
+		log("<*******>MMU Enabled , OLNY SQ remaps work<*******>\n");
 		//getchar();
 	}
 #endif
 	
 	if (temp.TI)
 	{
-		printf("TI , invalidating *TLB\n");
+		log("TI , invalidating *TLB\n");
 		temp.TI=0;
 
 		for (u32 i=0;i<4;i++)
@@ -76,9 +76,9 @@ void CCN_CCR_write(u32 value)
 		bm_GetStats(&stats);
 		if ((stats.manual_blocks*100/(stats.locked_blocks+1)>25))
 		{
-			printf("i-cache invalidation requested! (%d total)\n",ici_count);
+			log("i-cache invalidation requested! (%d total)\n",ici_count);
 
-			printf("Reseting Dynarec Cache on ICI due to manual block count\n");
+			log("Reseting Dynarec Cache on ICI due to manual block count\n");
 			SuspendAllBlocks();
 		}
 	}

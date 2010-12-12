@@ -146,7 +146,7 @@ class SimpleSSERegAlloc:public FloatRegAllocator
 			if (i)
 			{
 				alb++;
-				//printf("Allocaded %d xmm regs, %d%%\n",i,alb*100/(alb+nalb));
+				//log("Allocaded %d xmm regs, %d%%\n",i,alb*100/(alb+nalb));
 				//if (getchar()=='n')
 				//	memset(reginf,0xFF,sizeof(reginf));
 			}

@@ -35,11 +35,11 @@ void do_pvr_dma()
 		len		= SB_PDLEN ;
 
 	if(0x8201 != (dmaor &DMAOR_MASK)) {
-		printf("\n!\tDMAC: DMAOR has invalid settings (%X) !\n", dmaor);
+		log("\n!\tDMAC: DMAOR has invalid settings (%X) !\n", dmaor);
 		return;
 	}
 	if( len & 0x1F ) {
-		printf("\n!\tDMAC: SB_C2DLEN has invalid size (%X) !\n", len);
+		log("\n!\tDMAC: SB_C2DLEN has invalid size (%X) !\n", len);
 		return;
 	}
 

@@ -184,7 +184,7 @@ void OpDissCFS(char* text,const char* tx1,u32 pc,u16 opcode)
 
 //				char old=tx1[ti];
 				//tx1[ti]='\0';
-				printf("Sh4Dissasm : Tag not known\"%s\"\n",tx1);
+				log("Sh4Dissasm : Tag not known\"%s\"\n",tx1);
 				//tx1[ti]=old;
 				
 				*text='<';text++;
@@ -902,7 +902,7 @@ void BuildOpcodeTables()
 				}
 				else
 				{
-					printf("OPCODE TABLE FAULT , DOUBLE DEFINED OPCODE\n");
+					log("OPCODE TABLE FAULT , DOUBLE DEFINED OPCODE\n");
 				}
 			}
 		}
@@ -920,7 +920,7 @@ void BuildOpcodeTables()
 	cpu_unh = (cpu_count-31)-cpu_unh;
 	fpu_unh	= 31-fpu_unh;
 
-	printf("shil generation status : %d%% cpu done[%d of %d] , %d%% fpu done[%d of %d]\n",
+	log("shil generation status : %d%% cpu done[%d of %d] , %d%% fpu done[%d of %d]\n",
 		cpu_unh*100/(cpu_count-31),cpu_unh,(cpu_count-31) ,fpu_unh*100/31	,fpu_unh,31);
 }
 

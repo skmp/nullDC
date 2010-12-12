@@ -17,7 +17,7 @@
 #include "_vmem.h"
 
 #define printf_mmu
-#define printf_win32 printf
+#define printf_win32 log
 
 //SQ fast remap , mailny hackish , assumes 1 mb pages
 //max 64 mb can be remapped on SQ
@@ -73,7 +73,7 @@ bool UTLB_SyncMap(u32 entry)
 		#ifdef NO_MMU
 		u32 vpn_sq=((UTLB[entry].Address.VPN & (0x3FFFFFF>>10) )>>10) &0x3F;//upper bits are allways known [0xE0/E1/E2/E3]
 		sq_remap[vpn_sq]=UTLB[entry].Data.PPN<<10;
-		printf("SQ remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
+		log("SQ remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
 		#endif
 		return true;
 	}
@@ -82,12 +82,12 @@ bool UTLB_SyncMap(u32 entry)
 		#ifdef NO_MMU
 		if ((UTLB[entry].Address.VPN&(0x1FFFFFFF>>10))==(UTLB[entry].Data.PPN&(0x1FFFFFFF>>10)))
 		{
-			printf("Static remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
+			log("Static remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
 			return true;
 		}
-		printf("Dynamic remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
+		log("Dynamic remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
 		#endif
-		return false;//printf("MEM remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
+		return false;//log("MEM remap %d : 0x%X to 0x%X\n",entry,UTLB[entry].Address.VPN<<10,UTLB[entry].Data.PPN<<10);
 	}
 }
 //sync mem mapping to mmu , suspend compiled blocks if needed.entry is a ITLB entry # , -1 is for full sync
@@ -110,7 +110,7 @@ void fastcall mmu_raise_exeption(u32 mmu_error,u32 address,u32 am)
 	{
 	//No error
 	case MMU_ERROR_NONE:
-		printf("Error : mmu_raise_exeption(MMU_ERROR_NONE)\n");
+		log("Error : mmu_raise_exeption(MMU_ERROR_NONE)\n");
 		getc(stdin);
 		break;
 
@@ -129,7 +129,7 @@ void fastcall mmu_raise_exeption(u32 mmu_error,u32 address,u32 am)
 
 	//TLB Multyhit
 	case MMU_ERROR_TLB_MHIT :
-		printf("MMU_ERROR_TLB_MHIT @ 0x%X\n",address);
+		log("MMU_ERROR_TLB_MHIT @ 0x%X\n",address);
 		break;
 
 	//Mem is read/write protected (depends on translation type)
@@ -491,7 +491,10 @@ u8 __fastcall mmu_ReadMem8(u32 adr)
 		return _vmem_ReadMem8(addr);
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DREAD);
+
+	return 0;
 }
+
 u16 __fastcall mmu_ReadMem16(u32 adr)
 {
 	if (adr&1)
@@ -505,6 +508,8 @@ u16 __fastcall mmu_ReadMem16(u32 adr)
 		return _vmem_ReadMem16(addr);
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DREAD);
+
+	return 0;
 }
 u16 __fastcall mmu_IReadMem16(u32 adr)
 {
@@ -519,6 +524,8 @@ u16 __fastcall mmu_IReadMem16(u32 adr)
 		return _vmem_ReadMem16(addr);
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_IREAD);
+
+	return 0;
 }
 
 u32 __fastcall mmu_ReadMem32(u32 adr)
@@ -534,6 +541,8 @@ u32 __fastcall mmu_ReadMem32(u32 adr)
 		return _vmem_ReadMem32(addr);
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DREAD);
+
+	return 0;
 }
 u64 __fastcall mmu_ReadMem64(u32 adr)
 {
@@ -550,6 +559,8 @@ u64 __fastcall mmu_ReadMem64(u32 adr)
 	}
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DREAD);
+
+	return 0;
 }
 
 void __fastcall mmu_WriteMem8(u32 adr,u8 data)
@@ -564,6 +575,7 @@ void __fastcall mmu_WriteMem8(u32 adr,u8 data)
 	else
 		mmu_raise_exeption(tv,adr,MMU_TT_DWRITE);
 }
+
 void __fastcall mmu_WriteMem16(u32 adr,u16 data)
 {
 	if (adr&1)

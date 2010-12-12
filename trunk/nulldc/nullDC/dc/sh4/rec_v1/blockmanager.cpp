@@ -188,7 +188,7 @@ public :
 
 			if (_Myfirst[i]!=BLOCK_NONE)
 			{
-				printf("BlockList::CheckEmptyList fatal error , ItemCount!=RealItemCount\n");
+				log("BlockList::CheckEmptyList fatal error , ItemCount!=RealItemCount\n");
 				__debugbreak(); 
 				return;
 			}
@@ -330,7 +330,7 @@ void RelocateBlocks()
 	u32 oldsz=DynarecCacheUsed;
 	DynarecCacheUsed=dst_start-DynarecCache;
 
-	printf("Relocated dynarec blocks: %d KB before, %d KB new, %d bytes diff, %.2f%%\n",oldsz/1024,DynarecCacheUsed/1024,oldsz-DynarecCacheUsed,(oldsz-DynarecCacheUsed)*100/(float)DynarecCacheUsed);
+	log("Relocated dynarec blocks: %d KB before, %d KB new, %d bytes diff, %.2f%%\n",oldsz/1024,DynarecCacheUsed/1024,oldsz-DynarecCacheUsed,(oldsz-DynarecCacheUsed)*100/(float)DynarecCacheUsed);
 }
 
 
@@ -757,7 +757,7 @@ void __fastcall SuspendAllBlocks()
 }
 void __fastcall _SuspendAllBlocks()
 {
-	printf("Reseting Dynarec Cache...\n");
+	log("Reseting Dynarec Cache...\n");
 	ResetBlocks(false);
 	reset_cache=false;
 }
@@ -842,7 +842,7 @@ void TermBlockManager()
 void DumpBlockMappings()
 {
 	FILE* out=fopen("C:\\blk.txt","wb");
-	printf("nullDC block manager stats : tracing %d blocks\n",all_block_list.ItemCount);
+	log("nullDC block manager stats : tracing %d blocks\n",all_block_list.ItemCount);
 
 	for (u32 i=0;i<all_block_list.ItemCount;i++)
 	{
@@ -869,7 +869,7 @@ void DumpBlockMappings()
 
 void init_memalloc(u32 size)
 {
-	printf("Dynarec cache : size is %.2fMB\n",size/1024.f/1024.f);
+	log("Dynarec cache : size is %.2fMB\n",size/1024.f/1024.f);
 
 	DynarecCacheSize=size;
 	DynarecCacheUsed=0;
@@ -921,13 +921,13 @@ int compare_tbp_ticks (const void * a, const void * b)
 }
 void dyna_profiler_printf()
 {
-	printf("%d blocks in list\n",tbp_tick_blocks.size());
+	log("%d blocks in list\n",tbp_tick_blocks.size());
 	qsort(&(tbp_tick_blocks[0]), tbp_tick_blocks.ItemCount, sizeof(CompiledBlockInfo*), compare_tbp_ticks);
 
 	u32 tticks=0;
 	for (u32 i=0;i<tbp_tick_blocks.size();i++)
 	{
-		printf("%d%%[%d] :0x%X : 0x%X %d-%d\n"
+		log("%d%%[%d] :0x%X : 0x%X %d-%d\n"
 			,tbp_tick_blocks[i]->tbp_ticks*100/dyna_ticz
 			,tbp_tick_blocks[i]->tbp_ticks
 			,tbp_tick_blocks[i]->start
@@ -939,7 +939,7 @@ void dyna_profiler_printf()
 		//if (i>10)
 		//	break;
 	}
-	printf("%d%% total\n",tticks*100/dyna_ticz);
+	log("%d%% total\n",tticks*100/dyna_ticz);
 	tbp_tick_blocks.clear();
 	dyna_ticz=0;
 }
@@ -964,5 +964,5 @@ void dyna_profiler_tick(void* addr)
 		}
 	}
 	__debugbreak(); 
-	printf("0x%X OMG! UNABLE TO MATCH BLOCK TEH NOES\n",addr);
+	log("0x%X OMG! UNABLE TO MATCH BLOCK TEH NOES\n",addr);
 }

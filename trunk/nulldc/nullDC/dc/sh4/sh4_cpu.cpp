@@ -73,9 +73,9 @@ bool sh4_sleeping;
 
 void cpu_iNimp(u32 op, char* info)
 {
-	printf("not implemented opcode : %X : ", op);
-	printf(info);
-	printf(" @ %X\nPress Any key to continue\n", pc);
+	log("not implemented opcode : %X : ", op);
+	log(info);
+	log(" @ %X\nPress Any key to continue\n", pc);
 	getc(stdin);
 
 	//sh4_cpu->Stop();
@@ -83,9 +83,9 @@ void cpu_iNimp(u32 op, char* info)
 
 void cpu_iWarn(u32 op, char* info)
 {
-	printf("Check opcode : %X : ", op);
-	printf(info);
-	printf(" @ %X\n", pc);
+	log("Check opcode : %X : ", op);
+	log(info);
+	log(" @ %X\n", pc);
 }
 
 #include "sh4_cpu_movs.h"
@@ -101,14 +101,14 @@ sh4op(i0000_0000_0011_1000)
 {
 	//u32 size[4]={1,4,64,1024};
 	//u32 size_2[4]={1,1,1,1024/64};
-	//printf("ldtlb : ASID : %d , VPN : 0x%X ,PPN 0x%X,V %d , SZ : %d kb,PR %d, C %d , D %d , SH %d , WT %d\n"
+	//log("ldtlb : ASID : %d , VPN : 0x%X ,PPN 0x%X,V %d , SZ : %d kb,PR %d, C %d , D %d , SH %d , WT %d\n"
 	//	,CCN_PTEH.ASID,CCN_PTEH.VPN,
 	//	CCN_PTEL.PPN,CCN_PTEL.V,size[CCN_PTEL.SZ1*2 + CCN_PTEL.SZ0],CCN_PTEL.PR,
 	//	CCN_PTEL.C,CCN_PTEL.D,CCN_PTEL.SH,CCN_PTEL.WT);
 
 	//u32 newmap=CCN_PTEH.VPN <<10;
 	//u32 start=CCN_PTEL.PPN<<10;
-	//printf("Map 0x%X to 0x%X\n",start,newmap);
+	//log("Map 0x%X to 0x%X\n",start,newmap);
 	//start >>=16;
 	//newmap >>=16;
 	
@@ -116,7 +116,7 @@ sh4op(i0000_0000_0011_1000)
 	//	_vmem_mirror_mapping((i<<29) | (newmap & 0x1FFFFFFF),start,size_2[CCN_PTEL.SZ1*2 + CCN_PTEL.SZ0]);
 	//_vmem_mirror_mapping((3<<30) | (newmap & 0x1FFFFFFF),start,size_2[CCN_PTEL.SZ1*2 + CCN_PTEL.SZ0]);
 
-	//printf("ldtlb %d/%d\n",CCN_MMUCR.URC,CCN_MMUCR.URB);
+	//log("ldtlb %d/%d\n",CCN_MMUCR.URC,CCN_MMUCR.URB);
 	
 	UTLB_SyncUnmap(CCN_MMUCR.URC);
 	UTLB[CCN_MMUCR.URC].Data=CCN_PTEL;
@@ -134,7 +134,7 @@ sh4op(i0000_0000_0011_1000)
 sh4op(i0000_nnnn_1001_0011)
 {
 	//u32 n = GetN(op);
-	//printf("ocbi @0x%08X \n",r[n]);
+	//log("ocbi @0x%08X \n",r[n]);
 } 
 
 
@@ -142,7 +142,7 @@ sh4op(i0000_nnnn_1001_0011)
 sh4op(i0000_nnnn_1010_0011)
 {
 	//u32 n = GetN(op);
-	//printf("ocbp @0x%08X \n",r[n]);
+	//log("ocbp @0x%08X \n",r[n]);
 } 
 
 
@@ -150,7 +150,7 @@ sh4op(i0000_nnnn_1010_0011)
 sh4op(i0000_nnnn_1011_0011)
 {
 	//u32 n = GetN(op);
-	//printf("ocbwb @0x%08X \n",r[n]);
+	//log("ocbwb @0x%08X \n",r[n]);
 } 
 
 //pref @<REG_N>                 
@@ -160,7 +160,7 @@ void __fastcall do_pref(u32 addr)
 
 	if (!mmu_TranslateSQW(addr))
 	{
-		//printf("Read Exeption From SQ WRITE \n");
+		//log("Read Exeption From SQ WRITE \n");
 		return;
 	}
 
@@ -401,7 +401,7 @@ sh4op(i0100_nnnn_mmmm_1111)
 	u32 m = GetM(op);
 	if (sr.S==1)
 	{
-		printf("mac.w @<REG_M>+,@<REG_N>+ : s=%d\n",sr.S);
+		log("mac.w @<REG_M>+,@<REG_N>+ : s=%d\n",sr.S);
 	}
 	else
 	{
@@ -442,7 +442,7 @@ sh4op(i0000_nnnn_mmmm_1111)
 
 	mac.full += (s64)rm * (s64)rn;
 	
-	//printf("%I64u %I64u | %d %d | %d %d\n",mac,mul,macl,mach,rm,rn);
+	//log("%I64u %I64u | %d %d | %d %d\n",mac,mul,macl,mach,rm,rn);
 }
 
 //mul.l <REG_M>,<REG_N>         
@@ -550,7 +550,7 @@ u32 FASTCALL sh4_div1(u32 rn,u32 rm)
 	sr.Q=(sr.Q^sr.M)^of;
 	sr.T=1^(sr.Q ^ sr.M);
 	r[n]=(u32)op2;*/
-	//printf("Q %d , S %d , T %d , r[n] %d, r[m] %d\n",sr.Q,sr.S,sr.T,r[n],r[m]);
+	//log("Q %d , S %d , T %d , r[n] %d, r[m] %d\n",sr.Q,sr.S,sr.T,r[n],r[m]);
 }
 //div1 <REG_M>,<REG_N>          
 sh4op(i0011_nnnn_mmmm_0100)
@@ -603,11 +603,7 @@ sh4op(i0011_nnnn_mmmm_1111)
 		mov rn,eax;
 		lea eax,r; //@(r)
 		mov ebx,n;
-		#ifndef X64 //inc by native type size
-		shl ebx,2; //ptr = 32bits 
-		#else
-		shl ebx,3; //64
-		#endif
+		shl ebx,2; //ptr[loc] = 32bits 
 		add eax,ebx;
 		mov ebx,rn;
 		mov [eax],ebx;//*(t*)p = rn
@@ -682,11 +678,7 @@ sh4op(i0011_nnnn_mmmm_1011)
 		mov rn,eax;
 		lea eax,r; //@(r)
 		mov ebx,n;
-		#ifndef X64 //inc by native type size
-		shl ebx,2; //ptr = 32bits 
-		#else
-		shl ebx,3; //64
-		#endif
+		shl ebx,2; //ptr[loc] = 32bits 
 		add eax,ebx;
 		mov ebx,rn;
 		mov [eax],ebx;//*(t*)p = rn

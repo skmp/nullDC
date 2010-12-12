@@ -62,14 +62,14 @@ void write_BSC_PCTRA(u32 data)
 	#if defined(BUILD_NAOMI	) || defined(BUILD_ATOMISWAVE)
 		NaomiBoardIDWriteControl((u16)data);
 	#else
-	//printf("C:BSC_PCTRA = %08X\n",data);
+	//log("C:BSC_PCTRA = %08X\n",data);
 	#endif
 }
 //u32 port_out_data;
 void write_BSC_PDTRA(u32 data)
 {
 	BSC_PDTRA.full=(u16)data;
-	//printf("D:BSC_PDTRA = %08X\n",data);
+	//log("D:BSC_PDTRA = %08X\n",data);
 
 	#if defined(BUILD_NAOMI	) || defined(BUILD_ATOMISWAVE)
 		NaomiBoardIDWrite((u16)data);

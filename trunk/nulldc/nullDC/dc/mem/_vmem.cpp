@@ -309,7 +309,9 @@ void _vmem_reset()
 	_vmem_lrp=0;
 
 	//register default functions (0) for slot 0 :)
-	verify(_vmem_register_handler(0,0,0,0,0,0)==0);
+	u32 test;
+	test = _vmem_register_handler(0,0,0,0,0,0);
+	verify(test==0);
 	_vmem_map_handler(0,0,0xFFFF);
 }
 
@@ -438,10 +440,12 @@ bool _vmem_reserve()
 	
 
 	//Mark all except P4 as direct mapped
-	verify(0!=VirtualAlloc(sh4_mem_marks+0,38*PAGE_SIZE,MEM_COMMIT,PAGE_READWRITE));
+	u8* test = (u8*)VirtualAlloc(sh4_mem_marks+0,38*PAGE_SIZE,MEM_COMMIT,PAGE_READWRITE);
+	verify(0!=test);
 
 	//Mark SQ as sq mapped
-	verify(0!=VirtualAlloc(&sh4_mem_marks[(38+64)*PAGE_SIZE],PAGE_SIZE,MEM_COMMIT,PAGE_READWRITE));
+	test = (u8*)VirtualAlloc(&sh4_mem_marks[(38+64)*PAGE_SIZE],PAGE_SIZE,MEM_COMMIT,PAGE_READWRITE);
+	verify(0!=test);
 
 	return sh4_reserved_mem!=0;
 }

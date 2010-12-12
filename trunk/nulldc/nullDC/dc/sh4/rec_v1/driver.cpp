@@ -69,7 +69,7 @@ CompiledBlockInfo*  __fastcall CompileCode(u32 pc)
 	if (!cblock)
 	{
 		_SuspendAllBlocks();
-		printf("Compile failed -- retrying\n");
+		log("Compile failed -- retrying\n");
 		return CompileCode(pc);//retry
 	}
 	
@@ -261,7 +261,7 @@ void rec_Sh4_int_Step()
 {
 	if (rec_sh4_int_bCpuRun)
 	{
-		printf("recSh4 Is running , can't step\n");
+		log("recSh4 Is running , can't step\n");
 	}
 	else
 	{
@@ -275,7 +275,7 @@ void rec_Sh4_int_Skip()
 {
 	if (rec_sh4_int_bCpuRun)
 	{
-		printf("recSh4 Is running , can't Skip\n");
+		log("recSh4 Is running , can't Skip\n");
 	}
 	else
 	{
@@ -287,7 +287,7 @@ void rec_Sh4_int_Reset(bool Manual)
 {
 	if (rec_sh4_int_bCpuRun)
 	{
-		printf("Sh4 Is running , can't Reset\n");
+		log("Sh4 Is running , can't Reset\n");
 	}
 	else
 	{
@@ -297,7 +297,7 @@ void rec_Sh4_int_Reset(bool Manual)
 		ResetBlockManager();
 		
 		//Any more registers have default value ?
-		printf("recSh4 Reset\n");
+		log("recSh4 Reset\n");
 	}
 }
 
@@ -311,7 +311,7 @@ void rec_Sh4_int_Init()
 	ResetAnalyser();
 	ResetBlockManager();
 
-	printf("recSh4 Init\n");
+	log("recSh4 Init\n");
 }
 
 void rec_Sh4_int_Term() 
@@ -319,7 +319,7 @@ void rec_Sh4_int_Term()
 	TermBlockManager();
 	TermAnalyser();
 	Sh4_int_Term();
-	printf("recSh4 Term\n");
+	log("recSh4 Term\n");
 }
 
 bool rec_Sh4_int_IsCpuRunning() 

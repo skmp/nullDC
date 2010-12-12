@@ -80,8 +80,8 @@ int slave_cmdl(wchar** arg,int cl)
 		printf("Invalid param @ slave, pipe cant be 0/non number\n");
 		return 0;
 	}
-	printf("Value of write handle to pipe1: %p\n",laddWrSlave);
-	printf("Value of read handle to pipe2 : %p\n",laddRdSlave);
+	log("Value of write handle to pipe1: %p\n",laddWrSlave);
+	log("Value of read handle to pipe2 : %p\n",laddRdSlave);
 
 	//this warning can't be fixed can it ?
 	writep = laddWrSlave;
@@ -126,10 +126,10 @@ void WriteBlockSerial(u8* blk,u32 size,u8* sum)
 	DWORD dwWritten=0;
 	
 	if (!WriteFile(writep,blk,size,&dwWritten,NULL))
-		printf("IPC error");
+		log("IPC error");
 
 	if (dwWritten!=size)
-		printf("IPC error");
+		log("IPC error");
 }
 void WriteSerial(u8 data)
 {
@@ -140,14 +140,14 @@ void WriteSerial(u8 data)
 	if (!writep)	
 		return;
 
-	//printf("Write IPC not implemented");
+	//log("Write IPC not implemented");
 	DWORD dwWritten=0;
 	
 	if (!WriteFile(writep,&data,1,&dwWritten,NULL))
-		printf("IPC error");
+		log("IPC error");
 
 	if (dwWritten!=1)
-		printf("IPC error");
+		log("IPC error");
 }
 
 int pend_temp=0;
@@ -186,7 +186,7 @@ bool PendingSerialData()
 			ReadFile(readp,ReadBuff,readind,&tba,NULL);
 			ReadSz=tba;
 			if (readind!=tba)
-				printf("IPC ERROR \n");
+				log("IPC ERROR \n");
 		}
 		*/
 		return tba!=0;
@@ -206,7 +206,7 @@ s32 ReadSerial()
 	//DWORD dwRead;
 	if (readind<=0)
 	{
-		printf("IPC error");
+		log("IPC error");
 		return -1;
 	}
 	
@@ -215,10 +215,10 @@ s32 ReadSerial()
 	return rv;
 /*
 	if (!ReadFile(readp,&read_data,1,&dwRead,NULL))
-		printf("IPC error");
+		log("IPC error");
 	if (dwRead!=1)
-		printf("IPC error");
-	//printf("Read IPC not implemented");
+		log("IPC error");
+	//log("Read IPC not implemented");
 	return read_data;*/
 	
 }

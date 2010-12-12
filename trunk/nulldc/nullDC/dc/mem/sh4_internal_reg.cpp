@@ -159,22 +159,22 @@ T __fastcall ReadMem_P4(u32 addr)
 	case 0xE1:
 	case 0xE2:
 	case 0xE3:
-		printf("Unhandled p4 read [Store queue] 0x%x\n",addr);
+		log("Unhandled p4 read [Store queue] 0x%x\n",addr);
 		return 0;
 		break;
 
 	case 0xF0:
-		//printf("Unhandled p4 read [Instruction cache address array] 0x%x\n",addr);
+		//log("Unhandled p4 read [Instruction cache address array] 0x%x\n",addr);
 		return 0;
 		break;
 
 	case 0xF1:
-		//printf("Unhandled p4 read [Instruction cache data array] 0x%x\n",addr);
+		//log("Unhandled p4 read [Instruction cache data array] 0x%x\n",addr);
 		return 0;
 		break;
 
 	case 0xF2:
-		//printf("Unhandled p4 read [Instruction TLB address array] 0x%x\n",addr);
+		//log("Unhandled p4 read [Instruction TLB address array] 0x%x\n",addr);
 		{
 			u32 entry=(addr>>8)&3;
 			return ITLB[entry].Address.reg_data | (ITLB[entry].Data.V<<8);
@@ -182,7 +182,7 @@ T __fastcall ReadMem_P4(u32 addr)
 		break;
 
 	case 0xF3:
-		//printf("Unhandled p4 read [Instruction TLB data arrays 1 and 2] 0x%x\n",addr);
+		//log("Unhandled p4 read [Instruction TLB data arrays 1 and 2] 0x%x\n",addr);
 		{
 			u32 entry=(addr>>8)&3;
 			return ITLB[entry].Data.reg_data;
@@ -195,18 +195,18 @@ T __fastcall ReadMem_P4(u32 addr)
 			//W=(addr>>14)&1;
 			//A=(addr>>3)&1;
 			//Set=(addr>>5)&0xFF;
-			//printf("Unhandled p4 read [Operand cache address array] %d:%d,%d  0x%x\n",Set,W,A,addr);
+			//log("Unhandled p4 read [Operand cache address array] %d:%d,%d  0x%x\n",Set,W,A,addr);
 			return 0;
 		}
 		break;
 
 	case 0xF5:
-		//printf("Unhandled p4 read [Operand cache data array] 0x%x",addr);
+		//log("Unhandled p4 read [Operand cache data array] 0x%x",addr);
 		return 0;
 		break;
 
 	case 0xF6:
-		//printf("Unhandled p4 read [Unified TLB address array] 0x%x\n",addr);
+		//log("Unhandled p4 read [Unified TLB address array] 0x%x\n",addr);
 		{
 			u32 entry=(addr>>8)&63;
 			u32 rv=UTLB[entry].Address.reg_data;
@@ -217,7 +217,7 @@ T __fastcall ReadMem_P4(u32 addr)
 		break;
 
 	case 0xF7:
-		//printf("Unhandled p4 read [Unified TLB data arrays 1 and 2] 0x%x\n",addr);
+		//log("Unhandled p4 read [Unified TLB data arrays 1 and 2] 0x%x\n",addr);
 		{
 			u32 entry=(addr>>8)&63;
 			return UTLB[entry].Data.reg_data;
@@ -225,11 +225,11 @@ T __fastcall ReadMem_P4(u32 addr)
 		break;
 
 	case 0xFF:
-		printf("Unhandled p4 read [area7] 0x%x\n",addr);
+		log("Unhandled p4 read [area7] 0x%x\n",addr);
 		break;
 
 	default:
-		printf("Unhandled p4 read [Reserved] 0x%x\n",addr);
+		log("Unhandled p4 read [Reserved] 0x%x\n",addr);
 		break;
 	}
 
@@ -255,21 +255,21 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 	case 0xE1:
 	case 0xE2:
 	case 0xE3:
-		printf("Unhandled p4 Write [Store queue] 0x%x",addr);
+		log("Unhandled p4 Write [Store queue] 0x%x",addr);
 		break;
 
 	case 0xF0:
-		//printf("Unhandled p4 Write [Instruction cache address array] 0x%x = %x\n",addr,data);
+		//log("Unhandled p4 Write [Instruction cache address array] 0x%x = %x\n",addr,data);
 		return;
 		break;
 
 	case 0xF1:
-		//printf("Unhandled p4 Write [Instruction cache data array] 0x%x = %x\n",addr,data);
+		//log("Unhandled p4 Write [Instruction cache data array] 0x%x = %x\n",addr,data);
 		return;
 		break;
 
 	case 0xF2:
-		//printf("Unhandled p4 Write [Instruction TLB address array] 0x%x = %x\n",addr,data);
+		//log("Unhandled p4 Write [Instruction TLB address array] 0x%x = %x\n",addr,data);
 		{
 			u32 entry=(addr>>8)&3;
 			ITLB[entry].Address.reg_data=data & 0xFFFFFCFF;
@@ -282,11 +282,11 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 	case 0xF3:
 		if (addr&0x800000)
 		{
-			printf("Unhandled p4 Write [Instruction TLB data array 2] 0x%x = %x\n",addr,data);
+			log("Unhandled p4 Write [Instruction TLB data array 2] 0x%x = %x\n",addr,data);
 		}
 		else
 		{
-			//printf("Unhandled p4 Write [Instruction TLB data array 1] 0x%x = %x\n",addr,data);
+			//log("Unhandled p4 Write [Instruction TLB data array 1] 0x%x = %x\n",addr,data);
 			u32 entry=(addr>>8)&3;
 			ITLB[entry].Data.reg_data=data;
 			ITLB_Sync(entry);
@@ -300,13 +300,13 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 			//W=(addr>>14)&1;
 			//A=(addr>>3)&1;
 			//Set=(addr>>5)&0xFF;
-			//printf("Unhandled p4 Write [Operand cache address array] %d:%d,%d  0x%x = %x\n",Set,W,A,addr,data);
+			//log("Unhandled p4 Write [Operand cache address array] %d:%d,%d  0x%x = %x\n",Set,W,A,addr,data);
 			return;
 		}
 		break;
 
 	case 0xF5:
-		//printf("Unhandled p4 Write [Operand cache data array] 0x%x = %x\n",addr,data);
+		//log("Unhandled p4 Write [Operand cache data array] 0x%x = %x\n",addr,data);
 		return;
 		break;
 
@@ -314,7 +314,7 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 		{
 			if (addr&0x80)
 			{
-				//printf("Unhandled p4 Write [Unified TLB address array , Associative Write] 0x%x = %x\n",addr,data);
+				//log("Unhandled p4 Write [Unified TLB address array , Associative Write] 0x%x = %x\n",addr,data);
 				CCN_PTEH_type t;
 				t.reg_data=data;
 
@@ -357,11 +357,11 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 	case 0xF7:
 		if (addr&0x800000)
 		{
-			printf("Unhandled p4 Write [Unified TLB data array 2] 0x%x = %x\n",addr,data);
+			log("Unhandled p4 Write [Unified TLB data array 2] 0x%x = %x\n",addr,data);
 		}
 		else
 		{
-			//printf("Unhandled p4 Write [Unified TLB data array 1] 0x%x = %x\n",addr,data);
+			//log("Unhandled p4 Write [Unified TLB data array 1] 0x%x = %x\n",addr,data);
 			u32 entry=(addr>>8)&63;
 			UTLB_SyncUnmap(entry);
 			UTLB[entry].Data.reg_data=data;
@@ -371,11 +371,11 @@ void __fastcall WriteMem_P4(u32 addr,T data)
 		break;
 
 	case 0xFF:
-		printf("Unhandled p4 Write [area7] 0x%x = %x\n",addr,data);
+		log("Unhandled p4 Write [area7] 0x%x = %x\n",addr,data);
 		break;
 
 	default:
-		printf("Unhandled p4 Write [Reserved] 0x%x\n",addr);
+		log("Unhandled p4 Write [Reserved] 0x%x\n",addr);
 		break;
 	}
 
@@ -393,7 +393,7 @@ T __fastcall ReadMem_sq(u32 addr)
 {
 	if (sz!=4)
 	{
-		printf("Store Queue Error , olny 4 byte read are possible[x%X]\n",addr);
+		log("Store Queue Error , olny 4 byte read are possible[x%X]\n",addr);
 		return 0xDE;
 	}
 
@@ -408,7 +408,7 @@ template <u32 sz,class T>
 void __fastcall WriteMem_sq(u32 addr,T data)
 {
 	if (sz!=4)
-		printf("Store Queue Error , olny 4 byte writes are possible[x%X=0x%X]\n",addr,data);
+		log("Store Queue Error , olny 4 byte writes are possible[x%X=0x%X]\n",addr,data);
 	//u32 offset = (addr >> 2) & 7; // 3 bits
 	u32 united_offset=addr & 0x3C;
 
@@ -756,13 +756,13 @@ T __fastcall ReadMem_area7_OCR_T(u32 addr)
 			return (T)*(u32*)&OnChipRAM[addr&OnChipRAM_MASK];
 		else
 		{
-			printf("ReadMem_area7_OCR_T: template SZ is wrong = %d\n",sz);
+			log("ReadMem_area7_OCR_T: template SZ is wrong = %d\n",sz);
 			return 0xDE;
 		}
 	}
 	else
 	{
-		printf("On Chip Ram Read ; but OCR is disabled\n");
+		log("On Chip Ram Read ; but OCR is disabled\n");
 		return 0xDE;
 	}
 }
@@ -781,12 +781,12 @@ void __fastcall WriteMem_area7_OCR_T(u32 addr,T data)
 			*(u32*)&OnChipRAM[addr&OnChipRAM_MASK]=data;
 		else
 		{
-			printf("WriteMem_area7_OCR_T: template SZ is wrong = %d\n",sz);
+			log("WriteMem_area7_OCR_T: template SZ is wrong = %d\n",sz);
 		}
 	}
 	else
 	{
-		printf("On Chip Ram Write ; but OCR is disabled\n");
+		log("On Chip Ram Write ; but OCR is disabled\n");
 	}
 }
 

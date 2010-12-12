@@ -2461,8 +2461,8 @@ u32 FASTCALL ControllerDMA_net(void* device_instance,u32 Command,u32* buffer_in,
 			/*
 				char file[43];
 			sprintf(file,"log_%d.raw",aport);
-			FILE* log=fopen(file,"a");
-			fseek(log,0,SEEK_END);
+			FILE* printf=fopen(file,"a");
+			fseek(printf,0,SEEK_END);
 			char* bvvvv=(char*)buffer_out_b;
 			*/
 			//header
@@ -2500,8 +2500,8 @@ u32 FASTCALL ControllerDMA_net(void* device_instance,u32 Command,u32* buffer_in,
 			//1
 			//WriteMem8(ptr_out, 10); ptr_out += 1;
 			/*
-			fwrite(bvvvv,12,1,log);
-			fclose(log);
+			fwrite(bvvvv,12,1,printf);
+			fclose(printf);
 			*/
 			}
 			return 8;
@@ -3416,7 +3416,8 @@ s32 FASTCALL Init(void* data,u32 id,maple_init_params* params)
 	{
 		sync_counter=0;
 		next_sync_counter=1;
-		verify(Init_netplay()==0);
+		int test = Init_netplay()==0;
+		verify(test);
 	}
 	return rv_ok;
 }
