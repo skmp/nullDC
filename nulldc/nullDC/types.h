@@ -50,6 +50,7 @@ using namespace std;
 #endif
 
 #undef NO_VERIFY
+#undef SB_MAP_UNKNOWN_REGS
 
 //On release we have no checks
 #ifndef RELEASE
@@ -157,7 +158,7 @@ using namespace std;
 #ifndef NO_VERIFY
 #define verify(x) if((x)==false){ msgboxf(_T("Verify Failed  : ") _T(#x) _T("\n in %s -> %s : %d \n"),MBX_ICONERROR,_T(__FUNCTION__),_T(__FILE__),__LINE__); dbgbreak;}
 #else
-#define verify(__x__) // __x__ 
+#define verify(__x__) /* __x__ */ ; 
 #endif
 
 #define die(reason) { msgboxf(_T("Fatal error : %s\n in %s -> %s : %d \n"),MBX_ICONERROR,_T(reason),_T(__FUNCTION__),_T(__FILE__),__LINE__); dbgbreak;}
@@ -194,6 +195,9 @@ struct RegisterStruct
 	RegReadFP* readFunction;	//stored pointer to reg read function
 	RegWriteFP* writeFunction;	//stored pointer to reg write function
 	u32 flags;					//flags for read/write
+	#ifdef SB_MAP_UNKNOWN_REGS
+	u16 unk;
+	#endif
 };
 
 
