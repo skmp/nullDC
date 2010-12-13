@@ -412,23 +412,38 @@ void gd_setdisc()
 
 	SecNumber.DiscFormat=gd_disk_type>>4;
 }
+
+void gd_reset_containers()
+{
+	memset(&GDStatus,0,sizeof(GDStatus));
+	memset(&SecNumber,0,sizeof(SecNumber));
+	memset(&Features,0,sizeof(Features));
+	memset(&packet_cmd,0,sizeof(packet_cmd));
+	memset(&pio_buff,0,sizeof(pio_buff));
+	memset(&ata_cmd,0,sizeof(ata_cmd));
+	memset(&cdda,0,sizeof(cdda));
+	memset(&read_buff,0,sizeof(read_buff));
+	memset(&read_params,0,sizeof(read_params));
+	gd_disk_type = Open;
+}
+
 void gd_reset()
 {
 	//Reset the drive
+	gd_reset_containers();
 	gd_setdisc();
 	gd_set_state(gds_waitcmd);
 }
+
 u32 GetFAD(u8* data,bool msf)
 {
 	if( msf )	
 	{
 		log("GDROM: MSF FORMAT\n");
-		return ((data[0]*60*75) + (data[1]*75) + (data[2]));
+		return (u32)((data[0]*60*75) + (data[1]*75) + (data[2]));
 	}
-	else
-	{
-		return (data[0]<<16) | (data[1]<<8) | (data[2]);
-	}
+
+	return (u32)((data[0]<<16) | (data[1]<<8) | (data[2])) ;
 }
 //disk changes ect
 void FASTCALL NotifyEvent_gdrom(u32 info,void* param)
@@ -567,7 +582,7 @@ void gd_process_spi_cmd()
 			#define readcmd packet_cmd.GDReadBlock
 
 			read_params.start_sector = GetFAD(&readcmd.b[2],readcmd.prmtype);
-			read_params.remaining_sectors = (readcmd.b[8]<<16) | (readcmd.b[9]<<8) | (readcmd.b[10]);
+			read_params.remaining_sectors = (u32)(readcmd.b[8]<<16) | (readcmd.b[9]<<8) | (readcmd.b[10]);
 			read_params.sector_type = gdrom_get_sector_type(packet_cmd);
 
 			printf_spicmd("SPI_CD_READ sec=%d sz=%d/%d dma=%d\n",read_params.start_sector,read_params.remaining_sectors,read_params.sector_type,Features.CDRead.DMA);
@@ -1039,8 +1054,10 @@ void WriteMem_gdrom(u32 Addr, u32 data, u32 sz)
 	case GD_COMMAND_Write:
 	{
 		verify(sz==1);
+
 		if ((data !=ATA_NOP) && (data != ATA_SOFT_RESET))
 			verify(gd_state==gds_waitcmd);
+
 		//log("\nGDROM:\tCOMMAND: %X !\n", data);
 		ata_cmd.command=(u8)data;
 		gd_set_state(gds_procata);

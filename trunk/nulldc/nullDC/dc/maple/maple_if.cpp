@@ -244,8 +244,10 @@ void DoMapleDma()
 	}
 //dma_end:
 
-	maple_pending_dma= ((total_bytes*200000000)/262144)+1;
-	SB_MDST=1;
+	asic_RaiseInterrupt(holly_MAPLE_DMA);
+
+	//maple_pending_dma= ((total_bytes*200000000)/262144)+1;
+	//SB_MDST=1;
 }
 
 //device : 0 .. 4 -> subdevice , 5 -> main device :)

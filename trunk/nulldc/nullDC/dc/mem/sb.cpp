@@ -28,6 +28,7 @@ Array<RegisterStruct> sb_regs(0x540);
 //	much empty space
 
 
+
 //0x005F6800	SB_C2DSTAT	RW	ch2-DMA destination address 
  u32 SB_C2DSTAT = 0;
 //0x005F6804	SB_C2DLEN	RW	ch2-DMA length 
@@ -327,6 +328,8 @@ u32 SB_SDDIV = 0;
 u32 sb_ReadMem(u32 addr,u32 sz)
 {	
 	u32 offset = addr-SB_BASE;
+	register u32 rflags;
+	RegisterStruct* reg;
 #ifdef TRACE
 	if (offset & 3/*(size-1)*/) //4 is min allign size
 	{
@@ -335,81 +338,114 @@ u32 sb_ReadMem(u32 addr,u32 sz)
 #endif
 
 	offset>>=2;
+	reg = &sb_regs[offset];
+	rflags = reg->flags;
 
 #ifdef TRACE
-	if (sb_regs[offset].flags & sz)
+	if (rflags & sz)
 	{
 #endif
-		if (sb_regs[offset].flags & REG_READ_DATA )
+		#ifdef SB_MAP_UNKNOWN_REGS
+		if(reg->unk)
+			log("Read from unk-mapped SB reg : addr=%x\n",addr);
+		#endif
+
+		if (rflags & REG_READ_DATA )
 		{
-			if (sz==4)
-				return  *sb_regs[offset].data32;
-			else if (sz==2)
-				return  *sb_regs[offset].data16;
-			else 
-				return  *sb_regs[offset].data8;
+			switch(sz)
+			{
+				case 2:
+					return *reg->data16;
+
+				case 4:
+					return *reg->data32;
+
+				default:
+					return *reg->data8;
+			}
 		}
 		else
 		{
-			if (sb_regs[offset].readFunction)
-				return sb_regs[offset].readFunction();
+			if (reg->readFunction)
+				return reg->readFunction();
 			else
 			{
-				if (!(sb_regs[offset].flags& REG_NOT_IMPL))
-					EMUERROR("ERROR [readed write olny register]");
+				if (!(rflags& REG_NOT_IMPL))
+					EMUERROR("ERROR [readed write olny register]\n");
 			}
 		}
 #ifdef TRACE
 	}
 	else
 	{
-		if (!(sb_regs[offset].flags& REG_NOT_IMPL))
+		if (!(rflags& REG_NOT_IMPL))
 			EMUERROR("ERROR [wrong size read on register]");
 	}
 #endif
-	if ((sb_regs[offset].flags& REG_NOT_IMPL))
-		EMUERROR2("Read from System Control Regs , not  implemented , addr=%x",addr);
+	if ((rflags& REG_NOT_IMPL))
+		EMUERROR2("Read from System Control Regs , not  implemented , addr=%x\n",addr);
+
 	return 0;
 }
 
 void sb_WriteMem(u32 addr,u32 data,u32 sz)
 {
 	u32 offset = addr-SB_BASE;
+	register u32 rflags;
+	RegisterStruct* reg;
 #ifdef TRACE
 	if (offset & 3/*(size-1)*/) //4 is min allign size
 	{
 		EMUERROR("unallinged System bus register write");
 	}
 #endif
-offset>>=2;
+
+	offset>>=2;
+	reg = &sb_regs[offset];
+	rflags = reg->flags;
+
 #ifdef TRACE
-	if (sb_regs[offset].flags & sz)
+	if (rflags & sz)
 	{
 #endif
-		if (sb_regs[offset].flags & REG_WRITE_DATA)
+		#ifdef SB_MAP_UNKNOWN_REGS
+		if(reg->unk)
+			log("Write to unk-mapped SB reg : addr=%x,data=%x\n",addr,data);
+		#endif
+
+		if (rflags & REG_WRITE_DATA)
 		{
-			if (sz==4)
-				*sb_regs[offset].data32=data;
-			else if (sz==2)
-				*sb_regs[offset].data16=(u16)data;
-			else
-				*sb_regs[offset].data8=(u8)data;
+			switch(sz)
+			{
+				case 2:
+					*reg->data16=(u16)data;
+				return;
+
+				case 4:
+					*reg->data32=data;
+				return;
+
+				default:
+					*reg->data8=(u8)data;
+				return;
+			}
+
 			return;
 		}
 		else
 		{
-			if (sb_regs[offset].flags & REG_CONST)
-				EMUERROR("Error [Write to read olny register , const]");
+			if (rflags & REG_CONST)
+				EMUERROR("Error [Write to read olny register , const]\n");
 			else
 			{
-				if (sb_regs[offset].writeFunction)
+				if (reg->writeFunction)
 				{
-					sb_regs[offset].writeFunction(data);
+					reg->writeFunction(data);
 					return;
 				}
 				else
 				{
-					if (!(sb_regs[offset].flags& REG_NOT_IMPL))
+					if (!(rflags & REG_NOT_IMPL))
 						EMUERROR("ERROR [Write to read olny register]");
 				}
 			}
@@ -418,12 +454,12 @@ offset>>=2;
 	}
 	else
 	{
-		if (!(sb_regs[offset].flags& REG_NOT_IMPL))
+		if (!(rflags & REG_NOT_IMPL))
 			EMUERROR4("ERROR :wrong size write on register ; offset=%x , data=%x,sz=%d",offset,data,sz);
 	}
 #endif
-	if ((sb_regs[offset].flags& REG_NOT_IMPL))
-		EMUERROR3("Write to System Control Regs , not  implemented , addr=%x,data=%x",addr,data);
+	if ((rflags & REG_NOT_IMPL))
+		EMUERROR3("Write to System Control Regs , not  implemented , addr=%x,data=%x\n",addr,data);
 }
 
 u32 SB_FFST_rc;
@@ -445,6 +481,45 @@ void SB_SFRES_write32(u32 data)
 			log("SOFT RESET REQUEST FAILED\n");
 	}
 }
+
+#ifdef SB_MAP_UNKNOWN_REGS
+static u32 sb_unk[256] = {0};
+static u32 sb_unk_ptr = 0;
+
+void sb_implement_unk(u32 loc,u32 base,const u32 size = 4)
+{
+	base = (loc - base) >> 2;
+
+	if(base >= 0x540)
+	{
+		log("sb_implement_unk : base(%u) out of range\n",base);
+		return;
+	}
+
+	switch(size)
+	{
+		case 2:
+			sb_regs[base].flags=REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+			sb_regs[base].data16=(u16*)(sb_unk + (sb_unk_ptr++));
+		break;
+
+		case 4:
+			sb_regs[base].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+			sb_regs[base].data32=(u32*)(sb_unk + (sb_unk_ptr++));
+		break;
+
+		default:
+			sb_regs[base].flags=REG_8BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+			sb_regs[base].data8=(u8*)(sb_unk + (sb_unk_ptr++));
+		break;
+	}
+
+	sb_regs[base].readFunction=0;
+	sb_regs[base].writeFunction=0;
+	sb_regs[base].unk = 1;
+}
+#endif
+
 void sb_Init()
 {
 	sb_regs.Zero();
@@ -452,7 +527,39 @@ void sb_Init()
 	for (u32 i=0;i<sb_regs.Size;i++)
 	{
 		sb_regs[i].flags=REG_NOT_IMPL;
+
+		#ifdef SB_MAP_UNKNOWN_REGS
+		sb_regs[i].unk = 0;
+		#endif
 	}
+	
+	#ifdef SB_MAP_UNKNOWN_REGS
+	{
+		//Unknown regs
+		sb_unk_ptr = 0;
+
+		sb_implement_unk(0x005f68a4,SB_BASE);
+		sb_implement_unk(0x005f68ac,SB_BASE);
+		sb_implement_unk(0x005f68a0,SB_BASE);
+		sb_implement_unk(0x005f74a0,SB_BASE);
+		sb_implement_unk(0x005f74a4,SB_BASE);
+		sb_implement_unk(0x005f74a8,SB_BASE);
+		sb_implement_unk(0x005f74ac,SB_BASE);
+		sb_implement_unk(0x005f74b0,SB_BASE);
+		sb_implement_unk(0x005f74b4,SB_BASE);
+		sb_implement_unk(0x005f74e4,SB_BASE);
+		sb_implement_unk(0x005f78a0,SB_BASE);
+		sb_implement_unk(0x005f78a4,SB_BASE);
+		sb_implement_unk(0x005f78a8,SB_BASE);
+		sb_implement_unk(0x005f78ac,SB_BASE);
+		sb_implement_unk(0x005f78b0,SB_BASE);
+		sb_implement_unk(0x005f78b4,SB_BASE);
+		sb_implement_unk(0x005f78b8,SB_BASE);
+
+		sb_implement_unk(0x005f6b80,SB_BASE);
+		sb_implement_unk(0x005f6b8c,SB_BASE);
+	}
+	#endif
 
 	sb_regs[((SB_C2DSTAT_addr-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
 	sb_regs[((SB_C2DSTAT_addr-SB_BASE))>>2].readFunction=0;
