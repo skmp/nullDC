@@ -2028,6 +2028,9 @@ __error_out:
 
 	void DrawOSD()
 	{
+		if( (!settings.OSD.ShowFPS) && (!settings.OSD.ShowStats) )
+			return;
+
 		//dev->SetRenderState(D3DRS_ZFUNC,D3DCMP_ALWAYS);
 		dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 		dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
@@ -2424,10 +2427,23 @@ __error_out:
 			//Punch Through
 			dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
 
+			const DWORD aref = PT_ALPHA_REF & 0xff;
+
 			dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
 
-			dev->SetRenderState(D3DRS_ALPHAREF,PT_ALPHA_REF &0xFF);
-			
+			if(aref < 0xff)
+			{
+				dev->SetRenderState(D3DRS_ALPHAREF,aref);
+				dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
+				dev->SetRenderState(D3DRS_ZWRITEENABLE,TRUE);
+			}
+			else
+			{
+				dev->SetRenderState(D3DRS_ALPHAREF,1);
+				dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
+				dev->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
+			}
+
 			verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
 
 			if (!GetAsyncKeyState(VK_F2))
@@ -2813,7 +2829,7 @@ __error_out:
 
 		D3DCAPS9 caps;
 		d3d9->GetDeviceCaps(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,&caps);
-
+		
 		printf("Device caps... VS : %X ; PS : %X\n",caps.VertexShaderVersion,caps.PixelShaderVersion);
 
 		if (caps.VertexShaderVersion<D3DVS_VERSION(1, 0) || FORCE_SW_VERTEX_SHADERS)
@@ -2943,10 +2959,24 @@ __error_out:
 		rtt_FrameNumber=0;
 		d3d_init_done=true;
 
+		/*
+			if(caps.MaxAnisotropy)
+			{
+				for(s32 i = 0;i < 8;i++)
+				{
+					dev->SetSamplerState(i,D3DSAMP_MINFILTER,D3DTEXF_LINEAR);
+					dev->SetSamplerState(i,D3DSAMP_MAGFILTER,D3DTEXF_LINEAR);
+					dev->SetSamplerState(i,D3DSAMP_MIPFILTER,D3DTEXF_ANISOTROPIC);
+					dev->SetSamplerState(i,D3DSAMP_MAXANISOTROPY,caps.MaxAnisotropy);
+				}
+			}
+		*/
+
 		QueryPerformanceCounter(&InitEnd);
 			
 		printf("Initialising 3D Renderer took %.2f ms\n",(InitEnd.QuadPart-InitStart.QuadPart)/(freq.QuadPart/1000.0));
 		SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_NORMAL);
+
 		while(1)
 		{
 			rs.Wait();
