@@ -9,13 +9,16 @@ void SaveSettings()
 {
 	emu.ConfigSaveInt(L"nullDC_GUI",L"AutoHideMenu",settings.AutoHideMenu);
 	emu.ConfigSaveInt(L"nullDC_GUI",L"Fullscreen",settings.Fullscreen);
+	emu.ConfigSaveInt(_T("nullDC_GUI"),_T("AlwaysOnTop"),settings.AlwaysOnTop);
 }
 
 void LoadSettings()
 {
 	settings.AutoHideMenu=emu.ConfigLoadInt(L"nullDC_GUI",L"AutoHideMenu",1);
 	settings.Fullscreen=emu.ConfigLoadInt(L"nullDC_GUI",L"Fullscreen",0);
+	settings.AlwaysOnTop=emu.ConfigLoadInt(L"nullDC_GUI",L"AlwaysOnTop",0);
 }
+
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved

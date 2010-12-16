@@ -167,8 +167,16 @@ bool uiInit()
 	
 	RECT r= { 0,0,640,480};
 	AdjustWindowRectEx(&r,GetWindowLong(g_hWnd,GWL_STYLE),GetMenu(g_hWnd)!=NULL,GetWindowLong(g_hWnd,GWL_EXSTYLE));
-	SetWindowPos( g_hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_NOMOVE ) ;
+
+	if(settings.AlwaysOnTop)
+		SetWindowPos( g_hWnd, HWND_TOPMOST, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOMOVE | SWP_SHOWWINDOW);
+	else
+		SetWindowPos( g_hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_SHOWWINDOW ) ;
+
 	ShowWindow(g_hWnd,emu.nCmdShow);
+
+	if(settings.AlwaysOnTop)
+		SetFocus(g_hWnd);
 
 	if (settings.Fullscreen)
 	{
@@ -744,7 +752,27 @@ MENU_HANDLER( Handle_Options_AutoHideMenu)
 	SaveSettings();
 	SetMenuItemStyle(id,settings.AutoHideMenu?MIS_Checked:0,MIS_Checked);
 }
-MENU_HANDLER( Handle_Options_Fullscreen)
+
+MENU_HANDLER( Handle_Options_AlwaysOnTop )
+{
+	settings.AlwaysOnTop = !settings.AlwaysOnTop;
+	RECT r= { 0,0,640,480};
+	AdjustWindowRectEx(&r,GetWindowLong(g_hWnd,GWL_STYLE),GetMenu(g_hWnd)!=NULL,GetWindowLong(g_hWnd,GWL_EXSTYLE));
+
+	if(settings.AlwaysOnTop)
+	{
+		SetWindowPos( g_hWnd, HWND_TOPMOST, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOMOVE | SWP_SHOWWINDOW);
+		SetFocus(g_hWnd);
+	}
+	else
+		SetWindowPos( g_hWnd,HWND_NOTOPMOST, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_SHOWWINDOW ) ;
+
+	ShowWindow(g_hWnd,emu.nCmdShow);
+	SaveSettings();
+	SetMenuItemStyle(id,settings.AlwaysOnTop?MIS_Checked:0,MIS_Checked);
+}
+
+MENU_HANDLER( Handle_Options_Fullscreen )
 {
 	if (settings.Fullscreen)
 		settings.Fullscreen=0;
@@ -755,6 +783,7 @@ MENU_HANDLER( Handle_Options_Fullscreen)
 	SaveSettings();
 	SetMenuItemStyle(id,settings.Fullscreen?MIS_Checked:0,MIS_Checked);
 }
+
 MENU_HANDLER( Handle_Options_SelectPlugins)
 {
 	EmuSelectPlugins();
@@ -927,6 +956,7 @@ void CreateBasicMenus()
 	//Options Menu
 	u32 menu_setts=AddMenuItem(menu_options,-1,L"nullDC Settings",Handle_Options_Config,0);
 	gui_fullscreen_mid=AddMenuItem(menu_setts,-1,L"Fullscreen",Handle_Options_Fullscreen,settings.Fullscreen);
+	AddMenuItem(menu_setts,-1,L"Always on top",Handle_Options_AlwaysOnTop,settings.AlwaysOnTop); 
 	AddMenuItem(menu_setts,-1,L"Auto Hide Menu",Handle_Options_AutoHideMenu,settings.AutoHideMenu);
 		AddSeperator(menu_setts);
 		AddMenuItem(menu_setts,-1,L"Show",Handle_Options_Config,0);
@@ -1270,6 +1300,7 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 				{
 					wchar fn[512];
 					wchar ep[512];
+					
 					emu.ConfigLoadStr(L"emu",L"AppPath",ep,0);
 					int i;
 					i=0;

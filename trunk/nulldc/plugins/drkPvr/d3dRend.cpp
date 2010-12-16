@@ -2274,12 +2274,14 @@ __error_out:
 				verifyc(dev->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT));
 				verifyc(dev->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
 			}
+
 			if (fog_texture!=0)
 			{
 				verifyc(dev->SetTexture(2,fog_texture));
-				verifyc(dev->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT));
-				verifyc(dev->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
+				verifyc(dev->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT));
+				verifyc(dev->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
 			}
+
 			//Init stuff
 			dev->SetVertexShader(compiled_vs);
 
