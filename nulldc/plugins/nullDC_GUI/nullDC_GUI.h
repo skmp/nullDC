@@ -239,6 +239,8 @@ struct Settings_Struct
 {
 	bool AutoHideMenu;
 	bool Fullscreen;
+	bool AlwaysOnTop;
+	bool pad0;
 };
 
 extern Settings_Struct settings;
