@@ -519,22 +519,26 @@ void __fastcall SlowUpdate()
 #define AICA_SAMPLE_GCM 441
 #define AICA_SAMPLE_CYCLES (SH4_MAIN_CLOCK/(44100/AICA_SAMPLE_GCM))
 
+void aica_periodical(u32 cycl);
+void maple_periodical(u32 cycl);
+
 void __fastcall MediumUpdate()
 {
-	void aica_periodical(u32 cycl);
-
-	void maple_periodical(u32 cycl);
-
-	aica_sample_cycles+=3584*AICA_SAMPLE_GCM;
-
-	if (aica_sample_cycles>=AICA_SAMPLE_CYCLES)
+	#ifdef INCLUDE_DEV_TOOLS
+	if(!GetAsyncKeyState(DEV_TOOL_FAST_FW_KEY))
+	#endif
 	{
-		UpdateArm(512);
-		UpdateAica(1);
-		aica_sample_cycles-=AICA_SAMPLE_CYCLES;
-	}
+		aica_sample_cycles+=3584*AICA_SAMPLE_GCM;
 
-	aica_periodical(3584);
+		if (aica_sample_cycles>=AICA_SAMPLE_CYCLES)
+		{
+			UpdateArm(512);
+			UpdateAica(1);
+			aica_sample_cycles-=AICA_SAMPLE_CYCLES;
+		}
+
+		aica_periodical(3584);
+	}
 
 	maple_periodical(3584);
 

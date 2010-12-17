@@ -2412,40 +2412,35 @@ __error_out:
 				verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,FALSE));
 			}
 			
+			const DWORD aref = PT_ALPHA_REF & 0xff;
+
+			dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
+			dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
+
+			//When its fully opaque , disable blending otherwise the following state-block messes up everything
+			//This is either driver bug/limitation during a specific combination of states or somewhere a state messes up ..something 
+			dev->SetRenderState(D3DRS_ALPHABLENDENABLE,(aref != 0 ) || (aref == 0xff));
+
+			//fix 100% opacity by roundup(half) and blending ON!
+			dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
 
 			//OPAQUE
 			if (!GetAsyncKeyState(VK_F1))
 			{
 				if (UseFixedFunction)
-				{
 					RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
-				}
 				else
-				{
 					RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
-				}
 			}
 
 			//Punch Through
-			dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
 
-			const DWORD aref = PT_ALPHA_REF & 0xff;
+			//OFF! We'll get a nice mixed result from the previous pass of the opaque-objects
+			dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
 
-			dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
-
-			if(aref < 0xff)
-			{
-				dev->SetRenderState(D3DRS_ALPHAREF,aref);
-				dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-				dev->SetRenderState(D3DRS_ZWRITEENABLE,TRUE);
-			}
-			else
-			{
-				dev->SetRenderState(D3DRS_ALPHAREF,1);
-				dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
-				dev->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-			}
-
+			//fix 100% opacity by roundup(half) and blending OFF!
+			dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
+	
 			verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
 
 			if (!GetAsyncKeyState(VK_F2))
@@ -2460,7 +2455,11 @@ __error_out:
 				}
 			}
 
-			
+			//re-set just in case it had 100% opacity and got modified just to smooth out the final frame
+			dev->SetRenderState(D3DRS_ALPHAREF,aref);
+
+			//Now go to step 2 and render semi-trans /etc
+
 			//OP mod vols
 			if (settings.Emulation.ModVolMode!=MVM_Off && pvrrc.modtrig.used>0)
 			{

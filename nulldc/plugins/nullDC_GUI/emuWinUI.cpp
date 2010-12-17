@@ -171,7 +171,7 @@ bool uiInit()
 	if(settings.AlwaysOnTop)
 		SetWindowPos( g_hWnd, HWND_TOPMOST, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOMOVE | SWP_SHOWWINDOW);
 	else
-		SetWindowPos( g_hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_SHOWWINDOW ) ;
+		SetWindowPos( g_hWnd, NULL, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_NOMOVE) ;
 
 	ShowWindow(g_hWnd,emu.nCmdShow);
 
@@ -765,7 +765,7 @@ MENU_HANDLER( Handle_Options_AlwaysOnTop )
 		SetFocus(g_hWnd);
 	}
 	else
-		SetWindowPos( g_hWnd,HWND_NOTOPMOST, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_SHOWWINDOW ) ;
+		SetWindowPos( g_hWnd,HWND_NOTOPMOST, 0, 0, r.right - r.left, r.bottom - r.top,SWP_NOZORDER | SWP_NOMOVE ) ;
 
 	ShowWindow(g_hWnd,emu.nCmdShow);
 	SaveSettings();

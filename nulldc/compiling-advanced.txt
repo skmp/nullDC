@@ -1,9 +1,9 @@
 How to compile the optimized build(DC & Naomi):
 
-Look for : "#undef NO_VERIFY" (in types.h) and replace it with : 
+Look for : "#undef NO_VERIFY" (in nullDC/types.h) and replace it with : 
 "#define NO_VERIFY"
 
-Look for : "#define DEFAULT_LOGGING" (in logging_interface.h) and replace it with :
+Look for : "#define DEFAULT_LOGGING" (in nullDC/log/logging_interface.h) and replace it with :
 "#undef DEFAULT_LOGGING"
 
 Set build settings to "Release-NoTrace" , save everything and compile.
@@ -13,5 +13,13 @@ and the overall performance of
 the emulator.
 
 How to compile with unknown bios reg writes auto-mapped(DC):
-Open types.h.
+Open nullDC/types.h.
 Replace "#undef SB_MAP_UNKNOWN_REGS" with "#define SB_MAP_UNKNOWN_REGS" and re-compile the solution.
+
+How to compile with dev tools active:
+Open nullDC/types.h
+Replace "#undef INCLUDE_DEV_TOOLS" with "#define INCLUDE_DEV_TOOLS"
+
+Macros associated with dev-tools:
+Just scan the entire solution for : "DEV_TOOL" and you'll get all related
+macros/patches ;)
