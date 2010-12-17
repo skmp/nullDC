@@ -2274,14 +2274,12 @@ __error_out:
 				verifyc(dev->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT));
 				verifyc(dev->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
 			}
-
 			if (fog_texture!=0)
 			{
 				verifyc(dev->SetTexture(2,fog_texture));
 				verifyc(dev->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT));
 				verifyc(dev->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
 			}
-
 			//Init stuff
 			dev->SetVertexShader(compiled_vs);
 
@@ -2412,54 +2410,128 @@ __error_out:
 				verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,FALSE));
 			}
 			
-			const DWORD aref = PT_ALPHA_REF & 0xff;
 
-			dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
-			dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
-
-			//When its fully opaque , disable blending otherwise the following state-block messes up everything
-			//This is either driver bug/limitation during a specific combination of states or somewhere a state messes up ..something 
-			dev->SetRenderState(D3DRS_ALPHABLENDENABLE,(aref != 0 ) || (aref == 0xff));
-
-			//fix 100% opacity by roundup(half) and blending ON!
-			dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
-
-			//OPAQUE
-			if (!GetAsyncKeyState(VK_F1))
+			switch(settings.Enhancements.TextureOpacityFixLevel)
 			{
-				if (UseFixedFunction)
-					RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
-				else
-					RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
-			}
-
-			//Punch Through
-
-			//OFF! We'll get a nice mixed result from the previous pass of the opaque-objects
-			dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
-
-			//fix 100% opacity by roundup(half) and blending OFF!
-			dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
-	
-			verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
-
-			if (!GetAsyncKeyState(VK_F2))
-			{
-				if (UseFixedFunction)
+				case 0:
+				default:
 				{
-					RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
+					//OPAQUE
+					if (!GetAsyncKeyState(VK_F1))
+					{
+						if (UseFixedFunction)
+						{
+							RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
+						}
+						else
+						{
+							RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
+						}
+					}
+
+					//Punch Through
+					dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
+
+					dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
+
+					dev->SetRenderState(D3DRS_ALPHAREF,PT_ALPHA_REF &0xFF);
+			
+					verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
+
+					if (!GetAsyncKeyState(VK_F2))
+					{
+						if (UseFixedFunction)
+						{
+							RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
+						}
+						else
+						{
+							RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
+						}
+					}
+
+					break;
 				}
-				else
+
+				case 1:
 				{
-					RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
+					//OPAQUE
+					if (!GetAsyncKeyState(VK_F1))
+					{
+						if (UseFixedFunction)
+						{
+							RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
+						}
+						else
+						{
+							RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
+						}
+					}
+
+					const DWORD aref = PT_ALPHA_REF & 0xff;
+					dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
+					dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
+
+					if(aref < 0xff)
+					{
+						dev->SetRenderState(D3DRS_ALPHAREF,aref);
+						dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
+						dev->SetRenderState(D3DRS_ZWRITEENABLE,TRUE);
+					}
+					else
+					{
+						dev->SetRenderState(D3DRS_ALPHAREF,1);
+						dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
+						dev->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
+					}
+
+					verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
+
+					if (!GetAsyncKeyState(VK_F2))
+					{
+						if (UseFixedFunction)
+							RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
+						else
+							RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
+					}
+					
+					break;
+				}
+				
+				case 2:
+				{
+					const DWORD aref = PT_ALPHA_REF & 0xff;
+		
+					dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
+					dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
+					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,(aref != 0 ) || (aref == 0xff));
+					dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
+
+					//OPAQUE
+					if (!GetAsyncKeyState(VK_F1))
+					{
+						if (UseFixedFunction)
+							RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
+						else
+							RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
+					}
+
+					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
+					dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
+					verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));
+
+					if (!GetAsyncKeyState(VK_F2))
+					{
+						if (UseFixedFunction)
+							RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
+						else
+							RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
+					}
+
+					break;
 				}
 			}
-
-			//re-set just in case it had 100% opacity and got modified just to smooth out the final frame
-			dev->SetRenderState(D3DRS_ALPHAREF,aref);
-
-			//Now go to step 2 and render semi-trans /etc
-
+			
 			//OP mod vols
 			if (settings.Emulation.ModVolMode!=MVM_Off && pvrrc.modtrig.used>0)
 			{
@@ -2830,7 +2902,7 @@ __error_out:
 
 		D3DCAPS9 caps;
 		d3d9->GetDeviceCaps(D3DADAPTER_DEFAULT,D3DDEVTYPE_HAL,&caps);
-		
+
 		printf("Device caps... VS : %X ; PS : %X\n",caps.VertexShaderVersion,caps.PixelShaderVersion);
 
 		if (caps.VertexShaderVersion<D3DVS_VERSION(1, 0) || FORCE_SW_VERTEX_SHADERS)
@@ -2960,24 +3032,10 @@ __error_out:
 		rtt_FrameNumber=0;
 		d3d_init_done=true;
 
-		/*
-			if(caps.MaxAnisotropy)
-			{
-				for(s32 i = 0;i < 8;i++)
-				{
-					dev->SetSamplerState(i,D3DSAMP_MINFILTER,D3DTEXF_LINEAR);
-					dev->SetSamplerState(i,D3DSAMP_MAGFILTER,D3DTEXF_LINEAR);
-					dev->SetSamplerState(i,D3DSAMP_MIPFILTER,D3DTEXF_ANISOTROPIC);
-					dev->SetSamplerState(i,D3DSAMP_MAXANISOTROPY,caps.MaxAnisotropy);
-				}
-			}
-		*/
-
 		QueryPerformanceCounter(&InitEnd);
 			
 		printf("Initialising 3D Renderer took %.2f ms\n",(InitEnd.QuadPart-InitStart.QuadPart)/(freq.QuadPart/1000.0));
 		SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_NORMAL);
-
 		while(1)
 		{
 			rs.Wait();

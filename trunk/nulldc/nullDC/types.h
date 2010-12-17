@@ -52,7 +52,7 @@ using namespace std;
 //pageup = fast forward
 #define DEV_TOOL_FAST_FW_KEY (VK_PRIOR)
 
-#define INCLUDE_DEV_TOOLS
+#undef INCLUDE_DEV_TOOLS
 #undef NO_VERIFY
 #undef SB_MAP_UNKNOWN_REGS
 
