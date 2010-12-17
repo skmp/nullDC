@@ -91,7 +91,6 @@ struct _settings_type
 		u32 MultiSampleCount;
 		u32 MultiSampleQuality;
 		u32 AspectRatioMode;
-		u32 TextureOpacityFixLevel;
 	} Enhancements;
 	
 	struct
