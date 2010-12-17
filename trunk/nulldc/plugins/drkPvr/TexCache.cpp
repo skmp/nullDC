@@ -42,6 +42,11 @@ u32 fastcall twiddle_razi_(u32 x,u32 y,u32 x_sz,u32 y_sz)
 	}	
 	return rv;
 }
+
+u32 unpack_4_to_8_tw[16];
+u32 unpack_5_to_8_tw[32];
+u32 unpack_6_to_8_tw[64];
+
 void BuildTwiddleTables()
 {
 	for (u32 s=0;s<8;s++)
@@ -54,7 +59,25 @@ void BuildTwiddleTables()
 			detwiddle[1][s][i]=twiddle_razi_(0,i,y_sz,x_sz);
 		}
 	}
+
+	//also fill in the texture cvt tables !
+
+	for (int i=0;i<(1<<4);i++)
+	{
+		unpack_4_to_8_tw[i]=((i)<<4)|(i>>0);
+	}
+
+	for (int i=0;i<(1<<5);i++)
+	{
+		unpack_5_to_8_tw[i]=((i)<<3)|(i>>2);
+	}
+
+	for (int i=0;i<(1<<6);i++)
+	{
+		unpack_6_to_8_tw[i]=((i)<<2)|(i>>4);
+	}
 }
+
 //# define twop( val, n )	twidle_razi( (val), (n),(n) )
 #define twop twiddle_fast
 
@@ -80,21 +103,21 @@ void palette_update()
 	case 0:
 		for (int i=0;i<1024;i++)
 		{
-			palette_lut[i]=ARGB1555(PALETTE_RAM[i]);
+			palette_lut[i]=ARGB1555_TW(PALETTE_RAM[i]);
 		}
 		break;
 
 	case 1:
 		for (int i=0;i<1024;i++)
 		{
-			palette_lut[i]=ARGB565(PALETTE_RAM[i]);
+			palette_lut[i]=ARGB565_TW(PALETTE_RAM[i]);
 		}
 		break;
 
 	case 2:
 		for (int i=0;i<1024;i++)
 		{
-			palette_lut[i]=ARGB4444(PALETTE_RAM[i]);
+			palette_lut[i]=ARGB4444_TW(PALETTE_RAM[i]);
 		}
 		break;
 

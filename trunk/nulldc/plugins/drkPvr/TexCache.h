@@ -167,47 +167,9 @@ struct PixelBuffer
 };
 
 //Generic texture cache / texture format conevertion code / macros
-const u32 unpack_5_to_8[32] = 
-{
-	//low 16
-	0<<3,1<<3,2<<3,3<<3,
-	4<<3,5<<3,6<<3,7<<3,
-	8<<3,9<<3,10<<3,11<<3,
-	12<<3,13<<3,14<<3,15<<3,
-
-	//hi 16
-	16<<3,17<<3,18<<3,19<<3,
-	20<<3,21<<3,22<<3,23<<3,
-	24<<3,25<<3,26<<3,27<<3,
-	28<<3,29<<3,30<<3,31<<3,
-};
-
-const u32 unpack_6_to_8[64] = 
-{
-	//low 16
-	0<<2,1<<2,2<<2,3<<2,
-	4<<2,5<<2,6<<2,7<<2,
-	8<<2,9<<2,10<<2,11<<2,
-	12<<2,13<<2,14<<2,15<<2,
-
-	//hi 16
-	16<<2,17<<2,18<<2,19<<2,
-	20<<2,21<<2,22<<2,23<<2,
-	24<<2,25<<2,26<<2,27<<2,
-	28<<2,29<<2,30<<2,31<<2,
-
-	//low 16
-	32<<2,33<<2,34<<2,35<<2,
-	36<<2,37<<2,38<<2,39<<2,
-	40<<2,41<<2,42<<2,43<<2,
-	44<<2,45<<2,46<<2,47<<2,
-
-	//hi 16
-	48<<2,49<<2,50<<2,51<<2,
-	52<<2,53<<2,54<<2,55<<2,
-	56<<2,57<<2,58<<2,59<<2,
-	60<<2,61<<2,62<<2,63<<2,
-};
+extern u32 unpack_4_to_8_tw[16];
+extern u32 unpack_5_to_8_tw[32];
+extern u32 unpack_6_to_8_tw[64];
 
 void palette_update();
 
@@ -218,17 +180,29 @@ const u32 unpack_1_to_8[2]={0,0xFF};
 #define ARGB8888(A,R,G,B) \
 	PixelPacker::pack(A,R,G,B)
 
-#define ARGB1555( word )	\
-	ARGB8888(unpack_1_to_8[(word>>15)&1],unpack_5_to_8[(word>>10) & 0x1F],	\
-	unpack_5_to_8[(word>>5) & 0x1F],unpack_5_to_8[word&0x1F])
+#define ARGB1555_PL( word )	\
+	ARGB8888(unpack_1_to_8[(word>>15)&1],((word>>10) & 0x1F)<<3,	\
+	((word>>5) & 0x1F)<<3,(word&0x1F)<<3)
 
-#define ARGB565( word )		\
-	ARGB8888(0xFF,unpack_5_to_8[(word>>11) & 0x1F],	\
-	unpack_6_to_8[(word>>5) & 0x3F],unpack_5_to_8[word&0x1F])
+#define ARGB565_PL( word )		\
+	ARGB8888(0xFF,((word>>11) & 0x1F)<<3,	\
+	((word>>5) & 0x3F)<<2,(word&0x1F)<<3)
+
+#define ARGB4444_PL( word )	\
+	ARGB8888( (word&0xF000)>>(12-4),(word&0xF00)>>(8-4),(word&0xF0)>>(4-4),(word&0xF)<<4 )
+
+
+#define ARGB1555_TW( word )	\
+	ARGB8888(unpack_1_to_8[(word>>15)&1],unpack_5_to_8_tw[(word>>10) & 0x1F],	\
+	unpack_5_to_8_tw[(word>>5) & 0x1F],unpack_5_to_8_tw[word&0x1F])
+
+#define ARGB565_TW( word )		\
+	ARGB8888(0xFF,unpack_5_to_8_tw[(word>>11) & 0x1F],	\
+	unpack_6_to_8_tw[(word>>5) & 0x3F],unpack_5_to_8_tw[word&0x1F])
 //( 0xFF000000 | unpack_5_to_8[(word>>11) & 0x1F] | unpack_5_to_8[(word>>5) & 0x3F]<<8 | unpack_5_to_8[word&0x1F]<<16 )
 
-#define ARGB4444( word )	\
-	ARGB8888( (word&0xF000)>>(12-4),(word&0xF00)>>(8-4),(word&0xF0)>>(4-4),(word&0xF)<<4 )
+#define ARGB4444_TW( word )	\
+	ARGB8888( unpack_4_to_8_tw[(word&0xF000)>>(12)],unpack_4_to_8_tw[(word&0xF00)>>(8)],unpack_4_to_8_tw[(word&0xF0)>>(4)],unpack_4_to_8_tw[(word&0xF)] )
 
 template<class PixelPacker>
 __forceinline u32 YUV422(s32 Y,s32 Yu,s32 Yv)
@@ -285,39 +259,39 @@ pixelcvt_start(conv565_PL,4,1)
 	//convert 4x1 565 to 4x1 8888
 	u16* p_in=(u16*)data;
 	//0,0
-	pb->prel(0,ARGB565(p_in[0]));
+	pb->prel(0,ARGB565_PL(p_in[0]));
 	//1,0
-	pb->prel(1,ARGB565(p_in[1]));
+	pb->prel(1,ARGB565_PL(p_in[1]));
 	//2,0
-	pb->prel(2,ARGB565(p_in[2]));
+	pb->prel(2,ARGB565_PL(p_in[2]));
 	//3,0
-	pb->prel(3,ARGB565(p_in[3]));
+	pb->prel(3,ARGB565_PL(p_in[3]));
 }
 pixelcvt_next(conv1555_PL,4,1)
 {
 	//convert 4x1 1555 to 4x1 8888
 	u16* p_in=(u16*)data;
 	//0,0
-	pb->prel(0,ARGB1555(p_in[0]));
+	pb->prel(0,ARGB1555_PL(p_in[0]));
 	//1,0
-	pb->prel(1,ARGB1555(p_in[1]));
+	pb->prel(1,ARGB1555_PL(p_in[1]));
 	//2,0
-	pb->prel(2,ARGB1555(p_in[2]));
+	pb->prel(2,ARGB1555_PL(p_in[2]));
 	//3,0
-	pb->prel(3,ARGB1555(p_in[3]));
+	pb->prel(3,ARGB1555_PL(p_in[3]));
 }
 pixelcvt_next(conv4444_PL,4,1)
 {
 	//convert 4x1 4444 to 4x1 8888
 	u16* p_in=(u16*)data;
 	//0,0
-	pb->prel(0,ARGB4444(p_in[0]));
+	pb->prel(0,ARGB4444_PL(p_in[0]));
 	//1,0
-	pb->prel(1,ARGB4444(p_in[1]));
+	pb->prel(1,ARGB4444_PL(p_in[1]));
 	//2,0
-	pb->prel(2,ARGB4444(p_in[2]));
+	pb->prel(2,ARGB4444_PL(p_in[2]));
 	//3,0
-	pb->prel(3,ARGB4444(p_in[3]));
+	pb->prel(3,ARGB4444_PL(p_in[3]));
 }
 pixelcvt_next(convYUV_PL,4,1)
 {
@@ -355,39 +329,39 @@ pixelcvt_start(conv565_TW,2,2)
 	//convert 4x1 565 to 4x1 8888
 	u16* p_in=(u16*)data;
 	//0,0
-	pb->prel(0,0,ARGB565(p_in[0]));
+	pb->prel(0,0,ARGB565_TW(p_in[0]));
 	//0,1
-	pb->prel(0,1,ARGB565(p_in[1]));
+	pb->prel(0,1,ARGB565_TW(p_in[1]));
 	//1,0
-	pb->prel(1,0,ARGB565(p_in[2]));
+	pb->prel(1,0,ARGB565_TW(p_in[2]));
 	//1,1
-	pb->prel(1,1,ARGB565(p_in[3]));
+	pb->prel(1,1,ARGB565_TW(p_in[3]));
 }
 pixelcvt_next(conv1555_TW,2,2)
 {
 	//convert 4x1 1555 to 4x1 8888
 	u16* p_in=(u16*)data;
 	//0,0
-	pb->prel(0,0,ARGB1555(p_in[0]));
+	pb->prel(0,0,ARGB1555_TW(p_in[0]));
 	//0,1
-	pb->prel(0,1,ARGB1555(p_in[1]));
+	pb->prel(0,1,ARGB1555_TW(p_in[1]));
 	//1,0
-	pb->prel(1,0,ARGB1555(p_in[2]));
+	pb->prel(1,0,ARGB1555_TW(p_in[2]));
 	//1,1
-	pb->prel(1,1,ARGB1555(p_in[3]));
+	pb->prel(1,1,ARGB1555_TW(p_in[3]));
 }
 pixelcvt_next(conv4444_TW,2,2)
 {
 	//convert 4x1 4444 to 4x1 8888
 	u16* p_in=(u16*)data;
 	//0,0
-	pb->prel(0,0,ARGB4444(p_in[0]));
+	pb->prel(0,0,ARGB4444_TW(p_in[0]));
 	//0,1
-	pb->prel(0,1,ARGB4444(p_in[1]));
+	pb->prel(0,1,ARGB4444_TW(p_in[1]));
 	//1,0
-	pb->prel(1,0,ARGB4444(p_in[2]));
+	pb->prel(1,0,ARGB4444_TW(p_in[2]));
 	//1,1
-	pb->prel(1,1,ARGB4444(p_in[3]));
+	pb->prel(1,1,ARGB4444_TW(p_in[3]));
 }
 pixelcvt_next(convYUV_TW,2,2)
 {
@@ -618,8 +592,8 @@ template void fastcall texture_VQ<conv4444_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,
 template void fastcall texture_VQ<conv565_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
 template void fastcall texture_VQ<conv1555_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
 template void fastcall texture_VQ<convYUV_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
-template void fastcall texture_VQ<convPAL4_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
-template void fastcall texture_VQ<convPAL8_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
+//template void fastcall texture_VQ<convPAL4_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
+//template void fastcall texture_VQ<convPAL8_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
 
 //Planar
 #define argb1555to8888 texture_PL<conv1555_PL<pp_dx> >
@@ -643,8 +617,8 @@ template void fastcall texture_VQ<convPAL8_TW<pp_dx> >(PixelBuffer* pb,u8* p_in,
 #define argb565to8888_VQ texture_VQ<conv565_TW<pp_dx> >
 #define argb4444to8888_VQ texture_VQ<conv4444_TW<pp_dx> >
 #define YUV422to8888_VQ texture_VQ<convYUV_TW<pp_dx> >
-#define PAL4to8888_VQ texture_VQ<convPAL4_TW<pp_dx> >
-#define PAL8to8888_VQ  texture_VQ<convPAL8_TW<pp_dx> >
+//#define PAL4to8888_VQ texture_VQ<convPAL4_TW<pp_dx> >
+//#define PAL8to8888_VQ  texture_VQ<convPAL8_TW<pp_dx> >
 
 /*
 void fastcall texture_VQ_argb565(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
