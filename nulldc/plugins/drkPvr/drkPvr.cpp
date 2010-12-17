@@ -127,7 +127,6 @@ Optiongroup menu_zbuffer;
 Optiongroup menu_TCM;
 Optiongroup menu_widemode;
 Optiongroup menu_resolution;
-Optiongroup menu_opacity_patch;
 int oldmode=-1;
 int osx=-1,osy=-1;
 
@@ -265,14 +264,6 @@ void handler_ZBufferMode(int  mode)
 	SaveSettings();
 	render_restart=true;
 }
-
-void handler_OPL(int mode)
-{
-	settings.Enhancements.TextureOpacityFixLevel = (u32)mode;
-	SaveSettings();
-	render_restart=true;
-}
-
 u32 AA_mid_menu;
 u32 AA_mid_0;
 
@@ -314,7 +305,6 @@ void handler_SSM(int val)
 
 	SaveSettings();
 }
-
 void CreateSortMenu()
 {
 	sort_menu=emu.AddMenuItem(emu.RootMenu,-1,L"Sort : %s",0,0);
@@ -357,14 +347,6 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_widemode.Add(WSM,L"Borders",1);
 	menu_widemode.Add(WSM,L"Extra Geom",2);
 	menu_widemode.SetValue(settings.Enhancements.AspectRatioMode);
-
-	u32 mop = emu.AddMenuItem(emu.RootMenu,-1,L"Opacity patch level : %s",0,0);
-	menu_opacity_patch.format = L"Opacity patch level : %s";
-	menu_opacity_patch.callback = handler_OPL;
-	menu_opacity_patch.Add(mop,L"None",0,L"Off");
-	menu_opacity_patch.Add(mop,L"Standard(Highest compatibility)",1,L"Standard");
-	menu_opacity_patch.Add(mop,L"Extended(Game-specific patch)",2,L"Extended");
-	menu_opacity_patch.SetValue(settings.Enhancements.TextureOpacityFixLevel);
 
 	u32 PMT=emu.AddMenuItem(emu.RootMenu,-1,L"Palette Handling",0,0);
 	
@@ -649,7 +631,6 @@ void LoadSettings()
 	settings.Enhancements.MultiSampleCount		=	cfgGetInt(L"Enhancements.MultiSampleCount",0);
 	settings.Enhancements.MultiSampleQuality	=	cfgGetInt(L"Enhancements.MultiSampleQuality",0);
 	settings.Enhancements.AspectRatioMode		=	cfgGetInt(L"Enhancements.AspectRatioMode",1);
-	settings.Enhancements.TextureOpacityFixLevel =  cfgGetInt(L"Enhancements.TextureOpacityFixLevel",1);
 }
 
 
@@ -670,7 +651,6 @@ void SaveSettings()
 	cfgSetInt(L"Enhancements.MultiSampleCount",settings.Enhancements.MultiSampleCount);
 	cfgSetInt(L"Enhancements.MultiSampleQuality",settings.Enhancements.MultiSampleQuality);
 	cfgSetInt(L"Enhancements.AspectRatioMode",settings.Enhancements.AspectRatioMode);
-	cfgSetInt(L"Enhancements.TextureOpacityFixLevel",settings.Enhancements.TextureOpacityFixLevel);
 }
 
 int msgboxf(wchar* text,unsigned int type,...)

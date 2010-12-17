@@ -2028,9 +2028,6 @@ __error_out:
 
 	void DrawOSD()
 	{
-		if( (!settings.OSD.ShowFPS) && (!settings.OSD.ShowStats) )
-			return;
-
 		//dev->SetRenderState(D3DRS_ZFUNC,D3DCMP_ALWAYS);
 		dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
 		dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
@@ -2274,12 +2271,14 @@ __error_out:
 				verifyc(dev->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT));
 				verifyc(dev->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
 			}
+
 			if (fog_texture!=0)
 			{
 				verifyc(dev->SetTexture(2,fog_texture));
 				verifyc(dev->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT));
 				verifyc(dev->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
 			}
+
 			//Init stuff
 			dev->SetVertexShader(compiled_vs);
 
@@ -2411,126 +2410,40 @@ __error_out:
 			}
 			
 
-			switch(settings.Enhancements.TextureOpacityFixLevel)
+			//OPAQUE
+			if (!GetAsyncKeyState(VK_F1))
 			{
-				case 0:
-				default:
+				if (UseFixedFunction)
 				{
-					//OPAQUE
-					if (!GetAsyncKeyState(VK_F1))
-					{
-						if (UseFixedFunction)
-						{
-							RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
-						}
-						else
-						{
-							RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
-						}
-					}
-
-					//Punch Through
-					dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
-
-					dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
-
-					dev->SetRenderState(D3DRS_ALPHAREF,PT_ALPHA_REF &0xFF);
-			
-					verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
-
-					if (!GetAsyncKeyState(VK_F2))
-					{
-						if (UseFixedFunction)
-						{
-							RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
-						}
-						else
-						{
-							RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
-						}
-					}
-
-					break;
+					RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
 				}
-
-				case 1:
+				else
 				{
-					//OPAQUE
-					if (!GetAsyncKeyState(VK_F1))
-					{
-						if (UseFixedFunction)
-						{
-							RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
-						}
-						else
-						{
-							RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
-						}
-					}
-
-					const DWORD aref = PT_ALPHA_REF & 0xff;
-					dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
-					dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
-
-					if(aref < 0xff)
-					{
-						dev->SetRenderState(D3DRS_ALPHAREF,aref);
-						dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-						dev->SetRenderState(D3DRS_ZWRITEENABLE,TRUE);
-					}
-					else
-					{
-						dev->SetRenderState(D3DRS_ALPHAREF,1);
-						dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
-						dev->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-					}
-
-					verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
-
-					if (!GetAsyncKeyState(VK_F2))
-					{
-						if (UseFixedFunction)
-							RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
-						else
-							RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
-					}
-					
-					break;
-				}
-				
-				case 2:
-				{
-					const DWORD aref = PT_ALPHA_REF & 0xff;
-		
-					dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
-					dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
-					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,(aref != 0 ) || (aref == 0xff));
-					dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
-
-					//OPAQUE
-					if (!GetAsyncKeyState(VK_F1))
-					{
-						if (UseFixedFunction)
-							RendPolyParamList<ListType_Opaque,true,false>(pvrrc.global_param_op);
-						else
-							RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
-					}
-
-					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
-					dev->SetRenderState(D3DRS_ALPHAREF,(aref == 0xff) ? 0x80 : aref);
-					verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));
-
-					if (!GetAsyncKeyState(VK_F2))
-					{
-						if (UseFixedFunction)
-							RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
-						else
-							RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
-					}
-
-					break;
+					RendPolyParamList<ListType_Opaque,false,false>(pvrrc.global_param_op);
 				}
 			}
+
+			//Punch Through
+			dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
+
+			dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
+
+			dev->SetRenderState(D3DRS_ALPHAREF,PT_ALPHA_REF &0xFF);
+			
+			verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
+
+			if (!GetAsyncKeyState(VK_F2))
+			{
+				if (UseFixedFunction)
+				{
+					RendPolyParamList<ListType_Punch_Through,true,false>(pvrrc.global_param_pt);
+				}
+				else
+				{
+					RendPolyParamList<ListType_Punch_Through,false,false>(pvrrc.global_param_pt);
+				}
+			}
+
 			
 			//OP mod vols
 			if (settings.Emulation.ModVolMode!=MVM_Off && pvrrc.modtrig.used>0)
