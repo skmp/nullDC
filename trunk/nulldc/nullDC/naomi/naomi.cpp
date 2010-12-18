@@ -760,7 +760,7 @@ bool naomi_LoadRom(wchar* file)
 		if (RomCacheMap[i]==INVALID_HANDLE_VALUE)
 		{
 			wprintf(L"-Reserving ram at 0x%08X, size 0x%08X\n",fstart[i],fsize[i]);
-			u8* test = VirtualAlloc(RomDest,fsize[i],MEM_RESERVE,PAGE_NOACCESS);
+			LPVOID test = VirtualAlloc(RomDest,fsize[i],MEM_RESERVE,PAGE_NOACCESS);
 			verify(0 != test);
 		}
 		else

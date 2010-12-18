@@ -2018,6 +2018,7 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 						{
 							fwrite(EEPROM,1,0x80,f);
 							fclose(f);
+							wprintf(L"SAVED EEPROM to %s\n",eeprom_file);
 						}
 					}
 					return (7);
@@ -2034,7 +2035,7 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 							{
 								fread(EEPROM,1,0x80,f);
 								fclose(f);
-								wprintf(L"LOADED EEPROM from %s",eeprom_file);
+								wprintf(L"LOADED EEPROM from %s\n",eeprom_file);
 							}
 						}
 						//printf("EEprom READ ?\n");
