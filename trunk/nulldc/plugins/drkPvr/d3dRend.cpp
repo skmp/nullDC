@@ -1377,6 +1377,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 	#define idx_pp_TextureLookup 5
 	#define idx_ZBufferMode 6
 	#define idx_pp_FogCtrl 7
+	#define idx_RadeonRoundfix 8
 
 	D3DXMACRO ps_macros[]=
 	{
@@ -1388,6 +1389,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		{"TextureLookup","0"},	//use shader to emulate pals
 		{"ZBufferMode","0"},		//Z mode. 0 -> D24FS8, 1 -> D24S8 + FPemu, 2 -> D24S8 + scaling
 		{"pp_FogCtrl","0"},
+		{"RadeonRoundfix","0"},
 		{0,0}	//end of list
 	};
 	// -> function to do projected lookup
@@ -1564,13 +1566,15 @@ __error_out:
 		char temp[30];
 		strcpy(temp,D3DXGetPixelShaderProfile(dev));
 		//printf(&temp[3]);
-
+		
 		ps_macros[idx_ZBufferMode].Definition=ps_macro_numers[ZBufferMode];
+		ps_macros[idx_RadeonRoundfix].Definition=ps_macro_numers[settings.Emulation.RadeonRoundfix];
 
 		const char * profile=D3DXGetPixelShaderProfile(dev);
 
 		u8 file_hash[16];
-		if (hash_file("ps_hlsl.fx",profile,ps_macros[idx_ZBufferMode].Definition,file_hash))
+		if (hash_file("ps_hlsl.fx",profile,ps_macros[idx_ZBufferMode].Definition,file_hash) &&
+			hash_file("ps_hlsl.fx",profile,ps_macros[idx_RadeonRoundfix].Definition,file_hash))
 		{
 			printf("ps_hlsl.fx hash : ");
 			for (int i=0;i<16;i++)

@@ -264,6 +264,20 @@ void handler_ZBufferMode(int  mode)
 	SaveSettings();
 	render_restart=true;
 }
+
+void EXPORT_CALL handler_RadeonRoundfix (u32 id,void* win,void* puser)
+{
+	if (settings.Emulation.RadeonRoundfix)
+		settings.Emulation.RadeonRoundfix=0;
+	else
+		settings.Emulation.RadeonRoundfix=1;
+
+	emu.SetMenuItemStyle(id,settings.Emulation.RadeonRoundfix?MIS_Checked:0,MIS_Checked);
+	
+	SaveSettings();
+	render_restart=true;
+}
+
 u32 AA_mid_menu;
 u32 AA_mid_0;
 
@@ -396,6 +410,8 @@ s32 FASTCALL Load(emu_info* emu_inf)
 	menu_TCM.Add(TCM,L"Delete invalidated",1);
 
 	menu_TCM.SetValue(settings.Emulation.TexCacheMode);
+
+	emu.AddMenuItem(emu.RootMenu,-1,L"Radeon Roundfix (Shader Model 3+ preferably)",handler_RadeonRoundfix,settings.Emulation.RadeonRoundfix);
 
 	AddSeperator(emu.RootMenu);
 	
@@ -621,6 +637,7 @@ void LoadSettings()
 	settings.Emulation.ModVolMode				= 	cfgGetInt(L"Emulation.ModVolMode",MVM_NormalAndClip);
 	settings.Emulation.ZBufferMode				= 	cfgGetInt(L"Emulation.ZBufferMode",4);
 	settings.Emulation.TexCacheMode				= 	cfgGetInt(L"Emulation.TexCacheMode",0);
+	settings.Emulation.RadeonRoundfix			= 	cfgGetInt(L"Emulation.RadeonRoundfix",0) == 0?0:1;	
 
 	settings.OSD.ShowFPS						=	cfgGetInt(L"OSD.ShowFPS",0);
 	settings.OSD.ShowStats						=	cfgGetInt(L"OSD.ShowStats",0);
@@ -641,6 +658,7 @@ void SaveSettings()
 	cfgSetInt(L"Emulation.ModVolMode",settings.Emulation.ModVolMode);
 	cfgSetInt(L"Emulation.ZBufferMode",settings.Emulation.ZBufferMode);
 	cfgSetInt(L"Emulation.TexCacheMode",settings.Emulation.TexCacheMode);
+	cfgSetInt(L"Emulation.RadeonRoundfix",settings.Emulation.RadeonRoundfix);
 
 	cfgSetInt(L"OSD.ShowFPS",settings.OSD.ShowFPS);
 	cfgSetInt(L"OSD.ShowStats",settings.OSD.ShowStats);
