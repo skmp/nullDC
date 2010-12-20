@@ -264,8 +264,7 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 }
 
 bool GetInputXInput(HWND hDlg, int buttonid, int controller)
-{
-	char key[256];	
+{	
 	buttonid += 1000;			
 
 	wchar format[128];	
@@ -286,8 +285,7 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 
 	while(waiting)
 	{					
-		XInputGetState( pad, &xoyinfo[pad].state );
-		GetKeyStatus(key);			
+		XInputGetState(pad, &xoyinfo[pad].state);				
 
 		// AXIS
 		if(xoyinfo[pad].state.Gamepad.sThumbLX >  threshold) 
@@ -450,9 +448,9 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 		// KEYBOARD
 		if(joysticks[controller].keys)
 		{
-			for(int k = 0; k < 256; k++)
+			for(int k = 1; k < 255; k++)
 			{
-				if( key[k] )
+				if(GetAsyncKeyState(k)>>12)
 				{
 					pressed = k;
 					waiting = false;
@@ -488,8 +486,7 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 }
 
 bool GetInputKey(HWND hDlg, int buttonid, int controller)
-{
-	char key[256];	
+{		
 	buttonid += 1000;
 
 	wchar format[128];
@@ -502,16 +499,15 @@ bool GetInputKey(HWND hDlg, int buttonid, int controller)
 	int counter2 = 10;
 	
 	wsprintf(format, L"[%d]", counter2);
-	SetDlgItemText(hDlg, buttonid, format);
+	SetDlgItemText(hDlg, buttonid, format);	
 
 	while(waiting)
-	{					
-		GetKeyStatus(key);		
+	{													
 
-		for(int k = 0; k < 256; k++)
-		{
-			if( key[k] )
-			{
+		for(int k = 1; k < 255; k++)
+		{												
+			if(GetAsyncKeyState(k)>>12)
+			{				
 				pressed = k;
 				waiting = false;
 				succeed = true;
@@ -545,8 +541,7 @@ bool GetInputKey(HWND hDlg, int buttonid, int controller)
 }
 
 bool GetInputSDL(HWND hDlg, int buttonid, int controller)
-{
-	char key[256];	
+{	
 	buttonid += 1000;
 		
 	SDL_Joystick *joy;
@@ -576,8 +571,7 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 	
 	while(waiting)
 	{			
-		SDL_JoystickUpdate();
-		GetKeyStatus(key);
+		SDL_JoystickUpdate();		
 
 		// AXIS
 		for(int b = 0; b < axes; b++)
@@ -657,9 +651,9 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 
 		if(joysticks[controller].keys)
 		{
-			for(int k = 0; k < 256; k++)
+			for(int k = 1; k < 255; k++)
 			{
-				if( key[k] )
+				if(GetAsyncKeyState(k)>>12)
 				{
 					pressed = k;
 					waiting = false;
@@ -755,22 +749,22 @@ void SetControllerAll(HWND hDlg, int controller)
 		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), FALSE);
 		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), TRUE);
 	}
-
-	SetButton(hDlg, IDTEXT_SHOULDERL,	joysticks[controller].control[MAP_LT]);
-	SetButton(hDlg, IDTEXT_SHOULDERR,	joysticks[controller].control[MAP_RT]);
-	SetButton(hDlg, IDTEXT_A,			joysticks[controller].control[MAP_A]);
-	SetButton(hDlg, IDTEXT_B,			joysticks[controller].control[MAP_B]);
-	SetButton(hDlg, IDTEXT_X,			joysticks[controller].control[MAP_X]);
-	SetButton(hDlg, IDTEXT_Y,			joysticks[controller].control[MAP_Y]);
-
-	SetButton(hDlg, IDTEXT_START,		joysticks[controller].control[MAP_START]);
 	
-	SetButton(hDlg, IDTEXT_HALFPRESS,	joysticks[controller].control[MAP_HALF]);
+	SetButton(hDlg, IDTEXT_SHOULDERL,	joysticks[controller].names[MAP_LT]);
+	SetButton(hDlg, IDTEXT_SHOULDERR,	joysticks[controller].names[MAP_RT]);
+	SetButton(hDlg, IDTEXT_A,			joysticks[controller].names[MAP_A]);
+	SetButton(hDlg, IDTEXT_B,			joysticks[controller].names[MAP_B]);
+	SetButton(hDlg, IDTEXT_X,			joysticks[controller].names[MAP_X]);
+	SetButton(hDlg, IDTEXT_Y,			joysticks[controller].names[MAP_Y]);
+
+	SetButton(hDlg, IDTEXT_START,		joysticks[controller].names[MAP_START]);
 	
-	SetButton(hDlg, IDTEXT_MX_L,		joysticks[controller].control[MAP_A_XL]);
-	SetButton(hDlg, IDTEXT_MX_R,		joysticks[controller].control[MAP_A_XR]);
-	SetButton(hDlg, IDTEXT_MY_U,		joysticks[controller].control[MAP_A_YU]);	
-	SetButton(hDlg, IDTEXT_MY_D,		joysticks[controller].control[MAP_A_YD]);
+	SetButton(hDlg, IDTEXT_HALFPRESS,	joysticks[controller].names[MAP_HALF]);
+	
+	SetButton(hDlg, IDTEXT_MX_L,		joysticks[controller].names[MAP_A_XL]);
+	SetButton(hDlg, IDTEXT_MX_R,		joysticks[controller].names[MAP_A_XR]);
+	SetButton(hDlg, IDTEXT_MY_U,		joysticks[controller].names[MAP_A_YU]);	
+	SetButton(hDlg, IDTEXT_MY_D,		joysticks[controller].names[MAP_A_YD]);
 
 	SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_SETCURSEL, joysticks[controller].controllertype, 0);	
 	SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_SETCURSEL, joysticks[controller].deadzone, 0);	
@@ -780,10 +774,11 @@ void SetControllerAll(HWND hDlg, int controller)
 	if(joysticks[controller].keys == 1) CheckDlgButton(hDlg,IDC_KEY, BST_CHECKED);
 	else CheckDlgButton(hDlg,IDC_KEY, BST_UNCHECKED);
 
-	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].control[MAP_D_UP]);
-	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].control[MAP_D_DOWN]);
-	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].control[MAP_D_LEFT]);
-	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].control[MAP_D_RIGHT]);		
+	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].names[MAP_D_UP]);
+	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].names[MAP_D_DOWN]);
+	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].names[MAP_D_LEFT]);
+	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].names[MAP_D_RIGHT]);	
+	
 }
 
 // Get dialog items
@@ -795,26 +790,26 @@ void GetControllerAll(HWND hDlg, int controller)
 	else if(joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_XINPUT)
 		joysticks[controller].ID = (int)SendMessage(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), CB_GETCURSEL, 0, 0); 
 
-	GetButton(hDlg, IDTEXT_SHOULDERL,		joysticks[controller].control[MAP_LT]);
-	GetButton(hDlg, IDTEXT_SHOULDERR,		joysticks[controller].control[MAP_RT]);
-	GetButton(hDlg, IDTEXT_A,				joysticks[controller].control[MAP_A]);
-	GetButton(hDlg, IDTEXT_B,				joysticks[controller].control[MAP_B]);
-	GetButton(hDlg, IDTEXT_X,				joysticks[controller].control[MAP_X]);
-	GetButton(hDlg, IDTEXT_Y,				joysticks[controller].control[MAP_Y]);
+	GetButton(hDlg, IDTEXT_SHOULDERL,		joysticks[controller].names[MAP_LT]);
+	GetButton(hDlg, IDTEXT_SHOULDERR,		joysticks[controller].names[MAP_RT]);
+	GetButton(hDlg, IDTEXT_A,				joysticks[controller].names[MAP_A]);
+	GetButton(hDlg, IDTEXT_B,				joysticks[controller].names[MAP_B]);
+	GetButton(hDlg, IDTEXT_X,				joysticks[controller].names[MAP_X]);
+	GetButton(hDlg, IDTEXT_Y,				joysticks[controller].names[MAP_Y]);
 
-	GetButton(hDlg, IDTEXT_START,			joysticks[controller].control[MAP_START]);
+	GetButton(hDlg, IDTEXT_START,			joysticks[controller].names[MAP_START]);
 	
-	GetButton(hDlg, IDTEXT_HALFPRESS,		joysticks[controller].control[MAP_HALF]);
+	GetButton(hDlg, IDTEXT_HALFPRESS,		joysticks[controller].names[MAP_HALF]);
 		
-	GetButton(hDlg, IDTEXT_DPAD_UP,			joysticks[controller].control[MAP_D_UP]);
-	GetButton(hDlg, IDTEXT_DPAD_DOWN,		joysticks[controller].control[MAP_D_DOWN]);
-	GetButton(hDlg, IDTEXT_DPAD_LEFT,		joysticks[controller].control[MAP_D_LEFT]);
-	GetButton(hDlg, IDTEXT_DPAD_RIGHT,		joysticks[controller].control[MAP_D_RIGHT]);	
+	GetButton(hDlg, IDTEXT_DPAD_UP,			joysticks[controller].names[MAP_D_UP]);
+	GetButton(hDlg, IDTEXT_DPAD_DOWN,		joysticks[controller].names[MAP_D_DOWN]);
+	GetButton(hDlg, IDTEXT_DPAD_LEFT,		joysticks[controller].names[MAP_D_LEFT]);
+	GetButton(hDlg, IDTEXT_DPAD_RIGHT,		joysticks[controller].names[MAP_D_RIGHT]);	
 
-	GetButton(hDlg, IDTEXT_MX_L,			joysticks[controller].control[MAP_A_XL]);
-	GetButton(hDlg, IDTEXT_MX_R,			joysticks[controller].control[MAP_A_XR]);
-	GetButton(hDlg, IDTEXT_MY_U,			joysticks[controller].control[MAP_A_YU]);
-	GetButton(hDlg, IDTEXT_MY_D,			joysticks[controller].control[MAP_A_YD]);
+	GetButton(hDlg, IDTEXT_MX_L,			joysticks[controller].names[MAP_A_XL]);
+	GetButton(hDlg, IDTEXT_MX_R,			joysticks[controller].names[MAP_A_XR]);
+	GetButton(hDlg, IDTEXT_MY_U,			joysticks[controller].names[MAP_A_YU]);
+	GetButton(hDlg, IDTEXT_MY_D,			joysticks[controller].names[MAP_A_YD]);
 	
 	joysticks[current_port].keys = IsDlgButtonChecked(hDlg, IDC_KEY) == BST_CHECKED? 1:0;
 	joysticks[controller].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0); 

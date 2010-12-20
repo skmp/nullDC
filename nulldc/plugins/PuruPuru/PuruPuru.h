@@ -39,17 +39,15 @@
 
 struct CONTROLLER_STATE		// DC PAD INFO/STATE
 {
-	int button[5];			// Amount of buttons (A B X Y Start) 
-	int trigger[2];			// Triggers (L-Trigger R-Trigger)
-	int dpad[4];			// d-pad using buttons
-	int axis[2];			// 2 Axis (Main)
+	int control[13];		// Axis, buttons, dpad, triggers...
 	int halfpress;			// ...	
 	SDL_Joystick *joy;		// SDL joystick device
 };
 
 struct CONTROLLER_MAPPING   // GC PAD MAPPING
 {	
-	wchar control[16][64];		// All of it, Axis are one and only one.
+	wchar names[16][64];
+	int control[16];		// All of it, Axis are one and only one.
 	int enabled;			// Pad attached?
 	int deadzone;			// Deadzone... what else?
 	int keys;
@@ -77,38 +75,53 @@ struct CONTROLLER_INFO_XINPUT
 
 // ENUMS
 
-enum
+enum eController
 {
 	CTL_MAIN_X = 0,
-	CTL_MAIN_Y
-};
+	CTL_MAIN_Y,
 
-enum
-{
-	CTL_L_SHOULDER = 0,
+	CTL_L_SHOULDER,
 	CTL_R_SHOULDER,
-};
 
-enum
-{
-	CTL_A_BUTTON = 0,
+	CTL_A_BUTTON,
 	CTL_B_BUTTON,
 	CTL_X_BUTTON,
 	CTL_Y_BUTTON,
-	CTL_START	
-};
+	CTL_START,
 
-enum
-{
-	CTL_D_PAD_UP = 0,
+	CTL_D_PAD_UP,
 	CTL_D_PAD_DOWN,
 	CTL_D_PAD_LEFT,
-	CTL_D_PAD_RIGHT
+	CTL_D_PAD_RIGHT,
 };
 
-enum
+enum eControllerX
 {
-	CTL_TYPE_JOYSTICK_SDL = 0,	
+	X360_LX,
+	X360_LY,
+	X360_RX,
+	X360_RY,
+	X360_LT,
+	X360_RT,
+	X360_UP,
+	X360_DOWN,
+	X360_LEFT,
+	X360_RIGHT,
+	X360_START,
+	X360_BACK,
+	X360_LS,
+	X360_RS,
+	X360_LB,
+	X360_RB,
+	X360_A,
+	X360_B,
+	X360_X,
+	X360_Y
+};
+
+enum eControllerType
+{
+	CTL_TYPE_JOYSTICK_SDL,	
 	CTL_TYPE_JOYSTICK_XINPUT,
 	CTL_TYPE_KEYBOARD
 };
@@ -117,10 +130,20 @@ enum
 {
 	AXIS,	
 	TRIGGER,
-	DIGITAL	
+	DIGITAL		
 };
 
-enum
+enum eInputType
+{
+	inAXIS_0 = 1, // Axis-, Axis+
+	inAXIS_1,
+	inBUTTON,
+	inHAT,
+	inTRIGGER,
+	inKEY
+}; 
+
+enum eMappedController
 {
 	MAP_LT = 0,
 	MAP_RT,
@@ -159,7 +182,7 @@ void FASTCALL Destroy(void* data,u32 id);
 // Other
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
 
-void GetKeyStatus(char* keys);
+void GetKeyStatus(int port, char* keys);
 void GetJoyStatus(int controller);
 
 void EXPORT_CALL ConfigMenuCallback(u32 id,void* w,void* p);
