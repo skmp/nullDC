@@ -356,22 +356,22 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 			// Set button
 			u16 kcode[4]={0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF};
 
-			if( joystate[port].button[CTL_A_BUTTON] )	kcode[port] ^= key_CONT_A;
-			if( joystate[port].button[CTL_B_BUTTON] )	kcode[port] ^= key_CONT_B;
-			if( joystate[port].button[CTL_X_BUTTON] )	kcode[port] ^= key_CONT_X;
-			if( joystate[port].button[CTL_Y_BUTTON] )	kcode[port] ^= key_CONT_Y;			
-			if( joystate[port].button[CTL_START]    )	kcode[port] ^= key_CONT_START;
+			if( joystate[port].control[CTL_A_BUTTON] )	kcode[port] ^= key_CONT_A;
+			if( joystate[port].control[CTL_B_BUTTON] )	kcode[port] ^= key_CONT_B;
+			if( joystate[port].control[CTL_X_BUTTON] )	kcode[port] ^= key_CONT_X;
+			if( joystate[port].control[CTL_Y_BUTTON] )	kcode[port] ^= key_CONT_Y;			
+			if( joystate[port].control[CTL_START]    )	kcode[port] ^= key_CONT_START;
 												
-			if( joystate[port].dpad[CTL_D_PAD_UP]    )	kcode[port] ^= key_CONT_DPAD_UP;
-			if( joystate[port].dpad[CTL_D_PAD_DOWN]  )	kcode[port] ^= key_CONT_DPAD_DOWN;			
-			if( joystate[port].dpad[CTL_D_PAD_LEFT]  )	kcode[port] ^= key_CONT_DPAD_LEFT;			
-			if( joystate[port].dpad[CTL_D_PAD_RIGHT] )	kcode[port] ^= key_CONT_DPAD_RIGHT;		
+			if( joystate[port].control[CTL_D_PAD_UP]    )	kcode[port] ^= key_CONT_DPAD_UP;
+			if( joystate[port].control[CTL_D_PAD_DOWN]  )	kcode[port] ^= key_CONT_DPAD_DOWN;			
+			if( joystate[port].control[CTL_D_PAD_LEFT]  )	kcode[port] ^= key_CONT_DPAD_LEFT;			
+			if( joystate[port].control[CTL_D_PAD_RIGHT] )	kcode[port] ^= key_CONT_DPAD_RIGHT;		
 			
 			w16(kcode[port] | 0xF901); //0xF901 -> buttons that are allways up on a dc
 			
 			// Set triggers		
-			w8(joystate[port].trigger[CTL_R_SHOULDER]);										
-			w8(joystate[port].trigger[CTL_L_SHOULDER]);				
+			w8(joystate[port].control[CTL_R_SHOULDER]);										
+			w8(joystate[port].control[CTL_L_SHOULDER]);				
 	
 			// Set Analog sticks (Main)
 			// Reset!
@@ -386,8 +386,8 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 			// The value returned by SDL_JoystickGetAxis is a signed integer (-32768 to 32767)
 			// The value used for the gamecube controller is an unsigned char (0 to 255)
 			
-			float main_stick_x = (float)joystate[port].axis[CTL_MAIN_X];
-			float main_stick_y = (float)joystate[port].axis[CTL_MAIN_Y];						
+			float main_stick_x = (float)joystate[port].control[CTL_MAIN_X];
+			float main_stick_y = (float)joystate[port].control[CTL_MAIN_Y];						
 			
 			float radius = sqrt(main_stick_x*main_stick_x + main_stick_y*main_stick_y);
 
@@ -431,38 +431,31 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 	}
 }
 
-void GetKeyStatus(char* keys)
+void GetKeyStatus(int port, char* keys)
 {	
-	for (int k = 0; k < 256; k += 4)
-	 {
-		keys[k]   = (char)(GetAsyncKeyState(k)   >> 8);
-		keys[k+1] = (char)(GetAsyncKeyState(k+1) >> 8);
-		keys[k+2] = (char)(GetAsyncKeyState(k+2) >> 8);
-		keys[k+3] = (char)(GetAsyncKeyState(k+3) >> 8);
-	 }	 
+	for(int i=0; i<16; i++)
+	{
+		if((joysticks[port].control[i]>>24) & inKEY)
+		{
+			int num = joysticks[port].control[i] & 0xFF;
+			keys[num] = (char)(GetAsyncKeyState(num)>>12);
+		}
+	}		
 }
 
-int GetStatusKey (int port, int type, wchar* input )
+int GetStatusKey (int port, int type, int input)
 {
-	char key[256];
-	GetKeyStatus(key);			
+	char key[256] = {0};
+	GetKeyStatus(port, key);			
 
-	int num = _wtoi(&input[1]);		
+	int num = input & 0xFF;
 
-	if(input[0] == L'K')
+	if((input>>24) & inKEY)
 	{
 		switch(type)
 		{
-			case AXIS:
-				{					
-					if(key[num]) return 32767;
-					else		 return 0;													
-				}
-			case TRIGGER:
-				{													
-					if(key[num]) return 255;
-					else		 return 0;				
-				}				
+			case AXIS:	  return key[num]? 32767:0;				
+			case TRIGGER: return key[num]? 255:0;
 			case DIGITAL: return key[num];				
 		}
 	}
@@ -470,734 +463,701 @@ int GetStatusKey (int port, int type, wchar* input )
 	return 0;
 }
 
-int GetStateXInput (int port, int type, wchar* input )
-{	
+int GetStateXInput (int port, int type, int input)
+{			
+	char key[256] = {0};
+	if(joysticks[port].keys) GetKeyStatus(port, key);		
+		
 	XInputGetState( joysticks[port].ID, &xoyinfo[port].state );
 	port = joysticks[port].ID;	
 
-	char key[256];
-	if(joysticks[port].keys) GetKeyStatus(key);		
-		
-	int num = _wtoi(&input[1]);
+	int num = input & 0xFF;
+	int mode = input >> 24;
 
 	switch(type)
 	{
-		case AXIS:
+	case AXIS:
+		{
+			switch(mode)
 			{
-				if(input[0] == L'L' && input[1] == L'X' && input[2] == '+')
+			case inAXIS_0:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'X' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
-
-					if(axis < 0) return  -axis;
-					else		 return   0;
-				}
-				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '+')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
-
-					if(axis < 0) return  -axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '+')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
-
-					if(axis < 0) return  -axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '+')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
-
-					if(axis < 0) return  -axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'T')
-				{
-					return xoyinfo[port].state.Gamepad.bLeftTrigger * 128;
-				}
-				else if(input[0] == L'R' && input[1] == L'T')
-				{
-					return xoyinfo[port].state.Gamepad.bRightTrigger * 128;
-				}
-				else if(input[0] == L'U' && input[1] == L'P')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'D' && input[1] == L'O' && input[2] == 'W')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'E' && input[2] == 'F')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'I' && input[2] == 'G')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'S' && input[1] == L'T' && input[2] == 'A')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'B' && input[1] == L'A' && input[2] == 'C')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'S')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'S')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'B')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'B')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'A' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'B' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'X' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'Y' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)
-						return 32767;
-					else
-						return 0;
-				}
-				else if(input[0] == L'K')
-				{
-					if(key[num]) return 32767;
-					else		 return 0;
-				}
-						
-			}
-		case TRIGGER:
-			{
-				if(input[0] == L'L' && input[1] == L'X' && input[2] == '+')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX/128;
-
-					if(axis > 255) axis = 255;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'X' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX/128;
-
-					if(axis < -255) axis = -255;
-
-					if(axis < 0) return  -axis;
-					else		 return   0;
-				}
-				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '+')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY/128;
-
-					if(axis > 255) axis = 255;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY/128;
-
-					if(axis < -255) axis = -255;
-
-					if(axis < 0) return  -axis;
-					else		 return   0;
-				}
-				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '+')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX/128;
-
-					if(axis > 255) axis = 255;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX/128;
-
-					if(axis < -255) axis = -255;
-
-					if(axis < 0) return  -axis;
-					else		 return   0;
-				}
-				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '+')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY/128;
-
-					if(axis > 255) axis = 255;
-
-					if(axis > 0) return  axis;
-					else		 return	 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '-')
-				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY/128;
-
-					if(axis < -255) axis = -255;
-
-					if(axis < 0) return  -axis;
-					else		 return   0;
-				}
-				else if(input[0] == L'L' && input[1] == L'T')
-				{
-					return xoyinfo[port].state.Gamepad.bLeftTrigger;
-				}
-				else if(input[0] == L'R' && input[1] == L'T')
-				{
-					return xoyinfo[port].state.Gamepad.bRightTrigger;
-				}
-				else if(input[0] == L'U' && input[1] == L'P')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'D' && input[1] == L'O' && input[2] == 'W')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'E' && input[2] == 'F')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'I' && input[2] == 'G')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'S' && input[1] == L'T' && input[2] == 'A')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'B' && input[1] == L'A' && input[2] == 'C')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'S')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'S')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'L' && input[1] == L'B')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'R' && input[1] == L'B')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'A' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'B' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'X' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'Y' && input[1] == '.')
-				{
-					if( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)
-						return 255;
-					else
-						return 0;
-				}
-				else if(input[0] == L'K')
+					switch(num)
 					{
-						if(key[num]) return 255;
-						else		 return 0;
+					case X360_LX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+							if(axis < 0) return  -axis;
+							else		 return   0;
+						}
+					case X360_LY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+							if(axis < 0) return  -axis;
+							else		 return	 0;
+						}
+					case X360_RX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+							if(axis < 0) return  -axis;
+							else		 return	 0;
+						}
+					case X360_RY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+							if(axis < 0) return  -axis;
+							else		 return	 0;
+						}
 					}
-						
+				}
+			case inAXIS_1:
+				{
+					switch(num)
+					{
+					case X360_LX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+
+							if(axis > 0) return  axis;
+							else		 return   0;
+						}
+					case X360_LY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+
+							if(axis > 0) return  axis;
+							else		 return	 0;
+						}
+					case X360_RX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+
+							if(axis > 0) return  axis;
+							else		 return	 0;
+						}
+					case X360_RY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+
+							if(axis > 0) return  axis;
+							else		 return	 0;
+						}
+					}
+				}
+			case inTRIGGER:
+				{
+					if(num == X360_LT)
+						return xoyinfo[port].state.Gamepad.bLeftTrigger * 128;
+					else
+						return xoyinfo[port].state.Gamepad.bRightTrigger * 128;
+				}
+			case inHAT:
+				{
+					switch(num)
+					{
+					case X360_UP:
+						{							
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)?32767:0;
+						}
+					case X360_DOWN:
+						{							
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)?32767:0;
+						}
+					case X360_LEFT:
+						{							
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)?32767:0;
+						}
+					case X360_RIGHT:
+						{							
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?32767:0;
+						}
+					}
+				}
+			case inBUTTON:
+				{
+					switch(num)
+					{	
+					case X360_START:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START)?32767:0;
+						}
+					case X360_BACK:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)?32767:0;
+						}
+					case X360_LS:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)?32767:0;
+						}
+					case X360_RS:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)?32767:0;
+						}
+					case X360_LB:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)?32767:0;
+						}
+					case X360_RB:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)?32767:0;
+						}
+					case X360_A:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)?32767:0;
+						}
+					case X360_B:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)?32767:0;
+						}
+					case X360_X:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)?32767:0;
+						}
+					case X360_Y:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)?32767:0;
+						}
+					}
+				}
+			case inKEY:
+				{					
+					return (key[num])?32767:0;
+				}
 			}				
-		case DIGITAL:	
-			{				
-				if(input[0] == L'L' && input[1] == L'X' && input[2] == '+')
+		}
+	case TRIGGER:
+		{
+			switch(mode)
+			{
+			case inAXIS_0:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+					switch(num)
+					{
+					case X360_LX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX/128;							
 
-					if(axis > 22000) return  1;
-					else			 return	 0;
+							if(axis < 0)
+							{
+								if(axis < -255) axis = -255;
+								return  -axis;
+							}
+							else return   0;
+						}
+					case X360_LY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY/128;
+
+							if(axis < 0)
+							{
+								if(axis < -255) axis = -255;
+								return  -axis;
+							}
+							else return   0;
+						}
+					case X360_RX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX/128;
+
+							if(axis < 0)
+							{
+								if(axis < -255) axis = -255;
+								return  -axis;
+							}
+							else return   0;
+						}
+					case X360_RY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY/128;
+
+							if(axis < 0)
+							{
+								if(axis < -255) axis = -255;
+								return  -axis;
+							}
+							else return   0;
+						}
+					}
 				}
-				else if(input[0] == L'L' && input[1] == L'X' && input[2] == '-')
+			case inAXIS_1:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+					switch(num)
+					{
+					case X360_LX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX/128;							
 
-					if(axis < -22000) return  1;
-					else		 	 return	 0;
+							if(axis > 0)
+							{
+								if(axis > 255) axis = 255;
+								return  axis;
+							}
+							else return	 0;
+						}
+					case X360_LY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY/128;
+
+							if(axis > 0)
+							{
+								if(axis > 255) axis = 255;
+								return  axis;
+							}
+							else return	 0;
+						}
+					case X360_RX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX/128;
+
+							if(axis > 0)
+							{
+								if(axis > 255) axis = 255;
+								return  axis;
+							}
+							else return	 0;
+						}
+					case X360_RY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY/128;
+
+							if(axis > 0)
+							{
+								if(axis > 255) axis = 255;
+								return  axis;
+							}
+							else return	 0;
+						}
+					}
 				}
-				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '+')
+			case inTRIGGER:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
-
-					if(axis > 22000) return  1;
-					else			 return	 0;
+					if(num == X360_LT)
+						return xoyinfo[port].state.Gamepad.bLeftTrigger;
+					else if(num == X360_RT)
+						return xoyinfo[port].state.Gamepad.bRightTrigger;
 				}
-				else if(input[0] == L'L' && input[1] == L'Y' && input[2] == '-')
+			case inHAT:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
-
-					if(axis < -22000) return  1;
-					else			 return	 0;
+					switch(num)
+					{
+					case X360_UP:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP)?255:0;
+						}
+					case X360_DOWN:
+						{	
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN)?255:0;
+						}
+					case X360_LEFT:
+						{							
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT)?255:0;
+						}
+					case X360_RIGHT:
+						{							
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT)?255:0;
+						}
+					}
 				}
-				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '+')
+			case inBUTTON:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
-
-					if(axis > 22000) return  1;
-					else			 return	 0;
+					switch(num)
+					{	
+					case X360_START:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START)?255:0;
+						}
+					case X360_BACK:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK)?255:0;
+						}
+					case X360_LS:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB)?255:0;
+						}
+					case X360_RS:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB)?255:0;
+						}
+					case X360_LB:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER)?255:0;
+						}
+					case X360_RB:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER)?255:0;
+						}
+					case X360_A:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A)?255:0;
+						}
+					case X360_B:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B)?255:0;
+						}
+					case X360_X:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X)?255:0;
+						}
+					case X360_Y:
+						{
+							return (xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y)?255:0;
+						}
+					}
 				}
-				else if(input[0] == L'R' && input[1] == L'X' && input[2] == '-')
+			case inKEY:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
-
-					if(axis < -22000) return  1;
-					else			 return	 0;
+					return (key[num])?255:0;					
 				}
-				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '+')
+			}												
+		}				
+	case DIGITAL:	
+		{				
+			switch(mode)
+			{
+			case inAXIS_0:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
-
-					if(axis > 22000) return  1;
-					else			 return	 0;
+					switch(num)
+					{
+					case X360_LX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+							return (axis < -22000)?1:0;							
+						}
+					case X360_LY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+							return (axis < -22000)?1:0;
+						}
+					case X360_RX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+							return (axis < -22000)?1:0;
+						}
+					case X360_RY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+							return (axis < -22000)?1:0;
+						}
+					}
 				}
-				else if(input[0] == L'R' && input[1] == L'Y' && input[2] == '-')
+			case inAXIS_1:
 				{
-					SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
-
-					if(axis < -22000) return  1;
-					else			 return	 0;
+					switch(num)
+					{
+					case X360_LX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLX;
+							return (axis > 22000)?1:0;							
+						}
+					case X360_LY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbLY;
+							return (axis > 22000)?1:0;
+						}
+					case X360_RX:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRX;
+							return (axis > 22000)?1:0;
+						}
+					case X360_RY:
+						{
+							SHORT axis = xoyinfo[port].state.Gamepad.sThumbRY;
+							return (axis > 22000)?1:0;
+						}
+					}
 				}
-				else if(input[0] == L'L' && input[1] == L'T')
+			case inTRIGGER:
 				{
-					if(xoyinfo[port].state.Gamepad.bLeftTrigger > 100) 
-						return 1;
-					else
-						return 0;										
+					if(num == X360_LT) 
+						return (xoyinfo[port].state.Gamepad.bLeftTrigger > 100)?1:0;
+					else if(num == X360_RT) 
+						return (xoyinfo[port].state.Gamepad.bLeftTrigger > 100)?1:0;
 				}
-				else if(input[0] == L'R' && input[1] == L'T')
+			case inHAT:
 				{
-					if(xoyinfo[port].state.Gamepad.bRightTrigger > 100)
-						return 1;
-					else
-						return 0;
+					switch(num)
+					{
+					case X360_UP:
+						{
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP);
+						}
+					case X360_DOWN:
+						{	
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN);
+						}
+					case X360_LEFT:
+						{
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT);
+						}
+					case X360_RIGHT:
+						{
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);
+						}
+					}
 				}
-				else if(input[0] == L'U' && input[1] == L'P')  
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_UP);			
-				else if(input[0] == L'D' && input[1] == L'O' && input[2] == 'W')
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN);				
-				else if(input[0] == L'L' && input[1] == L'E' && input[2] == 'F')
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT);				
-				else if(input[0] == L'R' && input[1] == L'I' && input[2] == 'G')
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT);				
-				else if(input[0] == L'S' && input[1] == L'T' && input[2] == 'A')
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START);								
-				else if(input[0] == L'B' && input[1] == L'A' && input[2] == 'C')
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK);
-
-				else if(input[0] == L'L' && input[1] == L'S')
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB);				
-				else if(input[0] == L'R' && input[1] == L'S')   
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);
-				else if(input[0] == L'L' && input[1] == L'B')   
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
-				else if(input[0] == L'R' && input[1] == L'B')
-					return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);				
-
-				else if(input[0] == L'A' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A);				
-				else if(input[0] == L'B' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B);				
-				else if(input[0] == L'X' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X);				
-				else if(input[0] == L'Y' && input[1] == '.') return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y);				
-				else if(input[0] == L'K') return key[num];		
-				
-						
-			}
+			case inBUTTON:
+				{
+					switch(num)
+					{	
+					case X360_START:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_START);
+						}
+					case X360_BACK:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_BACK);
+						}
+					case X360_LS:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_THUMB);
+						}
+					case X360_RS:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_THUMB);
+						}
+					case X360_LB:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_LEFT_SHOULDER);
+						}
+					case X360_RB:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_RIGHT_SHOULDER);
+						}
+					case X360_A:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_A);
+						}
+					case X360_B:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_B);
+						}
+					case X360_X:
+						{						
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_X);
+						}
+					case X360_Y:
+						{							
+							return( xoyinfo[port].state.Gamepad.wButtons & XINPUT_GAMEPAD_Y);
+						}
+					}
+				}
+			case inKEY:
+				{
+					return key[num];					
+				}
+			}					
+		}
 	}
-
+	
 	return 0;
 }
 
 
 // 22000 AXIS to BUTTON threshold.
 
-int GetStateSDL (int port, int type, wchar* input )
+int GetStateSDL (int port, int type, int input)
 {							
+	char key[256] = {0};
+	if(joysticks[port].keys) GetKeyStatus(port, key);
+	
 	port = joysticks[port].ID;
 
-	char key[256];
-	if(joysticks[port].keys) GetKeyStatus(key);
-
-	int num = _wtoi(&input[1]); // wtoi Works a lot better than I thought.
-	bool plus = false;
-
-	if(input[0] == 'A' && input[sizeof(input)/2] == '+') plus = true;	
-
-	int currentHat = SDL_JoystickGetHat(joystate[port].joy, 0);
+	int num = input & 0xFF;
+	int mode = input >> 24;
+	int currentHat = SDL_JoystickGetHat(joystate[port].joy, 0);	
 
 	switch(type)
 	{
-		case AXIS:
+	case AXIS:
+		{
+			switch(mode)
 			{
-				switch(input[0])
+			case inAXIS_0: 
 				{
-				case L'A': 
-					{
-						int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
-						
-						if(plus)
-						{
-							if(axis > 0)  return  axis;						
-							else		  return 0;
-						}
-						else
-						{
-							if(axis < 0)  return -axis;						
-							else		  return 0;
-						}
-					}
-				case L'B':
-					{
-						if( SDL_JoystickGetButton(joystate[port].joy, num) )
-							return 32767;
-						else
-							return 0;
-					}
-				case L'H':
-					{
-						if(num & currentHat) return 32767;
-						else				 return 0;	
-					}
-				case L'K':
-					{
-						if(key[num]) return 32767;
-						else		 return 0;
-					}
-				}				
-			}
-		case TRIGGER:
-			{
-				switch(input[0])
-				{
-				case L'A': 
-					{
-					
-						int axis = SDL_JoystickGetAxis(joystate[port].joy, num)/128;
+					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
 
-						if(plus)
-						{
-							if(axis > 255) axis = 255;							
-							
-							if(axis > 0)  return  axis;						
-							else				  return 0;
-						}
-						else
-						{
-							if(axis < -255) axis = -255;
-							
-							if(axis < 0)  return -axis;						
-							else				  return 0;
-						}
-						
-						
-					
-					}
-				case L'B': 
-					{
-						if( SDL_JoystickGetButton(joystate[port].joy, num) )
-							return 255;
-						else
-							return 0;
-					}
-				case L'H': 
-					{
-						if(num & currentHat) return 255;
-						else				 return 0;	
-					}
-				case L'K':
-					{
-						if(key[num]) return 255;
-						else		 return 0;
-					}
+					if(axis < 0)  return -axis;						
+					else		  return 0;					
+				}
+			case inAXIS_1: 
+				{
+					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+											
+					if(axis > 0)  return  axis;						
+					else		  return 0;										
+				}
+			case inBUTTON:
+				{
+					if( SDL_JoystickGetButton(joystate[port].joy, num) )
+						return 32767;
+					else
+						return 0;
+				}
+			case inHAT:
+				{
+					if(num & currentHat) return 32767;
+					else				 return 0;	
+				}
+			case inKEY:
+				{
+					if(key[num]) return 32767;
+					else		 return 0;
 				}
 			}				
-		case DIGITAL:	
+		}
+	case TRIGGER:
+		{
+			switch(mode)
 			{
-				switch(input[0])
+			case inAXIS_0: 
 				{
-				case L'A': 
-					{						
-						int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+					
+					int axis = SDL_JoystickGetAxis(joystate[port].joy, num)/128;										
+							
+					if(axis < 0)
+					{
+						if(axis < -255) axis = -255;						
 						
-						if(plus)
-						{
-							if(axis > 22000) return 1;
-							else		     return 0;
-						}
-						else						
-						{
-							if(axis <-22000) return 1;
-							else             return 0;
-						}
+						return -axis;
 					}
-				case L'B': return SDL_JoystickGetButton(joystate[port].joy, num);
-				case L'H': 
-					{	
-						if(num & currentHat) return 1;
-						else				 return 0;						
+					else return 0;
+					
+				}
+			case inAXIS_1: 
+				{
+					
+					int axis = SDL_JoystickGetAxis(joystate[port].joy, num)/128;										
+							
+					if(axis > 0)
+					{
+						if(axis > 255) axis = 255;
+
+						return  axis;
 					}
-				case L'K': return key[num];
+					else return 0;
+					
+				}
+			case inBUTTON: 
+				{
+					if( SDL_JoystickGetButton(joystate[port].joy, num) )
+						return 255;
+					else
+						return 0;
+				}
+			case inHAT: 
+				{
+					if(num & currentHat) return 255;
+					else				 return 0;	
+				}
+			case inKEY:
+				{
+					if(key[num]) return 255;
+					else		 return 0;
 				}
 			}
+		}				
+	case DIGITAL:	
+		{
+			switch(mode)
+			{
+			case inAXIS_0: 
+				{						
+					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+											
+					if(axis <-22000) return 1;
+					else             return 0;					
+				}
+			case inAXIS_1: 
+				{						
+					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+					
+					if(axis > 22000) return 1;
+					else		     return 0;										
+				}
+			case inBUTTON:
+				{
+					return SDL_JoystickGetButton(joystate[port].joy, num);
+				}
+			case inHAT: 
+				{	
+					if(num & currentHat) return 1;
+					else				 return 0;						
+				}
+			case inKEY: 
+				{
+					return key[num];
+				}
+			}
+		}
 	}
 
 	return 0;
 }
 
+int GetInputStatus(int port, int type, int input)
+{		
+	switch(joysticks[port].controllertype)
+	{
+	case CTL_TYPE_JOYSTICK_SDL: 
+		{
+			SDL_JoystickUpdate(); 
+			return GetStateSDL(port, type, input);
+		}
+
+	case CTL_TYPE_JOYSTICK_XINPUT:
+		{
+			XInputGetState(port, &xoyinfo[port].state); 
+			return GetStateXInput(port, type, input);
+		}
+	case CTL_TYPE_KEYBOARD:
+		{
+			return GetStatusKey(port, type, input);
+		}
+	}
+
+	return 0;
+}
+
+
 void GetJoyStatus(int controller)
 {	
-	if(joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_SDL)
-	{	
-		SDL_JoystickUpdate();
+		joystate[controller].control[CTL_MAIN_X] = 0;
+		joystate[controller].control[CTL_MAIN_Y] = 0;
 
-		joystate[controller].axis[CTL_MAIN_X] = 0;
-		joystate[controller].axis[CTL_MAIN_Y] = 0;
-
-		joystate[controller].axis[CTL_MAIN_X] -= GetStateSDL( controller, AXIS, joysticks[controller].control[MAP_A_XL] );
-		joystate[controller].axis[CTL_MAIN_X] += GetStateSDL( controller, AXIS, joysticks[controller].control[MAP_A_XR] );				
+		joystate[controller].control[CTL_MAIN_X] -= GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_XL]);
+		joystate[controller].control[CTL_MAIN_X] += GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_XR]);				
 		
-		joystate[controller].axis[CTL_MAIN_Y] -= GetStateSDL( controller, AXIS, joysticks[controller].control[MAP_A_YU] );		
-		joystate[controller].axis[CTL_MAIN_Y] += GetStateSDL( controller, AXIS, joysticks[controller].control[MAP_A_YD] );		
+		joystate[controller].control[CTL_MAIN_Y] -= GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YU]);		
+		joystate[controller].control[CTL_MAIN_Y] += GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YD]);		
 
-		joystate[controller].halfpress = GetStateSDL( controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
+		joystate[controller].halfpress = GetInputStatus(controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
 
-		joystate[controller].trigger[CTL_L_SHOULDER] = GetStateSDL( controller, TRIGGER, joysticks[controller].control[MAP_LT] );
-		joystate[controller].trigger[CTL_R_SHOULDER] = GetStateSDL( controller, TRIGGER, joysticks[controller].control[MAP_RT] );
+		joystate[controller].control[CTL_L_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_LT]);
+		joystate[controller].control[CTL_R_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_RT]);
 		
 		if ( joystate[controller].halfpress ) 
 		{
-			joystate[controller].trigger[CTL_L_SHOULDER] /= 2;
-			joystate[controller].trigger[CTL_R_SHOULDER] /= 2;
+			joystate[controller].control[CTL_L_SHOULDER] /= 2;
+			joystate[controller].control[CTL_R_SHOULDER] /= 2;
 
-			joystate[controller].axis[CTL_MAIN_X] /= 2;
-			joystate[controller].axis[CTL_MAIN_Y] /= 2;
+			joystate[controller].control[CTL_MAIN_X] /= 2;
+			joystate[controller].control[CTL_MAIN_Y] /= 2;
 		}				
 				
-		joystate[controller].button[CTL_A_BUTTON]   = GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_A] );
-		joystate[controller].button[CTL_B_BUTTON]   = GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_B] );
-		joystate[controller].button[CTL_X_BUTTON]   = GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_X] );
-		joystate[controller].button[CTL_Y_BUTTON]   = GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_Y] );
-		joystate[controller].button[CTL_START]	    = GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_START] );				
+		joystate[controller].control[CTL_A_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_A]);
+		joystate[controller].control[CTL_B_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_B]);
+		joystate[controller].control[CTL_X_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_X]);
+		joystate[controller].control[CTL_Y_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_Y]);
+		joystate[controller].control[CTL_START]	   = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_START]);				
 
-		joystate[controller].dpad[CTL_D_PAD_UP]		= GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_D_UP] );
-		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
-		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
-		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStateSDL( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );
-	}
-	else if(joysticks[controller].controllertype ==  CTL_TYPE_JOYSTICK_XINPUT)
-	{
-		XInputGetState( controller, &xoyinfo[controller].state );
-
-		joystate[controller].axis[CTL_MAIN_X] = 0;
-		joystate[controller].axis[CTL_MAIN_Y] = 0;
-
-		joystate[controller].axis[CTL_MAIN_X] -= GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_XL] );
-		joystate[controller].axis[CTL_MAIN_X] += GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_XR] );				
-		
-		joystate[controller].axis[CTL_MAIN_Y] -= GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_YU] );		
-		joystate[controller].axis[CTL_MAIN_Y] += GetStateXInput( controller, AXIS, joysticks[controller].control[MAP_A_YD] );		
-
-		joystate[controller].halfpress = GetStateXInput( controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
-
-		joystate[controller].trigger[CTL_L_SHOULDER] = GetStateXInput( controller, TRIGGER, joysticks[controller].control[MAP_LT] );
-		joystate[controller].trigger[CTL_R_SHOULDER] = GetStateXInput( controller, TRIGGER, joysticks[controller].control[MAP_RT] );
-		
-		if ( joystate[controller].halfpress ) 
-		{
-			joystate[controller].trigger[CTL_L_SHOULDER] /= 2;
-			joystate[controller].trigger[CTL_R_SHOULDER] /= 2;
-
-			joystate[controller].axis[CTL_MAIN_X] /= 2;
-			joystate[controller].axis[CTL_MAIN_Y] /= 2;
-		}				
-				
-		joystate[controller].button[CTL_A_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_A] );
-		joystate[controller].button[CTL_B_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_B] );
-		joystate[controller].button[CTL_X_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_X] );
-		joystate[controller].button[CTL_Y_BUTTON]   = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_Y] );
-		joystate[controller].button[CTL_START]	    = GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_START] );				
-
-		joystate[controller].dpad[CTL_D_PAD_UP]		= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_UP] );
-		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
-		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
-		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStateXInput( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );
-	}
-	else if(joysticks[controller].controllertype == CTL_TYPE_KEYBOARD)
-	{			
-		joystate[controller].axis[CTL_MAIN_X] = 0;
-		joystate[controller].axis[CTL_MAIN_Y] = 0;
-
-		joystate[controller].axis[CTL_MAIN_X] -= GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_XL] );
-		joystate[controller].axis[CTL_MAIN_X] += GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_XR] );				
-		
-		joystate[controller].axis[CTL_MAIN_Y] -= GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_YU] );		
-		joystate[controller].axis[CTL_MAIN_Y] += GetStatusKey( controller, AXIS, joysticks[controller].control[MAP_A_YD] );		
-
-		joystate[controller].halfpress = GetStatusKey( controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
-
-		joystate[controller].trigger[CTL_L_SHOULDER] = GetStatusKey( controller, TRIGGER, joysticks[controller].control[MAP_LT] );
-		joystate[controller].trigger[CTL_R_SHOULDER] = GetStatusKey( controller, TRIGGER, joysticks[controller].control[MAP_RT] );
-		
-		if ( joystate[controller].halfpress ) 
-		{
-			joystate[controller].trigger[CTL_L_SHOULDER] /= 2;
-			joystate[controller].trigger[CTL_R_SHOULDER] /= 2;
-
-			joystate[controller].axis[CTL_MAIN_X] /= 2;
-			joystate[controller].axis[CTL_MAIN_Y] /= 2;
-		}				
-				
-		joystate[controller].button[CTL_A_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_A] );
-		joystate[controller].button[CTL_B_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_B] );
-		joystate[controller].button[CTL_X_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_X] );
-		joystate[controller].button[CTL_Y_BUTTON]   = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_Y] );
-		joystate[controller].button[CTL_START]	    = GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_START] );				
-
-		joystate[controller].dpad[CTL_D_PAD_UP]		= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_UP] );
-		joystate[controller].dpad[CTL_D_PAD_DOWN]	= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN] );	
-		joystate[controller].dpad[CTL_D_PAD_LEFT]	= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT] );
-		joystate[controller].dpad[CTL_D_PAD_RIGHT]	= GetStatusKey( controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT] );		
-	}
-	
+		joystate[controller].control[CTL_D_PAD_UP]	  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_UP]);
+		joystate[controller].control[CTL_D_PAD_DOWN]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN]);	
+		joystate[controller].control[CTL_D_PAD_LEFT]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT]);
+		joystate[controller].control[CTL_D_PAD_RIGHT] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT]);	
 }
 
 // ConfigMenuCallback
@@ -1230,24 +1190,24 @@ void SaveConfig()
 	wchar SectionName[32];
 	for (int port=0;port<4;port++)
 	{		
-		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
+		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);		
 						
-		host.ConfigSaveStr(SectionName, L"l_shoulder",		joysticks[port].control[MAP_LT]);
-		host.ConfigSaveStr(SectionName, L"r_shoulder",		joysticks[port].control[MAP_RT]);
-		host.ConfigSaveStr(SectionName, L"a_button",		joysticks[port].control[MAP_A]);
-		host.ConfigSaveStr(SectionName, L"b_button",		joysticks[port].control[MAP_B]);
-		host.ConfigSaveStr(SectionName, L"x_button",		joysticks[port].control[MAP_X]);
-		host.ConfigSaveStr(SectionName, L"y_button",		joysticks[port].control[MAP_Y]);
-		host.ConfigSaveStr(SectionName, L"start_button",	joysticks[port].control[MAP_START]);		
-		host.ConfigSaveStr(SectionName, L"dpad_up",			joysticks[port].control[MAP_D_UP]);
-		host.ConfigSaveStr(SectionName, L"dpad_down",		joysticks[port].control[MAP_D_DOWN]);
-		host.ConfigSaveStr(SectionName, L"dpad_left",		joysticks[port].control[MAP_D_LEFT]);
-		host.ConfigSaveStr(SectionName, L"dpad_right",		joysticks[port].control[MAP_D_RIGHT]);
-		host.ConfigSaveStr(SectionName, L"main_x_left",		joysticks[port].control[MAP_A_XL]);
-		host.ConfigSaveStr(SectionName, L"main_x_right",	joysticks[port].control[MAP_A_XR]);
-		host.ConfigSaveStr(SectionName, L"main_y_up",		joysticks[port].control[MAP_A_YU]);				
-		host.ConfigSaveStr(SectionName, L"main_y_down",		joysticks[port].control[MAP_A_YD]);
-		host.ConfigSaveStr(SectionName, L"halfpress",		joysticks[port].control[MAP_HALF]);
+		host.ConfigSaveStr(SectionName, L"l_shoulder",		joysticks[port].names[MAP_LT]);
+		host.ConfigSaveStr(SectionName, L"r_shoulder",		joysticks[port].names[MAP_RT]);
+		host.ConfigSaveStr(SectionName, L"a_button",		joysticks[port].names[MAP_A]);
+		host.ConfigSaveStr(SectionName, L"b_button",		joysticks[port].names[MAP_B]);
+		host.ConfigSaveStr(SectionName, L"x_button",		joysticks[port].names[MAP_X]);
+		host.ConfigSaveStr(SectionName, L"y_button",		joysticks[port].names[MAP_Y]);
+		host.ConfigSaveStr(SectionName, L"start_button",	joysticks[port].names[MAP_START]);		
+		host.ConfigSaveStr(SectionName, L"dpad_up",			joysticks[port].names[MAP_D_UP]);
+		host.ConfigSaveStr(SectionName, L"dpad_down",		joysticks[port].names[MAP_D_DOWN]);
+		host.ConfigSaveStr(SectionName, L"dpad_left",		joysticks[port].names[MAP_D_LEFT]);
+		host.ConfigSaveStr(SectionName, L"dpad_right",		joysticks[port].names[MAP_D_RIGHT]);
+		host.ConfigSaveStr(SectionName, L"main_x_left",		joysticks[port].names[MAP_A_XL]);
+		host.ConfigSaveStr(SectionName, L"main_x_right",	joysticks[port].names[MAP_A_XR]);
+		host.ConfigSaveStr(SectionName, L"main_y_up",		joysticks[port].names[MAP_A_YU]);				
+		host.ConfigSaveStr(SectionName, L"main_y_down",		joysticks[port].names[MAP_A_YD]);
+		host.ConfigSaveStr(SectionName, L"halfpress",		joysticks[port].names[MAP_HALF]);
 
 		host.ConfigSaveInt(SectionName, L"deadzone",		joysticks[port].deadzone);
 		host.ConfigSaveInt(SectionName, L"keyboard",		joysticks[port].keys);		
@@ -1257,6 +1217,143 @@ void SaveConfig()
 	}
 }
 
+void Names2Control(int port)
+{
+	for(int i=0; i<16; i++)
+	{
+		wchar* temp = joysticks[port].names[i];
+		int num = _wtoi(&temp[1]);
+
+		if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_SDL)
+		{
+			bool plus = false;
+			if(temp[0] == L'A' && temp[sizeof(temp)/2] == L'+') plus = true;
+
+			switch(temp[0])
+			{
+			case L'A': 
+				{						
+					if(plus) joysticks[port].control[i] = (inAXIS_1<<24) + num;
+					else	 joysticks[port].control[i] = (inAXIS_0<<24) + num;
+				}break;
+
+			case L'B':
+				{
+					joysticks[port].control[i] = (inBUTTON<<24) + num;
+				}break;
+
+			case L'H':
+				{
+					joysticks[port].control[i] = (inHAT<<24) + num;
+				}break;
+			}
+		}
+		else if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_XINPUT)
+		{
+			if(temp[0] == L'L' && temp[1] == L'X' && temp[2] == '+')
+			{
+				joysticks[port].control[i] = (inAXIS_1<<24) + X360_LX;
+			}
+			else if(temp[0] == L'L' && temp[1] == L'X' && temp[2] == '-')
+			{
+				joysticks[port].control[i] = (inAXIS_0<<24) + X360_LX;
+			}
+			else if(temp[0] == L'L' && temp[1] == L'Y' && temp[2] == '+')
+			{
+				joysticks[port].control[i] = (inAXIS_1<<24) + X360_LY;
+			}
+			else if(temp[0] == L'L' && temp[1] == L'Y' && temp[2] == '-')
+			{
+				joysticks[port].control[i] = (inAXIS_0<<24) + X360_LY;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'X' && temp[2] == '+')
+			{
+				joysticks[port].control[i] = (inAXIS_1<<24) + X360_RX;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'X' && temp[2] == '-')
+			{
+				joysticks[port].control[i] = (inAXIS_0<<24) + X360_RX;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'Y' && temp[2] == '+')
+			{
+				joysticks[port].control[i] = (inAXIS_1<<24) + X360_RY;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'Y' && temp[2] == '-')
+			{
+				joysticks[port].control[i] = (inAXIS_0<<24) + X360_RY;
+			}
+			else if(temp[0] == L'L' && temp[1] == L'T')
+			{
+				joysticks[port].control[i] = (inTRIGGER<<24) + X360_LT;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'T')
+			{
+				joysticks[port].control[i] = (inTRIGGER<<24) + X360_RT;
+			}
+			else if(temp[0] == L'U' && temp[1] == L'P')
+			{
+				joysticks[port].control[i] = (inHAT<<24) + X360_UP;
+			}
+			else if(temp[0] == L'D' && temp[1] == L'O' && temp[2] == 'W')
+			{
+				joysticks[port].control[i] = (inHAT<<24) + X360_DOWN;
+			}
+			else if(temp[0] == L'L' && temp[1] == L'E' && temp[2] == 'F')
+			{
+				joysticks[port].control[i] = (inHAT<<24) + X360_LEFT;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'I' && temp[2] == 'G')
+			{
+				joysticks[port].control[i] = (inHAT<<24) + X360_RIGHT;
+			}
+			else if(temp[0] == L'S' && temp[1] == L'T' && temp[2] == 'A')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_START;
+			}
+			else if(temp[0] == L'B' && temp[1] == L'A' && temp[2] == 'C')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_BACK;
+			}
+			else if(temp[0] == L'L' && temp[1] == L'S')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_LS;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'S')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_RS;
+			}
+			else if(temp[0] == L'L' && temp[1] == L'B')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_LB;
+			}
+			else if(temp[0] == L'R' && temp[1] == L'B')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_RB;
+			}
+			else if(temp[0] == L'A' && temp[1] == '.')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_A;
+			}
+			else if(temp[0] == L'B' && temp[1] == '.')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_B;
+			}
+			else if(temp[0] == L'X' && temp[1] == '.')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_X;
+			}
+			else if(temp[0] == L'Y' && temp[1] == '.')
+			{
+				joysticks[port].control[i] = (inBUTTON<<24) + X360_Y;
+			}			
+		}
+
+		if(temp[0]==L'K')
+			joysticks[port].control[i] = (inKEY<<24) + num;
+	}
+}
+
+
 // Load settings from file
 // -----------------------
 void LoadConfig()
@@ -1265,31 +1362,31 @@ void LoadConfig()
 	for (int port=0;port<4;port++)
 	{		
 		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
-
 					
-		host.ConfigLoadStr(SectionName, L"l_shoulder",		joysticks[port].control[MAP_LT],	  L"-1");
-		host.ConfigLoadStr(SectionName, L"r_shoulder",		joysticks[port].control[MAP_RT],	  L"-1");
-		host.ConfigLoadStr(SectionName, L"a_button",		joysticks[port].control[MAP_A],		  L"-1");
-		host.ConfigLoadStr(SectionName, L"b_button",		joysticks[port].control[MAP_B],		  L"-1");
-		host.ConfigLoadStr(SectionName, L"x_button",		joysticks[port].control[MAP_X],		  L"-1");
-		host.ConfigLoadStr(SectionName, L"y_button",		joysticks[port].control[MAP_Y],		  L"-1");
-		host.ConfigLoadStr(SectionName, L"start_button",	joysticks[port].control[MAP_START],   L"-1");		
-		host.ConfigLoadStr(SectionName, L"dpad_up",			joysticks[port].control[MAP_D_UP],	  L"-1");
-		host.ConfigLoadStr(SectionName, L"dpad_down",		joysticks[port].control[MAP_D_DOWN],  L"-1");
-		host.ConfigLoadStr(SectionName, L"dpad_left",		joysticks[port].control[MAP_D_LEFT],  L"-1");
-		host.ConfigLoadStr(SectionName, L"dpad_right",		joysticks[port].control[MAP_D_RIGHT], L"-1");
-		host.ConfigLoadStr(SectionName, L"main_x_left",		joysticks[port].control[MAP_A_XL],	  L"-1");
-		host.ConfigLoadStr(SectionName, L"main_x_right",	joysticks[port].control[MAP_A_XR],	  L"-1");
-		host.ConfigLoadStr(SectionName, L"main_y_up",		joysticks[port].control[MAP_A_YU],	  L"-1");				
-		host.ConfigLoadStr(SectionName, L"main_y_down",		joysticks[port].control[MAP_A_YD],	  L"-1");				
-		host.ConfigLoadStr(SectionName, L"halfpress",		joysticks[port].control[MAP_HALF],	  L"-1");
+		host.ConfigLoadStr(SectionName, L"l_shoulder",		joysticks[port].names[MAP_LT], L"-1");
+		host.ConfigLoadStr(SectionName, L"r_shoulder",		joysticks[port].names[MAP_RT], L"-1");
+		host.ConfigLoadStr(SectionName, L"a_button",		joysticks[port].names[MAP_A], L"-1");
+		host.ConfigLoadStr(SectionName, L"b_button",		joysticks[port].names[MAP_B], L"-1");
+		host.ConfigLoadStr(SectionName, L"x_button",		joysticks[port].names[MAP_X], L"-1");
+		host.ConfigLoadStr(SectionName, L"y_button",		joysticks[port].names[MAP_Y], L"-1");
+		host.ConfigLoadStr(SectionName, L"start_button",	joysticks[port].names[MAP_START], L"-1");		
+		host.ConfigLoadStr(SectionName, L"dpad_up",			joysticks[port].names[MAP_D_UP], L"-1");
+		host.ConfigLoadStr(SectionName, L"dpad_down",		joysticks[port].names[MAP_D_DOWN], L"-1");
+		host.ConfigLoadStr(SectionName, L"dpad_left",		joysticks[port].names[MAP_D_LEFT], L"-1");
+		host.ConfigLoadStr(SectionName, L"dpad_right",		joysticks[port].names[MAP_D_RIGHT], L"-1");
+		host.ConfigLoadStr(SectionName, L"main_x_left",		joysticks[port].names[MAP_A_XL], L"-1");
+		host.ConfigLoadStr(SectionName, L"main_x_right",	joysticks[port].names[MAP_A_XR], L"-1");
+		host.ConfigLoadStr(SectionName, L"main_y_up",		joysticks[port].names[MAP_A_YU], L"-1");				
+		host.ConfigLoadStr(SectionName, L"main_y_down",		joysticks[port].names[MAP_A_YD], L"-1");				
+		host.ConfigLoadStr(SectionName, L"halfpress",		joysticks[port].names[MAP_HALF], L"-1");
 		
-
 		joysticks[port].deadzone		= host.ConfigLoadInt(SectionName, L"deadzone",		24);
 		joysticks[port].keys			= host.ConfigLoadInt(SectionName, L"keyboard",		 0);
 		joysticks[port].ID				= host.ConfigLoadInt(SectionName, L"joy_id",		 0);
 		joysticks[port].controllertype	= host.ConfigLoadInt(SectionName, L"controllertype", 0);
 		joysticks[port].eventnum		= host.ConfigLoadInt(SectionName, L"eventnum",		 0);
+
+		Names2Control(port);
 	}
 }
 
