@@ -24,10 +24,10 @@ bool emulator_running  = FALSE;
 bool canSDL		= false;
 bool canXInput  = false;
 
-CONTROLLER_STATE joystate[4];
-CONTROLLER_MAPPING joysticks[4];
-CONTROLLER_INFO_SDL		*joyinfo = 0;
-CONTROLLER_INFO_XINPUT	 xoyinfo[4];
+CONTROLLER_STATE		joystate[4];
+CONTROLLER_MAPPING		joysticks[4];
+CONTROLLER_INFO_SDL	   *joyinfo = 0;
+CONTROLLER_INFO_XINPUT	xoyinfo[4];
 
 _NaomiState State;
 char EEPROM[0x100];
@@ -476,10 +476,18 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 	u8*buffer_out_b=(u8*)buffer_out;
 	u8*buffer_in_b=(u8*)buffer_in;
 	buffer_out_len=0;
-	u32 port=((maple_device_instance*)device_instance)->port>>6;
+
 	u16 kcode[4]={0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF};
 
-	GetJoyStatus(port);
+	if(joysticks[0].enabled)
+		GetJoyStatus(0);
+	else
+		memset(joystate[0].control, 0, sizeof(joystate[0].control));
+
+	if(joysticks[1].enabled)	
+		GetJoyStatus(1);
+	else
+		memset(joystate[1].control, 0, sizeof(joystate[1].control));
 
 	switch (Command)
 	{
@@ -495,8 +503,11 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 					buffer_out[0]=0xffffffff;
 					buffer_out[1]=0xffffffff;					
 
-					if(joystate[port].control[CTLN_SERVICE2])	buffer_out[0]&=~(1<<0x1b);
-					if(joystate[port].control[CTLN_TEST2])		buffer_out[0]&=~(1<<0x1a);
+					if(joystate[0].control[CTLN_SERVICE2] || 
+					   joystate[1].control[CTLN_SERVICE2])	buffer_out[0]&=~(1<<0x1b);
+					
+					if(joystate[0].control[CTLN_TEST2] || 
+					   joystate[1].control[CTLN_TEST2])		buffer_out[0]&=~(1<<0x1a);
 					
 					if(State.Mode==0 && subcode!=0x33)	//Get Caps
 					{
@@ -593,34 +604,60 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 					{
 						unsigned char glbl=0x00;
 						unsigned char p1_1=0x00;
-						unsigned char p1_2=0x00;						
+						unsigned char p1_2=0x00;
+						unsigned char p2_1=0x00;
+						unsigned char p2_2=0x00;	
 						static unsigned char LastKey[256];
-						static unsigned short coin1=0x0000;																		
+						static unsigned short coin1=0x0000;
+						static unsigned short coin2=0x0000;	
 						
-						if(joystate[port].control[CTLN_SERVICE1]) glbl|=0x80;
-						if(joystate[port].control[CTLN_TEST1])	  p1_1|=0x40;						
-																				
-						if(joystate[port].control[CTLN_START]) p1_1|=0x80; 
-						
-						if(joystate[port].control[CTLN_D_UP]   ) p1_1|=0x20;
-						if(joystate[port].control[CTLN_D_DOWN] ) p1_1|=0x10;
-						if(joystate[port].control[CTLN_D_LEFT] ) p1_1|=0x08;
-						if(joystate[port].control[CTLN_D_RIGHT]) p1_1|=0x04;						
-												
-						if(joystate[port].control[CTLN_BUTTON1]) p1_1|=0x02;
-						if(joystate[port].control[CTLN_BUTTON2]) p1_1|=0x01;
-						if(joystate[port].control[CTLN_BUTTON3]) p1_2|=0x80;
-						if(joystate[port].control[CTLN_BUTTON4]) p1_2|=0x40;																			
-						if(joystate[port].control[CTLN_BUTTON5]) p1_2|=0x20;
-						if(joystate[port].control[CTLN_BUTTON6]) p1_2|=0x10;
-							
-						static bool old_coin = false;							
+						if(joystate[0].control[CTLN_TEST1] || 
+						   joystate[1].control[CTLN_TEST1])   glbl|=0x80;
 
-						if(!old_coin && joystate[port].control[CTLN_COIN]); // Coin key
+						if(joystate[0].control[CTLN_SERVICE1])	  p1_1|=0x40;																										
+						if(joystate[0].control[CTLN_START])   p1_1|=0x80; 
+						
+						if(joystate[0].control[CTLN_D_UP]   ) p1_1|=0x20;
+						if(joystate[0].control[CTLN_D_DOWN] ) p1_1|=0x10;
+						if(joystate[0].control[CTLN_D_LEFT] ) p1_1|=0x08;
+						if(joystate[0].control[CTLN_D_RIGHT]) p1_1|=0x04;						
+												
+						if(joystate[0].control[CTLN_BUTTON1]) p1_1|=0x02;
+						if(joystate[0].control[CTLN_BUTTON2]) p1_1|=0x01;
+						if(joystate[0].control[CTLN_BUTTON3]) p1_2|=0x80;
+						if(joystate[0].control[CTLN_BUTTON4]) p1_2|=0x40;																			
+						if(joystate[0].control[CTLN_BUTTON5]) p1_2|=0x20;
+						if(joystate[0].control[CTLN_BUTTON6]) p1_2|=0x10;
+
+						// Player 2
+						if(joystate[1].control[CTLN_SERVICE1])	  p2_1|=0x40;																										
+						if(joystate[1].control[CTLN_START])   p2_1|=0x80; 
+						
+						if(joystate[1].control[CTLN_D_UP]   ) p2_1|=0x20;
+						if(joystate[1].control[CTLN_D_DOWN] ) p2_1|=0x10;
+						if(joystate[1].control[CTLN_D_LEFT] ) p2_1|=0x08;
+						if(joystate[1].control[CTLN_D_RIGHT]) p2_1|=0x04;						
+												
+						if(joystate[1].control[CTLN_BUTTON1]) p2_1|=0x02;
+						if(joystate[1].control[CTLN_BUTTON2]) p2_1|=0x01;
+						if(joystate[1].control[CTLN_BUTTON3]) p2_2|=0x80;
+						if(joystate[1].control[CTLN_BUTTON4]) p2_2|=0x40;																			
+						if(joystate[1].control[CTLN_BUTTON5]) p2_2|=0x20;
+						if(joystate[1].control[CTLN_BUTTON6]) p2_2|=0x10;
+							
+						static bool old_coin1 = false;
+						static bool old_coin2 = false;
+
+						if(!old_coin1 && joystate[0].control[CTLN_COIN]) // Coin key
 						{
 							coin1++;
-							old_coin = true;
-						}						
+							old_coin1 = true;
+						}	
+						if(!old_coin2 && joystate[1].control[CTLN_COIN]) // Coin key
+						{
+							coin2++;
+							old_coin2 = true;
+						}	
 
 						buffer_out_b[0x11+0]=0x00;
 						buffer_out_b[0x11+1]=0x8E;	//Valid data check
@@ -636,9 +673,13 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 						buffer_out_b[8+0x12+1]=glbl;
 						buffer_out_b[8+0x12+2]=p1_1;
 						buffer_out_b[8+0x12+3]=p1_2;						
+						buffer_out_b[8+0x12+4]=p2_1;
+						buffer_out_b[8+0x12+5]=p2_2;	
 						buffer_out_b[8+0x12+6]=1;
 						buffer_out_b[8+0x12+7]=coin1>>8;
 						buffer_out_b[8+0x12+8]=coin1&0xff;						
+						buffer_out_b[8+0x12+9]=coin2>>8;
+						buffer_out_b[8+0x12+10]=coin2&0xff;						
 						buffer_out_b[8+0x12+11]=1;
 						buffer_out_b[8+0x12+12]=0x00;
 						buffer_out_b[8+0x12+13]=0x00;
@@ -855,7 +896,7 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 			w32(1 << 24);
 			//struct data
 			//2
-			w16(kcode[port] | 0xF901); 
+			w16(kcode[0] | 0xF901); 
 				
 			//trigger			
 			w8(0x0);			
