@@ -29,6 +29,10 @@ CONTROLLER_MAPPING joysticks[4];
 CONTROLLER_INFO_SDL		*joyinfo = 0;
 CONTROLLER_INFO_XINPUT	 xoyinfo[4];
 
+_NaomiState State;
+char EEPROM[0x100];
+bool EEPROM_loaded=false;
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // DllMain 
 // -------
@@ -64,12 +68,20 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	info->maple.Destroy = Destroy;
 
 	// 1 maple device
-	wcscpy_s(info->maple.devices[0].Name, L"PuruPuru input plugin v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
+#ifdef BUILD_NAOMI
+	wcscpy_s(info->maple.devices[0].Name, L"PuruPuru NAOMI JAMMA Controller v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
+	info->maple.devices[0].Type = MDT_Main;
+	info->maple.devices[0].Flags = 0;
+#else
+	wcscpy_s(info->maple.devices[0].Name, L"PuruPuru Dreamcast Controller v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
 	// Main device (Like controller, lightgun and such)
 	info->maple.devices[0].Type = MDT_Main;
 	// Can have 2 subdevices (a dc controller has 2 subdevice ports for vmus / etc)
 	// Can be 'hot plugged' (after emulation was started)
 	info->maple.devices[0].Flags = MDTF_Sub0 | MDTF_Sub1 | MDTF_Hotplug;
+#endif
+
+	
 
 	//EOL marker
 	info->maple.devices[1].Type = MDT_EndOfList;	// wtf is this raz?
@@ -150,8 +162,13 @@ s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 root
 		return rv_error;
 
 	inst->data = inst;
+
+#ifdef BUILD_NAOMI
+	inst->dma = ControllerDMA_NAOMI;
+#else
 	inst->dma = ControllerDMA;
-	
+#endif
+		
 	wchar temp[512];
 	swprintf(temp, sizeof(temp), L"Config keys for Player %d", (inst->port >> 6) + 1);	
 	u32 ckid = host.AddMenuItem(rootmenu, -1, temp, ConfigMenuCallback, 0);
@@ -264,6 +281,8 @@ char Joy_strBrand_2[64] = "Produced By or Under License From SEGA ENTERPRISES,LT
 #define key_CONT_DPAD2_DOWN  (1 << 13)
 #define key_CONT_DPAD2_LEFT  (1 << 14)
 #define key_CONT_DPAD2_RIGHT  (1 << 15)
+
+#ifndef BUILD_NAOMI
 
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len)
 {
@@ -430,6 +449,441 @@ u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u3
 			return 7;
 	}
 }
+
+#else
+
+void printState(u32 cmd,u32* buffer_in,u32 buffer_in_len)
+{
+	printf("Command : 0x%X",cmd);
+	if (buffer_in_len>0)
+		printf(",Data : %d bytes\n",buffer_in_len);
+	else
+		printf("\n");
+	buffer_in_len>>=2;
+	while(buffer_in_len-->0)
+	{
+		printf("%08X ",*buffer_in++);
+		if (buffer_in_len==0)
+			printf("\n");
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////
+// NAOMI JAMMA DMA
+// ---------------
+u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_in,u32 buffer_in_len,u32* buffer_out,u32& buffer_out_len)
+{
+	u8*buffer_out_b=(u8*)buffer_out;
+	u8*buffer_in_b=(u8*)buffer_in;
+	buffer_out_len=0;
+	u32 port=((maple_device_instance*)device_instance)->port>>6;
+	u16 kcode[4]={0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF};
+
+	GetJoyStatus(port);
+
+	switch (Command)
+	{
+	case 0x86:
+		{
+			u32 subcode=*(u8*)buffer_in;
+
+			switch(subcode)
+			{
+			case 0x15:
+			case 0x33:
+				{
+					buffer_out[0]=0xffffffff;
+					buffer_out[1]=0xffffffff;					
+
+					if(joystate[port].control[CTLN_SERVICE2])	buffer_out[0]&=~(1<<0x1b);
+					if(joystate[port].control[CTLN_TEST2])		buffer_out[0]&=~(1<<0x1a);
+					
+					if(State.Mode==0 && subcode!=0x33)	//Get Caps
+					{
+						buffer_out_b[0x11+1]=0x8E;	//Valid data check
+						buffer_out_b[0x11+2]=0x01;
+						buffer_out_b[0x11+3]=0x00;
+						buffer_out_b[0x11+4]=0xFF;
+						buffer_out_b[0x11+5]=0xE0;
+						buffer_out_b[0x11+8]=0x01;
+
+						switch(State.Cmd)
+						{
+							//Reset, in : 2 bytes, out : 0
+							case 0xF0:
+								break;
+
+							//Find nodes?
+							//In addressing Slave address, in : 2 bytes, out : 1
+							case 0xF1:
+								{
+									buffer_out_len=4*4;
+								}
+								break;
+
+							//Speed Change, in : 2 bytes, out : 0
+							case 0xF2:
+								break;
+
+							//Name
+							//"In the I / O ID" "Reading each slave ID data"
+							//"NAMCO LTD.; I / O PCB-1000; ver1.0; for domestic only, no analog input"
+							//in : 1 byte, out : max 102
+							case 0x10:
+								{
+									static char ID1[102]="nullDC Team; I/O Plugin-1; ver0.2; for nullDC or other emus";
+									buffer_out_b[0x8+0x10]=(BYTE)strlen(ID1)+3;
+									for(int i=0;ID1[i]!=0;++i)
+									{
+										buffer_out_b[0x8+0x13+i]=ID1[i];
+									}
+								}
+								break;
+
+							//CMD Version
+							//REV in command|Format command to read the (revision)|One|Two 
+							//in : 1 byte, out : 2 bytes
+							case 0x11:
+								{
+									buffer_out_b[0x8+0x13]=0x13;
+								}
+								break;
+
+							//JVS Version
+							//In JV REV|JAMMA VIDEO standard reading (revision)|One|Two 
+							//in : 1 byte, out : 2 bytes
+							case 0x12:
+								{
+									buffer_out_b[0x8+0x13]=0x30;
+								}
+								break;
+
+							//COM Version
+							//VER in the communication system|Read a communication system compliant version of |One|Two
+							//in : 1 byte, out : 2 bytes
+							case 0x13:
+								{
+									buffer_out_b[0x8+0x13]=0x10;
+								}
+								break;
+
+							//Features
+							//Check in feature |Each features a slave to read |One |6 to
+							//in : 1 byte, out : 6 + (?)
+							case 0x14:
+								{
+									unsigned char *FeatPtr=buffer_out_b+0x8+0x13;
+									buffer_out_b[0x8+0x9+0x3]=0x0;
+									buffer_out_b[0x8+0x9+0x9]=0x1;
+									#define ADDFEAT(Feature,Count1,Count2,Count3)	*FeatPtr++=Feature; *FeatPtr++=Count1; *FeatPtr++=Count2; *FeatPtr++=Count3;
+									ADDFEAT(1,2,12,0);	//Feat 1=Digital Inputs.  2 Players. 10 bits
+									ADDFEAT(2,2,0,0);	//Feat 2=Coin inputs. 2 Inputs
+									ADDFEAT(3,2,0,0);	//Feat 3=Analog. 2 Chans
+
+									ADDFEAT(0,0,0,0);	//End of list
+								}
+								break;
+
+							default:
+								printf("unknown CAP %X\n",State.Cmd);
+						}
+						buffer_out_len=4*4;
+					}
+					else if(State.Mode==1 || State.Mode==2 || subcode==0x33)	//Get Data
+					{
+						unsigned char glbl=0x00;
+						unsigned char p1_1=0x00;
+						unsigned char p1_2=0x00;						
+						static unsigned char LastKey[256];
+						static unsigned short coin1=0x0000;																		
+						
+						if(joystate[port].control[CTLN_SERVICE1]) glbl|=0x80;
+						if(joystate[port].control[CTLN_TEST1])	  p1_1|=0x40;						
+																				
+						if(joystate[port].control[CTLN_START]) p1_1|=0x80; 
+						
+						if(joystate[port].control[CTLN_D_UP]   ) p1_1|=0x20;
+						if(joystate[port].control[CTLN_D_DOWN] ) p1_1|=0x10;
+						if(joystate[port].control[CTLN_D_LEFT] ) p1_1|=0x08;
+						if(joystate[port].control[CTLN_D_RIGHT]) p1_1|=0x04;						
+												
+						if(joystate[port].control[CTLN_BUTTON1]) p1_1|=0x02;
+						if(joystate[port].control[CTLN_BUTTON2]) p1_1|=0x01;
+						if(joystate[port].control[CTLN_BUTTON3]) p1_2|=0x80;
+						if(joystate[port].control[CTLN_BUTTON4]) p1_2|=0x40;																			
+						if(joystate[port].control[CTLN_BUTTON5]) p1_2|=0x20;
+						if(joystate[port].control[CTLN_BUTTON6]) p1_2|=0x10;
+							
+						static bool old_coin = false;							
+
+						if(!old_coin && joystate[port].control[CTLN_COIN]); // Coin key
+						{
+							coin1++;
+							old_coin = true;
+						}						
+
+						buffer_out_b[0x11+0]=0x00;
+						buffer_out_b[0x11+1]=0x8E;	//Valid data check
+						buffer_out_b[0x11+2]=0x01;
+						buffer_out_b[0x11+3]=0x00;
+						buffer_out_b[0x11+4]=0xFF;
+						buffer_out_b[0x11+5]=0xE0;
+						buffer_out_b[0x11+8]=0x01;
+
+						//memset(OutData+8+0x11,0x00,0x100);
+
+						buffer_out_b[8+0x12+0]=1;
+						buffer_out_b[8+0x12+1]=glbl;
+						buffer_out_b[8+0x12+2]=p1_1;
+						buffer_out_b[8+0x12+3]=p1_2;						
+						buffer_out_b[8+0x12+6]=1;
+						buffer_out_b[8+0x12+7]=coin1>>8;
+						buffer_out_b[8+0x12+8]=coin1&0xff;						
+						buffer_out_b[8+0x12+11]=1;
+						buffer_out_b[8+0x12+12]=0x00;
+						buffer_out_b[8+0x12+13]=0x00;
+						buffer_out_b[8+0x12+14]=0x00;
+						buffer_out_b[8+0x12+15]=0x00;
+						buffer_out_b[8+0x12+16]=0x00;
+						buffer_out_b[8+0x12+17]=0x00;
+						buffer_out_b[8+0x12+18]=0x00;
+						buffer_out_b[8+0x12+19]=0x00;
+						buffer_out_b[8+0x12+20]=0x00;						
+
+						if(State.Mode==1)
+						{
+							buffer_out_b[0x11+0x7]=19;
+							buffer_out_b[0x11+0x4]=19+5;
+						}
+						else
+						{
+							buffer_out_b[0x11+0x7]=17;
+							buffer_out_b[0x11+0x4]=17-1;
+						}
+
+						//OutLen=8+0x11+16;
+						buffer_out_len=8+0x12+20;
+					}
+				}
+				return 8;
+					
+			case 0x17:	//Select Subdevice
+				{
+					State.Mode=0;
+					State.Cmd=buffer_in_b[8];
+					State.Node=buffer_in_b[9];
+					buffer_out_len=0;
+				}
+				return (7);
+				
+			case 0x27:	//Transfer request
+				{
+					State.Mode=1;
+					State.Cmd=buffer_in_b[8];
+					State.Node=buffer_in_b[9];
+					buffer_out_len=0;
+				}
+				return (7);
+			case 0x21:		//Transfer request with repeat
+				{
+					State.Mode=2;
+					State.Cmd=buffer_in_b[8];
+					State.Node=buffer_in_b[9];
+					buffer_out_len=0;
+				}
+				return (7);
+
+			case 0x0B:	//EEPROM write
+				{
+					int address=buffer_in_b[1];
+					int size=buffer_in_b[2];
+					//printf("EEprom write %08X %08X\n",address,size);
+					//printState(Command,buffer_in,buffer_in_len);
+					memcpy(EEPROM+address,buffer_in_b+4,size);
+
+					wchar eeprom_file[512];
+					host.ConfigLoadStr(L"emu",L"gamefile",eeprom_file,L"");
+					wcscat(eeprom_file,L".eeprom");
+					FILE* f=_wfopen(eeprom_file,L"wb");
+					if (f)
+					{
+						fwrite(EEPROM,1,0x80,f);
+						fclose(f);
+						wprintf(L"SAVED EEPROM to %s\n",eeprom_file);
+					}
+				}
+				return (7);
+			case 0x3:	//EEPROM read
+				{
+					if (!EEPROM_loaded)
+					{
+						EEPROM_loaded=true;
+						wchar eeprom_file[512];
+						host.ConfigLoadStr(L"emu",L"gamefile",eeprom_file,L"");
+						wcscat(eeprom_file,L".eeprom");
+						FILE* f=_wfopen(eeprom_file,L"rb");
+						if (f)
+						{
+							fread(EEPROM,1,0x80,f);
+							fclose(f);
+							wprintf(L"LOADED EEPROM from %s\n",eeprom_file);
+						}
+					}
+					//printf("EEprom READ ?\n");
+					int address=buffer_in_b[1];
+					//printState(Command,buffer_in,buffer_in_len);
+					memcpy(buffer_out,EEPROM+address,0x80);
+					buffer_out_len=0x80;
+				}
+				return 8;
+				//IF I return all FF, then board runs in low res
+			case 0x31:
+				{
+					buffer_out[0]=0xffffffff;
+					buffer_out[1]=0xffffffff;
+				}
+				return (8);
+								
+			default:
+				printf("Unknown 0x86 : SubCommand 0x%X - State: Cmd 0x%X Mode :  0x%X Node : 0x%X\n",subcode,State.Cmd,State.Mode,State.Node);
+				printState(Command,buffer_in,buffer_in_len);
+			}
+
+			return 8;//MAPLE_RESPONSE_DATATRF
+		}
+		break;
+	case 0x82:
+		{
+			const char *ID="315-6149    COPYRIGHT SEGA E\x83\x00\x20\x05NTERPRISES CO,LTD.  ";
+			memset(buffer_out_b,0x20,256);
+			memcpy(buffer_out_b,ID,0x38-4);
+			buffer_out_len=256;
+			return (0x83);
+		}
+	/*typedef struct {
+		DWORD		func;//4
+		DWORD		function_data[3];//3*4
+		u8		area_code;//1
+		u8		connector_direction;//1
+		char		product_name[30];//30*1
+		char		product_license[60];//60*1
+		WORD		standby_power;//2
+		WORD		max_power;//2
+	} maple_devinfo_t;*/
+	case 1:
+		{
+			//header
+			//WriteMem32(ptr_out,(u32)(0x05 | //response
+			//			(((u16)sendadr << 8) & 0xFF00) |
+			//			((((recadr == 0x20) ? 0x20 : 0) << 16) & 0xFF0000) |
+			//			(((112/4) << 24) & 0xFF000000))); ptr_out += 4;
+
+
+			//caps
+			//4
+			w32(1 << 24);
+
+			//struct data
+			//3*4
+			w32( 0xfe060f00); 
+			w32( 0);
+			w32( 0);
+			//1	area code
+			w8(0xFF);
+			//1	direction
+			w8(0);
+			//30
+			for (u32 i = 0; i < 30; i++)
+			{
+				if (Joy_strName[i]!=0)
+				{
+					w8((u8)Joy_strName[i]);
+				}
+				else
+				{
+					w8(0x20);
+				}
+				//if (!testJoy_strName[i])
+				//	break;
+			}
+			//ptr_out += 30;
+
+			//60
+			for (u32 i = 0; i < 60; i++)
+			{
+				if (Joy_strBrand_2[i]!=0)
+				{
+					w8((u8)Joy_strBrand_2[i]);
+				}
+				else
+				{
+					w8(0x20);
+				}
+				//if (!testJoy_strBrand[i])
+				//	break;
+			}
+			//ptr_out += 60;
+
+			//2
+			w16(0xAE01); 
+
+			//2
+			w16(0xF401); 
+		}
+		return 5;
+
+	/* controller condition structure 
+	typedef struct {//8 bytes
+	WORD buttons;			///* buttons bitfield	/2
+	u8 rtrig;			///* right trigger			/1
+	u8 ltrig;			///* left trigger 			/1
+	u8 joyx;			////* joystick X 			/1
+	u8 joyy;			///* joystick Y				/1
+	u8 joy2x;			///* second joystick X 		/1
+	u8 joy2y;			///* second joystick Y 		/1
+	} cont_cond_t;*/
+	case 9:
+		{
+			//header
+			//WriteMem32(ptr_out, (u32)(0x08 | // data transfer (response)
+			//			(((u16)sendadr << 8) & 0xFF00) |
+			//			((((recadr == 0x20) ? 0x20 : 1) << 16) & 0xFF0000) |
+			//			(((12 / 4 ) << 24) & 0xFF000000))); ptr_out += 4;
+			//caps
+			//4
+			//WriteMem32(ptr_out, (1 << 24)); ptr_out += 4;
+			w32(1 << 24);
+			//struct data
+			//2
+			w16(kcode[port] | 0xF901); 
+				
+			//trigger			
+			w8(0x0);			
+			w8(0x0); 
+			
+			// Analog XY
+			w8(0x80); 			
+			w8(0x80); 
+			
+			// XY2
+			w8(0x80); 			
+			w8(0x80); 
+
+			//are these needed ?
+			//1
+			//WriteMem8(ptr_out, 10); ptr_out += 1;
+			//1
+			//WriteMem8(ptr_out, 10); ptr_out += 1;
+		}
+		return 8;
+
+	default:
+		printf("unknown MAPLE Frame\n");
+		printState(Command,buffer_in,buffer_in_len);
+		break;
+	}
+}
+#endif
 
 void GetKeyStatus(int port, char* keys)
 {	
@@ -1125,39 +1579,63 @@ int GetInputStatus(int port, int type, int input)
 
 void GetJoyStatus(int controller)
 {	
-		joystate[controller].control[CTL_MAIN_X] = 0;
-		joystate[controller].control[CTL_MAIN_Y] = 0;
+#ifdef BUILD_NAOMI
 
-		joystate[controller].control[CTL_MAIN_X] -= GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_XL]);
-		joystate[controller].control[CTL_MAIN_X] += GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_XR]);				
+	joystate[controller].control[CTLN_D_UP]	   = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_D_UP]);
+	joystate[controller].control[CTLN_D_DOWN]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_D_DOWN]);	
+	joystate[controller].control[CTLN_D_LEFT]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_D_LEFT]);
+	joystate[controller].control[CTLN_D_RIGHT] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_D_RIGHT]);		
+	
+	joystate[controller].control[CTLN_BUTTON1] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_BUTTON1]);
+	joystate[controller].control[CTLN_BUTTON2] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_BUTTON2]);
+	joystate[controller].control[CTLN_BUTTON3] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_BUTTON3]);
+	joystate[controller].control[CTLN_BUTTON4] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_BUTTON4]);
+	joystate[controller].control[CTLN_BUTTON5] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_BUTTON5]);
+	joystate[controller].control[CTLN_BUTTON6] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_BUTTON6]);
+	
+	joystate[controller].control[CTLN_START] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_START]);
+	joystate[controller].control[CTLN_COIN]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_COIN]);
+
+	joystate[controller].control[CTLN_SERVICE1] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_SERVICE1]);
+	joystate[controller].control[CTLN_SERVICE2] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_SERVICE2]);					
+
+	joystate[controller].control[CTLN_TEST1] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_TEST1]);
+	joystate[controller].control[CTLN_TEST2] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAPN_TEST2]);					
+#else
+	joystate[controller].control[CTL_MAIN_X] = 0;
+	joystate[controller].control[CTL_MAIN_Y] = 0;
+
+	joystate[controller].control[CTL_MAIN_X] -= GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_XL]);
+	joystate[controller].control[CTL_MAIN_X] += GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_XR]);				
 		
-		joystate[controller].control[CTL_MAIN_Y] -= GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YU]);		
-		joystate[controller].control[CTL_MAIN_Y] += GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YD]);		
+	joystate[controller].control[CTL_MAIN_Y] -= GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YU]);		
+	joystate[controller].control[CTL_MAIN_Y] += GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YD]);		
 
-		joystate[controller].halfpress = GetInputStatus(controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
+	joystate[controller].halfpress = GetInputStatus(controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
 
-		joystate[controller].control[CTL_L_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_LT]);
-		joystate[controller].control[CTL_R_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_RT]);
+	joystate[controller].control[CTL_L_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_LT]);
+	joystate[controller].control[CTL_R_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_RT]);
 		
-		if ( joystate[controller].halfpress ) 
-		{
-			joystate[controller].control[CTL_L_SHOULDER] /= 2;
-			joystate[controller].control[CTL_R_SHOULDER] /= 2;
+	if ( joystate[controller].halfpress ) 
+	{
+		joystate[controller].control[CTL_L_SHOULDER] /= 2;
+		joystate[controller].control[CTL_R_SHOULDER] /= 2;
 
-			joystate[controller].control[CTL_MAIN_X] /= 2;
-			joystate[controller].control[CTL_MAIN_Y] /= 2;
-		}				
+		joystate[controller].control[CTL_MAIN_X] /= 2;
+		joystate[controller].control[CTL_MAIN_Y] /= 2;
+	}				
 				
-		joystate[controller].control[CTL_A_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_A]);
-		joystate[controller].control[CTL_B_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_B]);
-		joystate[controller].control[CTL_X_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_X]);
-		joystate[controller].control[CTL_Y_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_Y]);
-		joystate[controller].control[CTL_START]	   = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_START]);				
+	joystate[controller].control[CTL_A_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_A]);
+	joystate[controller].control[CTL_B_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_B]);
+	joystate[controller].control[CTL_X_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_X]);
+	joystate[controller].control[CTL_Y_BUTTON] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_Y]);
+	joystate[controller].control[CTL_START]	   = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_START]);				
 
-		joystate[controller].control[CTL_D_PAD_UP]	  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_UP]);
-		joystate[controller].control[CTL_D_PAD_DOWN]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN]);	
-		joystate[controller].control[CTL_D_PAD_LEFT]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT]);
-		joystate[controller].control[CTL_D_PAD_RIGHT] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT]);	
+	joystate[controller].control[CTL_D_PAD_UP]	  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_UP]);
+	joystate[controller].control[CTL_D_PAD_DOWN]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_DOWN]);	
+	joystate[controller].control[CTL_D_PAD_LEFT]  = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_LEFT]);
+	joystate[controller].control[CTL_D_PAD_RIGHT] = GetInputStatus(controller, DIGITAL,  joysticks[controller].control[MAP_D_RIGHT]);	
+#endif
 }
 
 // ConfigMenuCallback
@@ -1175,10 +1653,17 @@ void EXPORT_CALL ConfigMenuCallback(u32 id, void* w, void* p)
 
 	LoadConfig();	// load settings	
 
-	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG), (HWND)w, OpenConfig) )
+#ifdef BUILD_NAOMI
+	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG_NAOMI), (HWND)w, OpenConfig) )
 	{
 		SaveConfig();
 	}
+#else	
+	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG_DC), (HWND)w, OpenConfig) )
+	{
+		SaveConfig();
+	}
+#endif
 
 	LoadConfig();	// reload settings	
 }
@@ -1188,10 +1673,33 @@ void EXPORT_CALL ConfigMenuCallback(u32 id, void* w, void* p)
 void SaveConfig()
 {
 	wchar SectionName[32];
+
+#ifdef BUILD_NAOMI
+	for (int port=0;port<2;port++)
+	{		
+		wsprintf(SectionName, L"PuruPuru_NAOMI_%i", port+1);
+
+		host.ConfigSaveStr(SectionName, L"d_up",		joysticks[port].names[MAPN_D_UP]);
+		host.ConfigSaveStr(SectionName, L"d_down",		joysticks[port].names[MAPN_D_DOWN]);
+		host.ConfigSaveStr(SectionName, L"d_left",		joysticks[port].names[MAPN_D_LEFT]);
+		host.ConfigSaveStr(SectionName, L"d_right",		joysticks[port].names[MAPN_D_RIGHT]);
+		host.ConfigSaveStr(SectionName, L"button1",		joysticks[port].names[MAPN_BUTTON1]);
+		host.ConfigSaveStr(SectionName, L"button2",		joysticks[port].names[MAPN_BUTTON2]);
+		host.ConfigSaveStr(SectionName, L"button3",	    joysticks[port].names[MAPN_BUTTON3]);		
+		host.ConfigSaveStr(SectionName, L"button4",		joysticks[port].names[MAPN_BUTTON4]);
+		host.ConfigSaveStr(SectionName, L"button5",		joysticks[port].names[MAPN_BUTTON5]);
+		host.ConfigSaveStr(SectionName, L"button6",		joysticks[port].names[MAPN_BUTTON6]);
+		host.ConfigSaveStr(SectionName, L"start",		joysticks[port].names[MAPN_START]);		
+		host.ConfigSaveStr(SectionName, L"coin",		joysticks[port].names[MAPN_COIN]);		
+		host.ConfigSaveStr(SectionName, L"Service1",	joysticks[port].names[MAPN_SERVICE1]);		
+		host.ConfigSaveStr(SectionName, L"Service2",	joysticks[port].names[MAPN_SERVICE2]);		
+		host.ConfigSaveStr(SectionName, L"Test1",		joysticks[port].names[MAPN_TEST1]);		
+		host.ConfigSaveStr(SectionName, L"Test2",		joysticks[port].names[MAPN_TEST2]);	
+#else
 	for (int port=0;port<4;port++)
 	{		
-		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);		
-						
+		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
+				
 		host.ConfigSaveStr(SectionName, L"l_shoulder",		joysticks[port].names[MAP_LT]);
 		host.ConfigSaveStr(SectionName, L"r_shoulder",		joysticks[port].names[MAP_RT]);
 		host.ConfigSaveStr(SectionName, L"a_button",		joysticks[port].names[MAP_A]);
@@ -1210,6 +1718,7 @@ void SaveConfig()
 		host.ConfigSaveStr(SectionName, L"halfpress",		joysticks[port].names[MAP_HALF]);
 
 		host.ConfigSaveInt(SectionName, L"deadzone",		joysticks[port].deadzone);
+#endif			
 		host.ConfigSaveInt(SectionName, L"keyboard",		joysticks[port].keys);		
 		host.ConfigSaveInt(SectionName, L"joy_id",			joysticks[port].ID);
 		host.ConfigSaveInt(SectionName, L"controllertype",	joysticks[port].controllertype);
@@ -1359,6 +1868,29 @@ void Names2Control(int port)
 void LoadConfig()
 {
 	wchar SectionName[32];
+
+#ifdef BUILD_NAOMI
+	for (int port=0;port<2;port++)
+	{		
+		wsprintf(SectionName, L"PuruPuru_NAOMI_%i", port+1);
+
+		host.ConfigLoadStr(SectionName, L"d_up",		joysticks[port].names[MAPN_D_UP], L"-1");
+		host.ConfigLoadStr(SectionName, L"d_down",		joysticks[port].names[MAPN_D_DOWN], L"-1");
+		host.ConfigLoadStr(SectionName, L"d_left",		joysticks[port].names[MAPN_D_LEFT], L"-1");
+		host.ConfigLoadStr(SectionName, L"d_right",		joysticks[port].names[MAPN_D_RIGHT], L"-1");
+		host.ConfigLoadStr(SectionName, L"button1",		joysticks[port].names[MAPN_BUTTON1], L"-1");
+		host.ConfigLoadStr(SectionName, L"button2",		joysticks[port].names[MAPN_BUTTON2], L"-1");
+		host.ConfigLoadStr(SectionName, L"button3",	    joysticks[port].names[MAPN_BUTTON3], L"-1");		
+		host.ConfigLoadStr(SectionName, L"button4",		joysticks[port].names[MAPN_BUTTON4], L"-1");
+		host.ConfigLoadStr(SectionName, L"button5",		joysticks[port].names[MAPN_BUTTON5], L"-1");
+		host.ConfigLoadStr(SectionName, L"button6",		joysticks[port].names[MAPN_BUTTON6], L"-1");
+		host.ConfigLoadStr(SectionName, L"start",		joysticks[port].names[MAPN_START], L"-1");		
+		host.ConfigLoadStr(SectionName, L"coin",		joysticks[port].names[MAPN_COIN], L"-1");		
+		host.ConfigLoadStr(SectionName, L"Service1",	joysticks[port].names[MAPN_SERVICE1], L"-1");		
+		host.ConfigLoadStr(SectionName, L"Service2",	joysticks[port].names[MAPN_SERVICE2], L"-1");		
+		host.ConfigLoadStr(SectionName, L"Test1",		joysticks[port].names[MAPN_TEST1], L"-1");		
+		host.ConfigLoadStr(SectionName, L"Test2",		joysticks[port].names[MAPN_TEST2], L"-1");		
+#else
 	for (int port=0;port<4;port++)
 	{		
 		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
@@ -1379,8 +1911,9 @@ void LoadConfig()
 		host.ConfigLoadStr(SectionName, L"main_y_up",		joysticks[port].names[MAP_A_YU], L"-1");				
 		host.ConfigLoadStr(SectionName, L"main_y_down",		joysticks[port].names[MAP_A_YD], L"-1");				
 		host.ConfigLoadStr(SectionName, L"halfpress",		joysticks[port].names[MAP_HALF], L"-1");
-		
+
 		joysticks[port].deadzone		= host.ConfigLoadInt(SectionName, L"deadzone",		24);
+#endif				
 		joysticks[port].keys			= host.ConfigLoadInt(SectionName, L"keyboard",		 0);
 		joysticks[port].ID				= host.ConfigLoadInt(SectionName, L"joy_id",		 0);
 		joysticks[port].controllertype	= host.ConfigLoadInt(SectionName, L"controllertype", 0);

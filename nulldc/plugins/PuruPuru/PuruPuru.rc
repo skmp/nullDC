@@ -7,10 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "windows.h"
-#ifndef IDC_STATIC
-#define IDC_STATIC (-1)
-#endif
+#include "afxres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -53,7 +50,7 @@ END
 // Dialog
 //
 
-IDD_CONFIG DIALOGEX 0, 0, 337, 327
+IDD_CONFIG_DC DIALOGEX 0, 0, 337, 327
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Configure: PuruPuru Input Plugin"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
@@ -134,6 +131,74 @@ BEGIN
     LTEXT           "BETA RELEASE",IDC_STATEI,9,207,59,9
 END
 
+IDD_CONFIG_NAOMI DIALOGEX 0, 0, 480, 288
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Configure: PuruPuru Input Plugin"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_PORTTAB,"SysTabControl32",0x0,2,4,476,266
+    CONTROL         109,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | SS_SUNKEN,67,69,346,192
+    CONTROL         104,IDC_CONFIG_ON,"Static",SS_BITMAP | SS_REALSIZEIMAGE,174,204,43,39
+    CONTROL         106,IDC_CONFIG_OFF,"Static",SS_BITMAP | SS_REALSIZEIMAGE,174,204,43,39
+    LTEXT           "www.multigesture.net",IDC_STATIC,3,277,72,8
+    GROUPBOX        "Controller:",IDC_STATIC,8,19,285,28
+    COMBOBOX        IDC_JOYNAME_SDL,14,30,270,128,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_JOYNAME_XINPUT,13,30,271,128,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_JOYNAME_KEY,13,30,271,128,CBS_DROPDOWNLIST | WS_VSCROLL
+    CTEXT           "",IDTEXT_NBUTTON1,433,92,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_NBUTTON1,416,94,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_NBUTTON2,433,116,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_NBUTTON2,416,118,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_COIN,6,218,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_COIN,49,219,15,10,0,WS_EX_STATICEDGE
+    GROUPBOX        "Extra settings:",IDC_STATIC,393,19,80,28
+    CTEXT           "",IDTEXT_NBUTTON3,433,147,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_NBUTTON3,416,148,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_NBUTTON4,433,172,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_NBUTTON4,416,174,15,10,0,WS_EX_STATICEDGE
+    GROUPBOX        "Controller type:",IDC_STATIC,295,19,95,28
+    COMBOBOX        IDC_CONTROLTYPE,299,30,87,64,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "Button 1",IDC_DPAD_TEXT1,435,82,28,8
+    LTEXT           "Button 2",IDC_DPAD_TEXT2,435,106,28,8
+    LTEXT           "Button 3",IDC_DPAD_TEXT3,435,137,28,8
+    LTEXT           "Button 4",IDC_DPAD_TEXT4,435,162,28,8
+    PUSHBUTTON      "About",IDABOUT,427,271,50,14
+    DEFPUSHBUTTON   "OK",IDOK,377,271,50,14
+    CONTROL         "Keyboard Input",IDC_KEY,"Button",BS_AUTOCHECKBOX | BS_LEFTTEXT | WS_TABSTOP,400,31,66,10
+    LTEXT           "Start",IDC_DPAD_TEXT5,7,208,17,8
+    LTEXT           "Coin",IDC_DPAD_TEXT6,7,233,15,8
+    PUSHBUTTON      "",IDC_START,49,244,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_START,6,243,40,12,WS_BORDER
+    CTEXT           "",IDTEXT_SERVICE1,68,54,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_SERVICE1,109,56,15,10,0,WS_EX_STATICEDGE
+    PUSHBUTTON      "",IDC_TEST1,181,56,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_TEST1,198,54,40,12,WS_BORDER
+    LTEXT           "Service (1) Test",IDC_DPAD_TEXT7,128,56,52,8
+    CTEXT           "",IDTEXT_SERVICE2,240,54,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_SERVICE2,282,56,15,10,0,WS_EX_STATICEDGE
+    PUSHBUTTON      "",IDC_TEST2,356,56,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_TEST2,373,54,40,12,WS_BORDER
+    LTEXT           "Service (2) Test",IDC_DPAD_TEXT8,301,56,52,8
+    CTEXT           "",IDTEXT_NBUTTON5,433,202,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_NBUTTON5,416,204,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_NBUTTON6,433,228,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_NBUTTON6,416,229,15,10,0,WS_EX_STATICEDGE
+    LTEXT           "Button 5",IDC_DPAD_TEXT9,435,192,28,8
+    LTEXT           "Button 6",IDC_DPAD_TEXT10,435,218,28,8
+    CTEXT           "",IDTEXT_DPAD_UP,6,76,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_DPAD_UP,49,78,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_DPAD_DOWN,6,101,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_DPAD_DOWN,49,103,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_DPAD_LEFT,6,127,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_DPAD_LEFT,49,129,15,10,0,WS_EX_STATICEDGE
+    CTEXT           "",IDTEXT_DPAD_RIGHT,6,153,40,12,WS_BORDER
+    PUSHBUTTON      "",IDC_DPAD_RIGHT,49,154,15,10,0,WS_EX_STATICEDGE
+    LTEXT           "Up",IDC_DPAD_TEXT11,7,66,10,8
+    LTEXT           "Down",IDC_DPAD_TEXT12,7,91,19,8
+    LTEXT           "Left",IDC_DPAD_TEXT13,7,117,14,8
+    LTEXT           "Right",IDC_DPAD_TEXT14,7,143,18,8
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -141,10 +206,30 @@ END
 //
 
 IDB_BITMAP1             BITMAP                  "images\\full_dreamcast_controller.bmp"
+IDB_BITMAP2             BITMAP                  "images\\Naomi.bmp"
 IDB_BITMAP_ON           BITMAP                  "images\\ICON_ON.bmp"
 IDB_BITMAP_OFF          BITMAP                  "images\\ICON_OFF.bmp"
 IDB_BITMAP4             BITMAP                  "images\\purupurulogo.bmp"
 
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_CONFIG_DC, DIALOG
+    BEGIN
+    END
+
+    IDD_CONFIG_NAOMI, DIALOG
+    BEGIN
+        RIGHTMARGIN, 474
+        BOTTOMMARGIN, 285
+    END
+END
+#endif    // APSTUDIO_INVOKED
 
 #endif    // Dutch (Netherlands) resources
 /////////////////////////////////////////////////////////////////////////////

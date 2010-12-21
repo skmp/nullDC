@@ -54,6 +54,13 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 		TCITEM tci; 
 		tci.mask = TCIF_TEXT | TCIF_IMAGE;
 		tci.iImage = -1; 
+
+#ifdef BUILD_NAOMI
+		tci.pszText = current_port == 0 ? L"->Controller 1<-" : L"Controller 1"; 
+		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 0, &tci); 
+		tci.pszText = current_port == 1 ? L"->Controller 2<-" : L"Controller 2"; 
+		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 1, &tci); 
+#else		
 		tci.pszText = current_port == 0 ? L"->Controller 1<-" : L"Controller 1"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 0, &tci); 
 		tci.pszText = current_port == 1 ? L"->Controller 2<-" : L"Controller 2"; 
@@ -62,7 +69,7 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 2, &tci); 
 		tci.pszText = current_port == 3 ? L"->Controller 4<-" : L"Controller 4"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 3, &tci); 
-
+#endif
 		TabCtrl_SetCurSel(GetDlgItem(hDlg,IDC_PORTTAB),current_port);		
 
 		// Dummy Keyb-only combobox
@@ -210,22 +217,37 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 			}
 			break;
 
+#ifdef BUILD_NAOMI
+			case IDC_NBUTTON1:
+			case IDC_NBUTTON2:
+			case IDC_NBUTTON3:
+			case IDC_NBUTTON4:
+			case IDC_NBUTTON5:
+			case IDC_NBUTTON6:
+			case IDC_COIN:
+			case IDC_SERVICE1:
+			case IDC_SERVICE2:
+			case IDC_TEST1:
+			case IDC_TEST2:
+#else
+
 			case IDC_SHOULDERL:
 			case IDC_SHOULDERR:
 			case IDC_A:
 			case IDC_B:
 			case IDC_X:
-			case IDC_Y:				
-			case IDC_START:
+			case IDC_Y:							
 			case IDC_HALFPRESS:												
-			case IDC_DPAD_UP:
-			case IDC_DPAD_DOWN:
-			case IDC_DPAD_LEFT:
-			case IDC_DPAD_RIGHT:
 			case IDC_MX_L:
 			case IDC_MX_R:
 			case IDC_MY_U:
 			case IDC_MY_D:
+#endif		
+			case IDC_START:
+			case IDC_DPAD_UP:
+			case IDC_DPAD_DOWN:
+			case IDC_DPAD_LEFT:
+			case IDC_DPAD_RIGHT:
 			{
 				switch(joysticks[current_port].controllertype)
 				{
@@ -749,7 +771,29 @@ void SetControllerAll(HWND hDlg, int controller)
 		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), FALSE);
 		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), TRUE);
 	}
+
+#ifdef BUILD_NAOMI
+
+	SetButton(hDlg, IDTEXT_SERVICE1,	joysticks[controller].names[MAPN_SERVICE1]);
+	SetButton(hDlg, IDTEXT_SERVICE2,	joysticks[controller].names[MAPN_SERVICE2]);
+	SetButton(hDlg, IDTEXT_TEST1,		joysticks[controller].names[MAPN_TEST1]);
+	SetButton(hDlg, IDTEXT_TEST2,		joysticks[controller].names[MAPN_TEST2]);
+
+	SetButton(hDlg, IDTEXT_NBUTTON1,	joysticks[controller].names[MAPN_BUTTON1]);
+	SetButton(hDlg, IDTEXT_NBUTTON2,	joysticks[controller].names[MAPN_BUTTON2]);
+	SetButton(hDlg, IDTEXT_NBUTTON3,	joysticks[controller].names[MAPN_BUTTON3]);	
+	SetButton(hDlg, IDTEXT_NBUTTON4,	joysticks[controller].names[MAPN_BUTTON4]);
+	SetButton(hDlg, IDTEXT_NBUTTON5,	joysticks[controller].names[MAPN_BUTTON5]);
+	SetButton(hDlg, IDTEXT_NBUTTON6,	joysticks[controller].names[MAPN_BUTTON6]);
 	
+	SetButton(hDlg, IDTEXT_START,		joysticks[controller].names[MAPN_START]);	
+	SetButton(hDlg, IDTEXT_COIN,		joysticks[controller].names[MAPN_COIN]);
+
+	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].names[MAPN_D_UP]);
+	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].names[MAPN_D_DOWN]);
+	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].names[MAPN_D_LEFT]);
+	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].names[MAPN_D_RIGHT]);	
+#else
 	SetButton(hDlg, IDTEXT_SHOULDERL,	joysticks[controller].names[MAP_LT]);
 	SetButton(hDlg, IDTEXT_SHOULDERR,	joysticks[controller].names[MAP_RT]);
 	SetButton(hDlg, IDTEXT_A,			joysticks[controller].names[MAP_A]);
@@ -766,19 +810,18 @@ void SetControllerAll(HWND hDlg, int controller)
 	SetButton(hDlg, IDTEXT_MY_U,		joysticks[controller].names[MAP_A_YU]);	
 	SetButton(hDlg, IDTEXT_MY_D,		joysticks[controller].names[MAP_A_YD]);
 
-	SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_SETCURSEL, joysticks[controller].controllertype, 0);	
-	SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_SETCURSEL, joysticks[controller].deadzone, 0);	
-
-	UpdateVisibleItems(hDlg, joysticks[controller].controllertype);
-
-	if(joysticks[controller].keys == 1) CheckDlgButton(hDlg,IDC_KEY, BST_CHECKED);
-	else CheckDlgButton(hDlg,IDC_KEY, BST_UNCHECKED);
-
 	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].names[MAP_D_UP]);
 	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].names[MAP_D_DOWN]);
 	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].names[MAP_D_LEFT]);
 	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].names[MAP_D_RIGHT]);	
-	
+
+	SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_SETCURSEL, joysticks[controller].deadzone, 0);	
+#endif
+	SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_SETCURSEL, joysticks[controller].controllertype, 0);		
+	UpdateVisibleItems(hDlg, joysticks[controller].controllertype);
+
+	if(joysticks[controller].keys == 1) CheckDlgButton(hDlg,IDC_KEY, BST_CHECKED);
+	else CheckDlgButton(hDlg,IDC_KEY, BST_UNCHECKED);	
 }
 
 // Get dialog items
@@ -790,6 +833,28 @@ void GetControllerAll(HWND hDlg, int controller)
 	else if(joysticks[controller].controllertype == CTL_TYPE_JOYSTICK_XINPUT)
 		joysticks[controller].ID = (int)SendMessage(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), CB_GETCURSEL, 0, 0); 
 
+#ifdef BUILD_NAOMI
+
+	GetButton(hDlg, IDTEXT_SERVICE1,	joysticks[controller].names[MAPN_SERVICE1]);
+	GetButton(hDlg, IDTEXT_SERVICE2,	joysticks[controller].names[MAPN_SERVICE2]);
+	GetButton(hDlg, IDTEXT_TEST1,		joysticks[controller].names[MAPN_TEST1]);
+	GetButton(hDlg, IDTEXT_TEST2,		joysticks[controller].names[MAPN_TEST2]);
+
+	GetButton(hDlg, IDTEXT_NBUTTON1,	joysticks[controller].names[MAPN_BUTTON1]);
+	GetButton(hDlg, IDTEXT_NBUTTON2,	joysticks[controller].names[MAPN_BUTTON2]);
+	GetButton(hDlg, IDTEXT_NBUTTON3,	joysticks[controller].names[MAPN_BUTTON3]);	
+	GetButton(hDlg, IDTEXT_NBUTTON4,	joysticks[controller].names[MAPN_BUTTON4]);
+	GetButton(hDlg, IDTEXT_NBUTTON5,	joysticks[controller].names[MAPN_BUTTON5]);
+	GetButton(hDlg, IDTEXT_NBUTTON6,	joysticks[controller].names[MAPN_BUTTON6]);
+	
+	GetButton(hDlg, IDTEXT_START,		joysticks[controller].names[MAPN_START]);	
+	GetButton(hDlg, IDTEXT_COIN,		joysticks[controller].names[MAPN_COIN]);
+
+	GetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].names[MAPN_D_UP]);
+	GetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].names[MAPN_D_DOWN]);
+	GetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].names[MAPN_D_LEFT]);
+	GetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].names[MAPN_D_RIGHT]);	
+#else
 	GetButton(hDlg, IDTEXT_SHOULDERL,		joysticks[controller].names[MAP_LT]);
 	GetButton(hDlg, IDTEXT_SHOULDERR,		joysticks[controller].names[MAP_RT]);
 	GetButton(hDlg, IDTEXT_A,				joysticks[controller].names[MAP_A]);
@@ -810,11 +875,11 @@ void GetControllerAll(HWND hDlg, int controller)
 	GetButton(hDlg, IDTEXT_MX_R,			joysticks[controller].names[MAP_A_XR]);
 	GetButton(hDlg, IDTEXT_MY_U,			joysticks[controller].names[MAP_A_YU]);
 	GetButton(hDlg, IDTEXT_MY_D,			joysticks[controller].names[MAP_A_YD]);
-	
-	joysticks[current_port].keys = IsDlgButtonChecked(hDlg, IDC_KEY) == BST_CHECKED? 1:0;
-	joysticks[controller].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0); 
+
 	joysticks[controller].deadzone = (int)SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_GETCURSEL, 0, 0);
-	
+#endif
+	joysticks[current_port].keys = IsDlgButtonChecked(hDlg, IDC_KEY) == BST_CHECKED? 1:0;
+	joysticks[controller].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0); 		
 }
 
 // Get text from static text item
