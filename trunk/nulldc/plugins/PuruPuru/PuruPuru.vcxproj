@@ -118,6 +118,9 @@
     <None Include="images\full_dreamcast_controller.bmp" />
     <None Include="images\purupurulogo.bmp" />
     <None Include="exports.def" />
+    <None Include="images\ICON_OFF.bmp" />
+    <None Include="images\ICON_ON.bmp" />
+    <None Include="images\Naomi.bmp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PuruPuru.rc" />

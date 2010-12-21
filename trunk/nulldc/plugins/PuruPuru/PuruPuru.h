@@ -39,7 +39,7 @@
 
 struct CONTROLLER_STATE		// DC PAD INFO/STATE
 {
-	int control[13];		// Axis, buttons, dpad, triggers...
+	int control[16];		// Axis, buttons, dpad, triggers... + NAOMI
 	int halfpress;			// ...	
 	SDL_Joystick *joy;		// SDL joystick device
 };
@@ -47,7 +47,7 @@ struct CONTROLLER_STATE		// DC PAD INFO/STATE
 struct CONTROLLER_MAPPING   // GC PAD MAPPING
 {	
 	wchar names[16][64];
-	int control[16];		// All of it, Axis are one and only one.
+	int control[16];		// All of it too.
 	int enabled;			// Pad attached?
 	int deadzone;			// Deadzone... what else?
 	int keys;
@@ -73,10 +73,39 @@ struct CONTROLLER_INFO_XINPUT
     bool connected;
 };
 
+struct _NaomiState
+{
+	BYTE Cmd;
+	BYTE Mode;
+	BYTE Node;
+};
+
 // ENUMS
 
 enum eController
 {
+#ifdef BUILD_NAOMI
+
+	CTLN_D_UP = 0,
+	CTLN_D_DOWN,
+	CTLN_D_LEFT,
+	CTLN_D_RIGHT,
+
+	CTLN_BUTTON1,
+	CTLN_BUTTON2,
+	CTLN_BUTTON3,
+	CTLN_BUTTON4,
+	CTLN_BUTTON5,
+	CTLN_BUTTON6,
+
+	CTLN_START,
+	CTLN_COIN,
+	
+	CTLN_SERVICE1,
+	CTLN_SERVICE2,
+	CTLN_TEST1,
+	CTLN_TEST2	
+#else
 	CTL_MAIN_X = 0,
 	CTL_MAIN_Y,
 
@@ -93,6 +122,7 @@ enum eController
 	CTL_D_PAD_DOWN,
 	CTL_D_PAD_LEFT,
 	CTL_D_PAD_RIGHT,
+#endif
 };
 
 enum eControllerX
@@ -143,8 +173,32 @@ enum eInputType
 	inKEY
 }; 
 
+
+
 enum eMappedController
 {
+#ifdef BUILD_NAOMI
+
+	MAPN_D_UP = 0,
+	MAPN_D_DOWN,
+	MAPN_D_LEFT,
+	MAPN_D_RIGHT,
+
+	MAPN_BUTTON1,
+	MAPN_BUTTON2,
+	MAPN_BUTTON3,
+	MAPN_BUTTON4,
+	MAPN_BUTTON5,
+	MAPN_BUTTON6,
+
+	MAPN_START,
+	MAPN_COIN,
+	
+	MAPN_SERVICE1,
+	MAPN_SERVICE2,
+	MAPN_TEST1,
+	MAPN_TEST2	
+#else	
 	MAP_LT = 0,
 	MAP_RT,
 	MAP_A,
@@ -161,7 +215,7 @@ enum eMappedController
 	MAP_A_YU,
 	MAP_A_YD,
 	MAP_HALF
-
+#endif
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -181,6 +235,7 @@ void FASTCALL Destroy(void* data,u32 id);
 
 // Other
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
+u32 FASTCALL ControllerDMA_NAOMI(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
 
 void GetKeyStatus(int port, char* keys);
 void GetJoyStatus(int controller);
