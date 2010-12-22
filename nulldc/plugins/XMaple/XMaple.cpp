@@ -317,6 +317,8 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 
 	// Start at 0...
 	u32 id = ID_STDCONTROLLER;
+
+#ifndef BUILD_NAOMI
 	AddMapleDevice(L"Controller", MDTF_Sub0|MDTF_Sub1|MDTF_Hotplug);
 	AddMapleDevice(L"Twinstick", MDTF_Sub0|MDTF_Hotplug);
 	AddMapleDevice(L"Arcade Stick", MDTF_Sub0|MDTF_Hotplug);
@@ -324,7 +326,7 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	AddMapleSubDevice(L"Puru-Puru Pak", MDTF_Hotplug);
 //	AddMapleSubDevice(L"Mic", MDTF_Hotplug);
 //	AddMapleSubDevice(L"Dreameye Mic", MDTF_Hotplug);
-
+#endif
 	//EOL marker
 	info->maple.devices[id].Type = MDT_EndOfList;
 }
