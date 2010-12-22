@@ -653,11 +653,17 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 							coin1++;
 							old_coin1 = true;
 						}	
+						else if(old_coin1 && !joystate[0].control[CTLN_COIN]) // Coin key
+							old_coin1 = false;
+						
 						if(!old_coin2 && joystate[1].control[CTLN_COIN]) // Coin key
 						{
 							coin2++;
 							old_coin2 = true;
-						}	
+						}
+						else if(old_coin2 && !joystate[1].control[CTLN_COIN]) // Coin key													
+							old_coin2 = false;
+						
 
 						buffer_out_b[0x11+0]=0x00;
 						buffer_out_b[0x11+1]=0x8E;	//Valid data check
@@ -811,7 +817,7 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 		WORD		standby_power;//2
 		WORD		max_power;//2
 	} maple_devinfo_t;*/
-	case 1:
+	case 1: 
 		{
 			//header
 			//WriteMem32(ptr_out,(u32)(0x05 | //response
