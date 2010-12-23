@@ -237,7 +237,6 @@ void FASTCALL Destroy(void* data,u32 id);
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
 u32 FASTCALL ControllerDMA_NAOMI(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
 
-void GetKeyStatus(int port, char* keys);
 void GetJoyStatus(int controller);
 
 void EXPORT_CALL ConfigMenuCallback(u32 id,void* w,void* p);

@@ -619,7 +619,7 @@ void LoadSettings()
 	settings.Emulation.AlphaSortMode			=	cfgGetInt(L"Emulation.AlphaSortMode",1);
 	settings.Emulation.PaletteMode				=	cfgGetInt(L"Emulation.PaletteMode",1);
 	settings.Emulation.ModVolMode				= 	cfgGetInt(L"Emulation.ModVolMode",MVM_NormalAndClip);
-	settings.Emulation.ZBufferMode				= 	cfgGetInt(L"Emulation.ZBufferMode",4);
+	settings.Emulation.ZBufferMode				= 	cfgGetInt(L"Emulation.ZBufferMode",0);
 	settings.Emulation.TexCacheMode				= 	cfgGetInt(L"Emulation.TexCacheMode",0);
 
 	settings.OSD.ShowFPS						=	cfgGetInt(L"OSD.ShowFPS",0);
