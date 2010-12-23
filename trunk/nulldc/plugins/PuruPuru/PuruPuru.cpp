@@ -46,6 +46,12 @@ BOOL APIENTRY DllMain(	HINSTANCE hinstDLL,	// DLL module handle
 	return TRUE;
 }
 
+typedef INT_PTR CALLBACK dlgp( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
+dlgp* oldptr=0;
+
+bool keyboard_map[256];
+
 //////////////////////////////////////////////////////////////////////////////////////////
 // dcGetInterface
 // --------------
@@ -100,6 +106,7 @@ s32 FASTCALL Load(emu_info* emu)
 	wprintf(L"PuruPuru -> Load\n");	
 
 	memcpy(&host, emu, sizeof(host));
+	memset(keyboard_map, 0, sizeof(keyboard_map));
 
 	if(SDL_Init(SDL_INIT_JOYSTICK ) < 0)
 	{		
@@ -110,9 +117,10 @@ s32 FASTCALL Load(emu_info* emu)
 	{
 		int joys = Search_Devices();
 		if ( !joys ) wprintf(L"PuruPuru: No SDL Joystick Found!");
+	}	
 
-
-	}
+	if (oldptr==0)
+		oldptr = (dlgp*)SetWindowLongPtr((HWND)host.GetRenderTarget(),GWLP_WNDPROC,(LONG_PTR)sch);	
 
 	// All devices disabled unless connected later.
 	joysticks[0].enabled = 0;
@@ -129,6 +137,12 @@ s32 FASTCALL Load(emu_info* emu)
 void FASTCALL Unload()
 {
 	wprintf(L"PuruPuru -> Unload\n");
+
+	if (oldptr!=0)
+	{
+		SetWindowLongPtrW((HWND)host.GetRenderTarget(),GWLP_WNDPROC,(LONG_PTR)oldptr);
+		oldptr=0;
+	}
 
 	SDL_Quit();
 
@@ -282,8 +296,27 @@ char Joy_strBrand_2[64] = "Produced By or Under License From SEGA ENTERPRISES,LT
 #define key_CONT_DPAD2_LEFT  (1 << 14)
 #define key_CONT_DPAD2_RIGHT  (1 << 15)
 
-#ifndef BUILD_NAOMI
+INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
+{			
+	switch(uMsg)
+	{		
+	case WM_KEYDOWN:	
+		keyboard_map[wParam] = 1;
+		break;	
+	case WM_KEYUP:
+		keyboard_map[wParam] = 0;
+		break;
+	case WM_SYSKEYDOWN:
+		keyboard_map[wParam] = 1;
+		break;
+	case WM_SYSKEYUP:		
+		keyboard_map[wParam] = 0;
+		break;		
+	}
+	return oldptr(hWnd,uMsg,wParam,lParam);
+}
 
+#ifndef BUILD_NAOMI
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len)
 {
 	u8*buffer_out_b=(u8*)buffer_out;
@@ -932,22 +965,9 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 }
 #endif
 
-void GetKeyStatus(int port, char* keys)
-{	
-	for(int i=0; i<16; i++)
-	{
-		if((joysticks[port].control[i]>>24) & inKEY)
-		{
-			int num = joysticks[port].control[i] & 0xFF;
-			keys[num] = (char)(GetAsyncKeyState(num)>>12);
-		}
-	}		
-}
-
 int GetStatusKey (int port, int type, int input)
 {
-	char key[256] = {0};
-	GetKeyStatus(port, key);			
+	bool* key = keyboard_map;	
 
 	int num = input & 0xFF;
 
@@ -965,9 +985,11 @@ int GetStatusKey (int port, int type, int input)
 }
 
 int GetStateXInput (int port, int type, int input)
-{			
-	char key[256] = {0};
-	if(joysticks[port].keys) GetKeyStatus(port, key);		
+{				
+	bool key[256] = {0};
+	
+	if(joysticks[port].keys)
+		memcpy(key,keyboard_map,sizeof(key));
 		
 	XInputGetState( joysticks[port].ID, &xoyinfo[port].state );
 	port = joysticks[port].ID;	
@@ -1462,8 +1484,10 @@ int GetStateXInput (int port, int type, int input)
 
 int GetStateSDL (int port, int type, int input)
 {							
-	char key[256] = {0};
-	if(joysticks[port].keys) GetKeyStatus(port, key);
+	bool key[256] = {0};
+	
+	if(joysticks[port].keys)
+		memcpy(key,keyboard_map,sizeof(key));
 	
 	port = joysticks[port].ID;
 
