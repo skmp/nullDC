@@ -17,10 +17,6 @@
 
 extern u32 current_port;
 extern bool emulator_running;
-
-extern CONTROLLER_INFO_SDL		*joyinfo;
-extern CONTROLLER_INFO_XINPUT	 xoyinfo[4];
-extern CONTROLLER_MAPPING joysticks[4];
 extern HINSTANCE PuruPuru_hInst;
 
 extern bool canSDL;

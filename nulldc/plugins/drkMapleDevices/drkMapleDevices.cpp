@@ -5,7 +5,8 @@
 	Ever wondered how REALLY bad code looks like ? just keep on reading ...
 */
 
-//#define _HAS_LGLCD_ 1
+// Works with normal keyboards just the same.
+#define _HAS_LGLCD_ 1
 
 #include "nullDC\plugins\plugin_header.h"
 #include <memory.h>
@@ -37,7 +38,7 @@ emu_info host;
 
 #endif
 
-RAWINPUTDEVICE Rid[1];	
+RAWINPUTDEVICE Rid[2]; // Raw mouse and keyboard	
 
 u16 kcode[4]={0xFFFF,0xFFFF,0xFFFF,0xFFFF};
 u32 vks[4]={0};
@@ -393,10 +394,10 @@ INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	switch(uMsg)
 	{
 	case WM_INPUT:
-		{
+		{						
 			UINT dwSize = 40;
 			static BYTE lpb[40];		
-    
+			    
 			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, 
 							lpb, &dwSize, sizeof(RAWINPUTHEADER));
     
@@ -404,134 +405,143 @@ INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 			raw->data.mouse.usFlags = MOUSE_MOVE_RELATIVE;
     
-			if (raw->header.dwType == RIM_TYPEMOUSE) 
+			switch(raw->header.dwType)
 			{
-				switch(raw->data.mouse.usButtonFlags)
+			case RIM_TYPEMOUSE:
 				{
-					// Mouse Buttons Down
-					case RI_MOUSE_LEFT_BUTTON_DOWN:   mo_buttons &= ~mo_Left; break;	
-					case RI_MOUSE_MIDDLE_BUTTON_DOWN: mo_buttons &= ~mo_Middle; break;
-					case RI_MOUSE_RIGHT_BUTTON_DOWN:  mo_buttons &= ~mo_Right; break;
-
-					// Buttons Buttons UP
-					case RI_MOUSE_LEFT_BUTTON_UP:   mo_buttons |= mo_Left; break;
-					case RI_MOUSE_MIDDLE_BUTTON_UP: mo_buttons |= mo_Middle; break;
-					case RI_MOUSE_RIGHT_BUTTON_UP:  mo_buttons |= mo_Right; break;
-
-					// Wheel
-					case RI_MOUSE_WHEEL:
+					switch(raw->data.mouse.usButtonFlags)
 					{
-						u16 raw_wheel = raw->data.mouse.usButtonData;
+						// Mouse Buttons Down
+						case RI_MOUSE_LEFT_BUTTON_DOWN:   mo_buttons &= ~mo_Left; break;	
+						case RI_MOUSE_MIDDLE_BUTTON_DOWN: mo_buttons &= ~mo_Middle; break;
+						case RI_MOUSE_RIGHT_BUTTON_DOWN:  mo_buttons &= ~mo_Right; break;
+
+						// Buttons Buttons UP
+						case RI_MOUSE_LEFT_BUTTON_UP:   mo_buttons |= mo_Left; break;
+						case RI_MOUSE_MIDDLE_BUTTON_UP: mo_buttons |= mo_Middle; break;
+						case RI_MOUSE_RIGHT_BUTTON_UP:  mo_buttons |= mo_Right; break;
+
+						// Wheel
+						case RI_MOUSE_WHEEL:
+						{
+							u16 raw_wheel = raw->data.mouse.usButtonData;
 						
-						if(raw_wheel>>15) mo_wheel_delta = -(u16)~raw_wheel-1;
-						else			  mo_wheel_delta =  (u16) raw_wheel;																		
-					}
-					break;
+							if(raw_wheel>>15) mo_wheel_delta = -(u16)~raw_wheel-1;
+							else			  mo_wheel_delta =  (u16) raw_wheel;																		
+						}
+						break;
 					
-					default: break;
+						default: break;
+					}
+								
+					mo_x_delta = (int)(raw->data.mouse.lLastX * mouseSensitivity);
+					mo_y_delta = (int)(raw->data.mouse.lLastY * mouseSensitivity);	
 				}
-				
-				
-				mo_x_delta = (int)(raw->data.mouse.lLastX * mouseSensitivity);
-				mo_y_delta = (int)(raw->data.mouse.lLastY * mouseSensitivity);				
-			}         
-		}
-		break;
+				break;
 
-	case WM_KEYDOWN:
-
-		if(wParam == VK_SCROLL) mouseCapture = !mouseCapture;
-
-		kb_down(wParam);
-
-		for (int port=0;port<4;port++)
-		{
-			for (int i=0;joypad_settings_K[i].name;i++)
-			{
-				if (wParam==joypad_settings[port][i].KC)
+			case RIM_TYPEKEYBOARD:
 				{
-					if (joypad_settings[port][i].BIT<=0x8000)
+					u8 key = (u8)(raw->data.keyboard.VKey);
+					
+					switch(raw->data.keyboard.Message)
 					{
-						kcode[port] &= 0xFFFF -joypad_settings[port][i].BIT;
-					}
-					else
-					{
-						vks[port]|=joypad_settings[port][i].BIT;
-						switch(joypad_settings[port][i].BIT)
+					case WM_KEYDOWN:
+					//case WM_SYSKEYDOWN:
 						{
-						case key_CONT_ANALOG_UP:
-							joyy[port]= -126;
-							break;
-						case key_CONT_ANALOG_DOWN:
-							joyy[port]= +126;
-							break;
-						case key_CONT_ANALOG_RIGHT:
-							joyx[port]= +126;
-							break;
-						case key_CONT_ANALOG_LEFT:
-							joyx[port]= -126;
-							break;
-						case key_CONT_LSLIDER:
-							lt[port]=255;
-							break;
-						case key_CONT_RSLIDER:
-							rt[port]=255;
-							break;
-						}
-					}
-				}
-			}
-		}
-		break;
+							if(key == VK_SCROLL) mouseCapture = !mouseCapture;
+							
+							kb_down(key);
 
-	case WM_KEYUP:
-		kb_up(wParam & 0xFF);
+							for (int port=0;port<4;port++)							
+							for (int i=0;joypad_settings_K[i].name;i++)							
+							if (key==joypad_settings[port][i].KC)
+							{
+								if (joypad_settings[port][i].BIT<=0x8000)
+								{
+									kcode[port] &= 0xFFFF -joypad_settings[port][i].BIT;
+								}
+								else
+								{
+									vks[port]|=joypad_settings[port][i].BIT;
+									switch(joypad_settings[port][i].BIT)
+									{
+									case key_CONT_ANALOG_UP:
+										joyy[port]= -126;
+										break;
+									case key_CONT_ANALOG_DOWN:
+										joyy[port]= +126;
+										break;
+									case key_CONT_ANALOG_RIGHT:
+										joyx[port]= +126;
+										break;
+									case key_CONT_ANALOG_LEFT:
+										joyx[port]= -126;
+										break;
+									case key_CONT_LSLIDER:
+										lt[port]=255;
+										break;
+									case key_CONT_RSLIDER:
+										rt[port]=255;
+										break;
+									}
+								}
+							}																					
+						}
+						break;
 
-		for (int port=0;port<4;port++)
-		{
-			for (int i=0;joypad_settings_K[i].name;i++)
-			{
-				if (wParam==joypad_settings[port][i].KC)
-				{
-					if (joypad_settings[port][i].BIT<=0x8000)
-					{
-						kcode[port] |= joypad_settings[port][i].BIT;
-					}
-					else
-					{
-						vks[port] &= ~joypad_settings[port][i].BIT;
-						if ((vks[port] & (key_CONT_ANALOG_UP|key_CONT_ANALOG_DOWN)) !=(key_CONT_ANALOG_UP|key_CONT_ANALOG_DOWN))
+					case WM_KEYUP:
+					//case WM_SYSKEYUP:
 						{
-							if (vks[port] & key_CONT_ANALOG_UP)
-								joyy[port]=-126;
-							else if (vks[port] & key_CONT_ANALOG_DOWN)
-								joyy[port]=+126;
-							else
-								joyy[port]=0;
-						}
-						if ((vks[port] & (key_CONT_ANALOG_LEFT|key_CONT_ANALOG_RIGHT)) !=(key_CONT_ANALOG_LEFT|key_CONT_ANALOG_RIGHT))
-						{
-							if (vks[port] & key_CONT_ANALOG_LEFT)
-								joyx[port]=-126;
-							else if (vks[port] & key_CONT_ANALOG_RIGHT)
-								joyx[port]=+126;
-							else
-								joyx[port]=0;
-						}
-						switch(joypad_settings[port][i].BIT)
-						{
-						case key_CONT_LSLIDER:
-							lt[port]=0;
-							break;
-						case key_CONT_RSLIDER:
-							rt[port]=0;
-							break;
-						}
-					}
-				}
-			}
+							kb_up(key & 0xFF);
+
+							for (int port=0;port<4;port++)		
+							for (int i=0;joypad_settings_K[i].name;i++)							
+							if (key==joypad_settings[port][i].KC)
+							{
+								if (joypad_settings[port][i].BIT<=0x8000)
+								{
+									kcode[port] |= joypad_settings[port][i].BIT;
+								}
+								else
+								{
+									vks[port] &= ~joypad_settings[port][i].BIT;
+									if ((vks[port] & (key_CONT_ANALOG_UP|key_CONT_ANALOG_DOWN)) !=(key_CONT_ANALOG_UP|key_CONT_ANALOG_DOWN))
+									{
+										if (vks[port] & key_CONT_ANALOG_UP)
+											joyy[port]=-126;
+										else if (vks[port] & key_CONT_ANALOG_DOWN)
+											joyy[port]=+126;
+										else
+											joyy[port]=0;
+									}
+									if ((vks[port] & (key_CONT_ANALOG_LEFT|key_CONT_ANALOG_RIGHT)) !=(key_CONT_ANALOG_LEFT|key_CONT_ANALOG_RIGHT))
+									{
+										if (vks[port] & key_CONT_ANALOG_LEFT)
+											joyx[port]=-126;
+										else if (vks[port] & key_CONT_ANALOG_RIGHT)
+											joyx[port]=+126;
+										else
+											joyx[port]=0;
+									}
+									switch(joypad_settings[port][i].BIT)
+									{
+									case key_CONT_LSLIDER:
+										lt[port]=0;
+										break;
+									case key_CONT_RSLIDER:
+										rt[port]=0;
+										break;
+									}
+								}
+							}														
+						} 
+						break; // Case WM_KEYUP
+					}										
+				} 
+				break; // Case RIM_TYPEKEYBOARD
+			}			  
 		}
-		break;
+		break; // Case WM_INPUT
 	}
 	return oldptr(hWnd,uMsg,wParam,lParam);
 }
@@ -800,12 +810,19 @@ s32 FASTCALL Load(emu_info* emu)
 
 	#endif
 
+	// Registering RAW Mouse
 	Rid[0].usUsagePage = 0x01;
 	Rid[0].usUsage = 0x02;
 	Rid[0].dwFlags = 0;
 	Rid[0].hwndTarget = NULL;
 
-	RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
+	// Registering RAW Keyboard
+	Rid[1].usUsagePage = 0x01;
+	Rid[1].usUsage = 0x06;
+	Rid[1].dwFlags = 0;
+	Rid[1].hwndTarget = NULL;
+
+	RegisterRawInputDevices(Rid, 2, sizeof(Rid[0]));	
 
 	return rv_ok;
 }
@@ -3559,7 +3576,7 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 
 	//2
 	#ifdef _HAS_LGLCD_
-		MSD(L"nullDC VMU For Logitech G-15 Keyboards (" _T(__DATE__) L")",MDTF_Hotplug);
+		MSD(L"nullDC VMU Logitech friendly version (" _T(__DATE__) L")",MDTF_Hotplug);
 	#else
 		MSD(L"nullDC VMU (" _T(__DATE__) L")",MDTF_Hotplug);
 	#endif
