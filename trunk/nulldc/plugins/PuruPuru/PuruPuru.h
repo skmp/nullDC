@@ -234,10 +234,14 @@ void FASTCALL Term(void* data,u32 id);
 void FASTCALL Destroy(void* data,u32 id);
 
 // Other
+#ifdef BUILD_DREAMCAST
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
-u32 FASTCALL ControllerDMA_NAOMI(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
+#elif defined BUILD_NAOMI
+u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_in,u32 buffer_in_len,u32* buffer_out,u32& buffer_out_len);
+#endif
 
 void GetJoyStatus(int controller);
+void Names2Control(int port);
 
 void EXPORT_CALL ConfigMenuCallback(u32 id,void* w,void* p);
 
@@ -245,3 +249,10 @@ void SaveConfig();
 void LoadConfig();
 int Search_Devices();
 
+//Globals
+extern emu_info host;
+extern CONTROLLER_MAPPING joysticks[4];
+extern CONTROLLER_STATE joystate[4];
+extern CONTROLLER_INFO_SDL	*joyinfo;
+extern CONTROLLER_INFO_XINPUT xoyinfo[4];
+extern bool keyboard_map[256];

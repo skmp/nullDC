@@ -107,10 +107,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="config.cpp" />
+    <ClCompile Include="Dreamcast_Controller.cpp" />
+    <ClCompile Include="InputStuff.cpp" />
+    <ClCompile Include="NAOMI JAMMA.cpp" />
     <ClCompile Include="PuruPuru.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="config.h" />
+    <ClInclude Include="Devices.h" />
     <ClInclude Include="PuruPuru.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
