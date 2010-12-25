@@ -6,7 +6,7 @@
 
 #include "MapleInterface.h"
 #include "XInputBackend.h"
-
+#include "SDLBackend.h"
 
 //////////////////////////////////////////////////////////////////////////
 // should probably be moved to MapleInterface or smth
@@ -71,7 +71,8 @@ struct xmaple_settings
 	struct 
 	{
 		bool UseRealFreq;
-		int Length;
+		bool SDL_Rumble;
+		int Length;		
 		int Intensity;
 	} PuruPuru;	
 };
