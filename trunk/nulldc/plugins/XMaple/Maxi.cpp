@@ -35,7 +35,14 @@ Maxi::Maxi(maple_subdevice_instance* instance)
 void Maxi::StartVibThread()
 {
 	DEBUG_LOG("   VIBRATION THREAD STARTING...\n");
-	CreateThread(0, 0, (LPTHREAD_START_ROUTINE)XInput::VibrationThread, &m_status, 0, NULL);
+
+	extern xmaple_settings settings;
+
+	if(settings.PuruPuru.SDL_Rumble)
+		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)SDL::VibrationThread, &m_status, 0, NULL);
+	else
+		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)XInput::VibrationThread, &m_status, 0, NULL);
+
 	InitializeCriticalSection(&m_status.section);	
 	
 }
