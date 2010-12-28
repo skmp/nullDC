@@ -132,7 +132,7 @@
     <None Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SDLBackend.cpp" />
+    <ClCompile Include="DInputBackend.cpp" />
     <ClCompile Include="XInputBackend.cpp" />
     <ClCompile Include="ArcadeStick.cpp" />
     <ClCompile Include="FT0.cpp" />
@@ -150,7 +150,7 @@
     <ClCompile Include="XMaple.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SDLBackend.h" />
+    <ClInclude Include="DInputBackend.h" />
     <ClInclude Include="XInputBackend.h" />
     <ClInclude Include="MapleInterface.h" />
     <ClInclude Include="ArcadeStick.h" />
