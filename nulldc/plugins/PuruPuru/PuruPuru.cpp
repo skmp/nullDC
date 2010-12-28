@@ -19,7 +19,9 @@ u32 current_port = 0;
 bool emulator_running  = FALSE;
 
 bool canSDL		= false;
+bool canHaptic	= false;
 bool canXInput  = false;
+
 
 CONTROLLER_STATE		joystate[4];
 CONTROLLER_MAPPING		joysticks[4];
@@ -75,14 +77,22 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	// Can have 2 subdevices (a dc controller has 2 subdevice ports for vmus / etc)
 	// Can be 'hot plugged' (after emulation was started)
 	info->maple.devices[0].Flags = MDTF_Sub0 | MDTF_Sub1 | MDTF_Hotplug;
+
+	// PuruPuru Pack
+	wcscpy_s(info->maple.devices[1].Name, L"PuruPuru Pakku v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
+	info->maple.devices[1].Type = MDT_Sub;
+	info->maple.devices[1].Flags = MDTF_Hotplug;
+
+	//EOL marker
+	info->maple.devices[2].Type = MDT_EndOfList;	// wtf is this raz?
 #elif defined BUILD_NAOMI
 	wcscpy_s(info->maple.devices[0].Name, L"PuruPuru NAOMI JAMMA Controller v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
 	info->maple.devices[0].Type = MDT_Main;
 	info->maple.devices[0].Flags = 0;
-#endif
-	
+
 	//EOL marker
 	info->maple.devices[1].Type = MDT_EndOfList;	// wtf is this raz?
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -94,8 +104,7 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 // Notes: Called when plugin is loaded by the emu, the param has some handy functions so i make a copy of it ;).
 s32 FASTCALL Load(emu_info* emu)
 {	
-
-	wprintf(L"PuruPuru -> Load\n");	
+	//printf("PuruPuru -> Load\n");	
 
 	memcpy(&host, emu, sizeof(host));
 	memset(keyboard_map, 0, sizeof(keyboard_map));
@@ -106,7 +115,17 @@ s32 FASTCALL Load(emu_info* emu)
 		return rv_error;
 	}
 	else
-	{
+	{		
+		if(SDL_Init(SDL_INIT_HAPTIC) < 0)
+		{
+			MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL Haptic!", MB_ICONERROR);			
+		}
+		else
+		{
+			if(SDL_NumHaptics()>0)
+				canHaptic = true;
+		}
+		
 		int joys = Search_Devices();
 		if ( !joys ) wprintf(L"PuruPuru: No SDL Joystick Found!");
 	}	
@@ -128,6 +147,8 @@ s32 FASTCALL Load(emu_info* emu)
 
 	RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
 
+	LoadConfig();
+
 	return rv_ok;
 }
 
@@ -136,17 +157,19 @@ s32 FASTCALL Load(emu_info* emu)
 // Notes: Called when plugin is unloaded by emulator (only if Load was called before).
 void FASTCALL Unload()
 {
-	wprintf(L"PuruPuru -> Unload\n");
-
+	//printf("PuruPuru -> Unload\n");
+	
 	if (oldptr!=0)
 	{
 		SetWindowLongPtrW((HWND)host.GetRenderTarget(),GWLP_WNDPROC,(LONG_PTR)oldptr);
 		oldptr=0;
 	}
 
-	SDL_Quit();
-
+	for(int i=0; i<4; i++) Stop_Vibration(i);
+	
 	delete [] joyinfo;
+
+	SDL_Quit();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
@@ -167,7 +190,7 @@ void FASTCALL Unload()
 // rootmenu: Root menu for the device
 s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 rootmenu)
 {
-	wprintf(L"PuruPuru -> CreateMain\n");
+	//printf("PuruPuru -> CreateMain [%d]\n", inst->port >> 6);
 
 	// Enable pad on port.
 	joysticks[(inst->port >> 6)].enabled = 1;
@@ -177,10 +200,13 @@ s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 root
 
 	inst->data = inst;
 
-#ifdef BUILD_NAOMI
-	inst->dma = ControllerDMA_NAOMI;
-#else
+#ifdef BUILD_DREAMCAST
 	inst->dma = ControllerDMA;
+	host.AddMenuItem(rootmenu, -1, L"Dreamcast Controller", 0, 0);
+
+#elif defined BUILD_NAOMI
+	inst->dma = ControllerDMA_NAOMI;
+	host.AddMenuItem(rootmenu, -1, L"NAOMI JAMMA", 0, 0);
 #endif
 		
 	wchar temp[512];
@@ -195,15 +221,64 @@ s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 root
 	return rv_ok;
 }
 
+bool checkRumble(int port)
+{
+	switch(joysticks[port].controllertype)
+	{
+	case CTL_TYPE_JOYSTICK_SDL:
+		{
+			if(joyinfo[joysticks[port].ID].canRumble)
+			{
+				if(!SDL_JoystickOpened(joysticks[port].ID))
+					joystate[port].joy = SDL_JoystickOpen(joysticks[port].ID);
+				
+				joystate[port].rumble = SDL_HapticOpenFromJoystick(joystate[port].joy);
+
+				if(joystate[port].rumble != NULL) return true;
+				else return false;
+			}
+			else
+				return false;
+
+		}
+	case CTL_TYPE_JOYSTICK_XINPUT:
+		{
+			return true;
+		}
+	case CTL_TYPE_KEYBOARD:
+		{
+			return false;
+		}
+	}
+
+	return false;
+}
+
 // CreateSub
 // ---------
 // Notes: Called to create a sub device, uses same params as CreateMain
 s32 FASTCALL CreateSub(maple_subdevice_instance* inst, u32 id, u32 flags, u32 rootmenu)
-{	
-	wprintf(L"PuruPuru -> CreateSub\n");
+{		
+	int port = inst->port>>6;
+	
+	//printf("PuruPuru -> CreateSub [%d]\n", port);
 
-	// This plugin has no subdevices so return an error.
-	return rv_error;
+	inst->data = inst;
+	inst->dma  = PakkuDMA;
+
+	joysticks[port].canRumble = checkRumble(port);
+
+	if(joysticks[port].canRumble)	
+	{		
+		if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_SDL)
+			host.AddMenuItem(rootmenu, -1, L"Puru Puru Pakku (SDL)", 0, 0);
+		else
+			host.AddMenuItem(rootmenu, -1, L"Puru Puru Pakku (XInput)", 0, 0);		
+	}
+	else
+		host.AddMenuItem(rootmenu, -1, L"No Rumble Device", 0, 0);
+
+	return rv_ok;
 }
 
 // Init PAD (start emulation)
@@ -216,16 +291,32 @@ s32 FASTCALL CreateSub(maple_subdevice_instance* inst, u32 id, u32 flags, u32 ro
 // Hot plugged devices can miss this call if the emulation is started before the device is hotplugged. This is a bug on the emu %) ;p
 s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
 {
-	// Init input lib, this can also be done in Create*;
-	wprintf(L"PuruPuru -> Init\n");
+	// Init input lib, this can also be done in Create*;	
 	emulator_running = TRUE;
+	u32 port = ((maple_device_instance*)data)->port >> 6;
+	//printf("PuruPuru -> Init [%d]\n", port);
 
-	LoadConfig();	// Load joystick mapping
-	
-	u32 port = ((maple_device_instance*)data)->port >> 6;	
+	switch(id)
+	{
+	case 0: // Dreamcast Controller
+		{
+			if(joysticks[port].enabled)
+			{
+				if(!SDL_JoystickOpened(joysticks[port].ID))
+				joystate[port].joy = SDL_JoystickOpen(joysticks[port].ID);
+			}
+			else
+				joystate[port].joy = NULL;
+		}
+		break;
+	case 1: // PuruPuru Pakku
+		{
+			if(joysticks[port].canRumble)
+				Start_Vibration(port);
+		}
+		break;
+	}
 
-	if(joysticks[port].enabled)
-		joystate[port].joy = SDL_JoystickOpen(joysticks[port].ID);
 
 	return rv_ok;
 }
@@ -239,7 +330,8 @@ s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
 // Called only if Init() was called ;)
 void FASTCALL Term(void* data, u32 id)
 {
-	wprintf(L"PuruPuru -> Term\n");
+	u32 port = ((maple_device_instance*)data)->port >> 6;
+	//printf("PuruPuru -> Term [%d]\n", port);
 
 	emulator_running = FALSE;
 
@@ -254,14 +346,29 @@ void FASTCALL Term(void* data, u32 id)
 void FASTCALL Destroy(void* data, u32 id)
 {
 	//Free any memory allocted (if any)
-	wprintf(L"PuruPuru -> Destroy\n");
+	//printf("PuruPuru -> Destroy\n");
 
+#ifdef BUILD_DREAMCAST
 	// Disable on Hot-Unplug
 	u32 port = ((maple_device_instance*)data)->port >> 6;
 	
-	joysticks[port].enabled = 0;
+	switch(id)
+	{
+	case 0: // DC Controller
+		{
+			joysticks[port].enabled = 0;	
+			if(joystate[port].rumble != NULL) SDL_HapticClose(joystate[port].rumble);
+			if(joystate[port].joy != NULL) SDL_JoystickClose(joystate[port].joy);	
+		} 
+		break;
+	case 1: // Puru Pack
+		{
+			Stop_Vibration(port);
+		} 
+		break;
+	}
+#endif
 	
-	if(joystate[port].joy != NULL) SDL_JoystickClose(joystate[port].joy);	
 }
 
 
@@ -317,19 +424,19 @@ INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 // p = user specified data
 void EXPORT_CALL ConfigMenuCallback(u32 id, void* w, void* p)
 {
-	wprintf(L"PuruPuru -> ConfigMenuCallback\n");
+	//printf("PuruPuru -> ConfigMenuCallback\n");
 
 	current_port = ((maple_device_instance*)p)->port >> 6;
 
 	LoadConfig();	// load settings	
 
-#ifdef BUILD_NAOMI
-	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG_NAOMI), (HWND)w, OpenConfig) )
+#ifdef BUILD_DREAMCAST
+	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG_DC), (HWND)w, OpenConfig) )
 	{
 		SaveConfig();
 	}
-#else	
-	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG_DC), (HWND)w, OpenConfig) )
+#elif defined BUILD_NAOMI
+	if( DialogBox(PuruPuru_hInst, MAKEINTRESOURCE(IDD_CONFIG_NAOMI), (HWND)w, OpenConfig) )
 	{
 		SaveConfig();
 	}
@@ -365,7 +472,7 @@ void SaveConfig()
 		host.ConfigSaveStr(SectionName, L"Service2",	joysticks[port].names[MAPN_SERVICE2]);		
 		host.ConfigSaveStr(SectionName, L"Test1",		joysticks[port].names[MAPN_TEST1]);		
 		host.ConfigSaveStr(SectionName, L"Test2",		joysticks[port].names[MAPN_TEST2]);	
-#else
+#elif defined BUILD_DREAMCAST
 	for (int port=0;port<4;port++)
 	{		
 		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
@@ -388,6 +495,8 @@ void SaveConfig()
 		host.ConfigSaveStr(SectionName, L"halfpress",		joysticks[port].names[MAP_HALF]);
 
 		host.ConfigSaveInt(SectionName, L"deadzone",		joysticks[port].deadzone);
+		host.ConfigSaveInt(SectionName, L"pakku_intensity",	joysticks[port].pakku_intensity);		
+		host.ConfigSaveInt(SectionName, L"pakku_length",	joysticks[port].pakku_length);	
 #endif			
 		host.ConfigSaveInt(SectionName, L"keyboard",		joysticks[port].keys);		
 		host.ConfigSaveInt(SectionName, L"joy_id",			joysticks[port].ID);
@@ -423,7 +532,7 @@ void LoadConfig()
 		host.ConfigLoadStr(SectionName, L"Service2",	joysticks[port].names[MAPN_SERVICE2], L"-1");		
 		host.ConfigLoadStr(SectionName, L"Test1",		joysticks[port].names[MAPN_TEST1], L"-1");		
 		host.ConfigLoadStr(SectionName, L"Test2",		joysticks[port].names[MAPN_TEST2], L"-1");		
-#else
+#elif defined BUILD_DREAMCAST
 	for (int port=0;port<4;port++)
 	{		
 		wsprintf(SectionName, L"PuruPuru_Pad_%i", port+1);
@@ -446,6 +555,8 @@ void LoadConfig()
 		host.ConfigLoadStr(SectionName, L"halfpress",		joysticks[port].names[MAP_HALF], L"-1");
 
 		joysticks[port].deadzone		= host.ConfigLoadInt(SectionName, L"deadzone",		24);
+		joysticks[port].pakku_intensity	= host.ConfigLoadInt(SectionName, L"pakku_intensity", 100);
+		joysticks[port].pakku_length	= host.ConfigLoadInt(SectionName, L"pakku_length", 175);
 #endif				
 		joysticks[port].keys			= host.ConfigLoadInt(SectionName, L"keyboard",		 0);
 		joysticks[port].ID				= host.ConfigLoadInt(SectionName, L"joy_id",		 0);
@@ -470,7 +581,7 @@ int Search_Devices()
 {	
 	int numjoy = SDL_NumJoysticks();
 
-	wprintf(L"PuruPuru: %i joystics detected.\n", numjoy);
+	wprintf(L"\nPuruPuru -> SDL: %i Joystick(s) detected:\n", numjoy);
 
 	if(numjoy > 0) 
 	{
@@ -489,19 +600,40 @@ int Search_Devices()
 		for(int i = 0; i < numjoy; i++ )
 		{
 			joyinfo[i].joy			= SDL_JoystickOpen(i);
-			joyinfo[i].ID			= i;
+			joyinfo[i].rumble		= NULL;			
+			joyinfo[i].canRumble    = false;
 			joyinfo[i].NumAxes		= SDL_JoystickNumAxes(joyinfo[i].joy);
 			joyinfo[i].NumButtons	= SDL_JoystickNumButtons(joyinfo[i].joy);
 			joyinfo[i].NumBalls		= SDL_JoystickNumBalls(joyinfo[i].joy);
 			joyinfo[i].NumHats		= SDL_JoystickNumHats(joyinfo[i].joy);	
-
+			
 			AnsiToWide( joyinfo[i].Name, SDL_JoystickName(i) );
+			
+			wprintf(L"\t[%d] %s. ", i, joyinfo[i].Name);
+			
+			if(canHaptic)
+			{
+				if(SDL_JoystickIsHaptic(joyinfo[i].joy) == 1)
+					joyinfo[i].rumble =  SDL_HapticOpenFromJoystick(joyinfo[i].joy);
+
+				if(joyinfo[i].rumble != NULL)
+				{
+					wprintf(L"Rumble supported.");
+					joyinfo[i].canRumble = true;
+				}
+				else				
+					wprintf(L"Rumble not supported.");						
+				
+			}
+
+			// Close them if opened.
+			if(joyinfo[i].rumble != NULL) SDL_HapticClose(joyinfo[i].rumble);
+			if(joyinfo[i].joy != NULL) SDL_JoystickClose(joyinfo[i].joy);
 		
-			// Close if opened
-			if(SDL_JoystickOpened(i))
-				SDL_JoystickClose(joyinfo[i].joy);
+			wprintf(L"\n");
 		}
-	}
+			wprintf(L"\n");
+	}	
 
 	ZeroMemory( xoyinfo, sizeof( CONTROLLER_INFO_XINPUT ) * 4 );
 

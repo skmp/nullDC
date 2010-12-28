@@ -27,6 +27,9 @@
     <None Include="readme.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DInputBackend.cpp">
+      <Filter>Input Backends</Filter>
+    </ClCompile>
     <ClCompile Include="XInputBackend.cpp">
       <Filter>Input Backends</Filter>
     </ClCompile>
@@ -59,11 +62,11 @@
     </ClCompile>
     <ClCompile Include="VIBRATIONFUNCTION.cpp" />
     <ClCompile Include="XMaple.cpp" />
-    <ClCompile Include="SDLBackend.cpp">
-      <Filter>Input Backends</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DInputBackend.h">
+      <Filter>Input Backends</Filter>
+    </ClInclude>
     <ClInclude Include="XInputBackend.h">
       <Filter>Input Backends</Filter>
     </ClInclude>
@@ -98,8 +101,5 @@
       <Filter>Devices\FT4</Filter>
     </ClInclude>
     <ClInclude Include="XMaple.h" />
-    <ClInclude Include="SDLBackend.h">
-      <Filter>Input Backends</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

@@ -9,8 +9,8 @@
 // http://mc.pp.se/dc/controller.html
 
 // Based on Gigaherz solution
-#define wStringX(str, len) for(i=0;i<len && str[i]!=0; i++){w8((u8)str[i]);} for(;i<len; i++){w8(0x20);}
-#define wStrings(str30, str60) int i; wStringX(str30,30) wStringX(str60, 60) i=0
+#define wStringX(str, len) {int i; for(i=0;i<len && str[i]!=0; i++){w8((u8)str[i]);} for(;i<len; i++){w8(0x20);}}
+#define wStrings(str30, str60) wStringX(str30,30) wStringX(str60, 60)
 
 #define w32(data) *(u32*)buffer_out_b=(data);buffer_out_b+=4;buffer_out_len+=4
 #define w16(data) *(u16*)buffer_out_b=(data);buffer_out_b+=2;buffer_out_len+=2

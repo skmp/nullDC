@@ -156,6 +156,7 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 		{
 			if ( ((LPNMHDR)lParam)->idFrom==IDC_PORTTAB && ((LPNMHDR)lParam)->code == TCN_SELCHANGE  )
 			{
+				GetControllerAll(hDlg, current_port);
 				current_port = TabCtrl_GetCurSel(GetDlgItem(hDlg,IDC_PORTTAB));
 				SetControllerAll(hDlg, current_port);				
 			}

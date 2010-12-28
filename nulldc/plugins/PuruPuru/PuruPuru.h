@@ -16,6 +16,7 @@
 #include "config.h"
 
 #include <SDL.h>
+#include <SDL_haptic.h>
 #pragma comment(lib, "SDL.lib")
 
 #include <XInput.h>
@@ -42,6 +43,7 @@ struct CONTROLLER_STATE		// DC PAD INFO/STATE
 	int control[16];		// Axis, buttons, dpad, triggers... + NAOMI
 	int halfpress;			// ...	
 	SDL_Joystick *joy;		// SDL joystick device
+	SDL_Haptic *rumble;     // SDL rumble device
 };
 
 struct CONTROLLER_MAPPING   // GC PAD MAPPING
@@ -49,7 +51,10 @@ struct CONTROLLER_MAPPING   // GC PAD MAPPING
 	wchar names[16][64];
 	int control[16];		// All of it too.
 	int enabled;			// Pad attached?
+	int canRumble;			// Is haptic supported?
 	int deadzone;			// Deadzone... what else?
+	int pakku_intensity;
+	int pakku_length;
 	int keys;
 	int ID;					// Joystick device ID
 	int controllertype;		// Joystick, Joystick no hat or a keyboard (perhaps a mouse later)
@@ -62,9 +67,10 @@ struct CONTROLLER_INFO_SDL	// CONNECTED WINDOWS DEVICES INFO
 	int NumButtons;			// Amount of Buttons
 	int NumBalls;			// Amount of Balls
 	int NumHats;			// Amount of Hats (POV)
-	wchar Name[512];		// Joypad/stickname		
-	int ID;					// SDL joystick device ID
+	bool canRumble;
+	wchar Name[512];		// Joypad/stickname			
 	SDL_Joystick *joy;		// SDL joystick device
+	SDL_Haptic *rumble;		// SDL Rumble device
 };
 
 struct CONTROLLER_INFO_XINPUT
@@ -236,6 +242,10 @@ void FASTCALL Destroy(void* data,u32 id);
 // Other
 #ifdef BUILD_DREAMCAST
 u32 FASTCALL ControllerDMA(void* device_instance, u32 Command,u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
+u32 FASTCALL PakkuDMA(void* device_instance, u32 Command, u32* buffer_in, u32 buffer_in_len, u32* buffer_out, u32& buffer_out_len);
+// Rumble functions
+void Start_Vibration(int port);
+void Stop_Vibration(int port);
 #elif defined BUILD_NAOMI
 u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_in,u32 buffer_in_len,u32* buffer_out,u32& buffer_out_len);
 #endif

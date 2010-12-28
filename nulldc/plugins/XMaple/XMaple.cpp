@@ -336,7 +336,6 @@ void loadConfig()
 	settings.Controller.Deadzone = host.ConfigLoadInt(L"Xmaple", L"Controller.DeadZone", 25);
 
 	settings.PuruPuru.UseRealFreq = host.ConfigLoadInt(L"Xmaple", L"PuruPuru.UseRealFrequency", 1) == 1 ? true:false;
-	settings.PuruPuru.SDL_Rumble = host.ConfigLoadInt(L"Xmaple", L"PuruPuru.SDL_Rumble", 0) == 1 ? true:false;
 	settings.PuruPuru.Length = host.ConfigLoadInt(L"Xmaple", L"PuruPuru.Length", 175);
 	settings.PuruPuru.Intensity = host.ConfigLoadInt(L"Xmaple", L"PuruPuru.Intensity", 100);
 	
