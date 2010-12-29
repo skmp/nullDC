@@ -121,6 +121,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="images\full_dreamcast_controller.bmp" />
+    <None Include="images\ICON_ON2.bmp" />
     <None Include="images\purupurulogo.bmp" />
     <None Include="exports.def" />
     <None Include="images\ICON_OFF.bmp" />

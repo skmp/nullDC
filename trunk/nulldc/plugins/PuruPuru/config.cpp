@@ -8,8 +8,8 @@
 // Site: www.multigesture.net
 // Copyright (C) 2007-2009 nullDC Project.
 //
-
-#include "PuruPuru.h"
+//
+#include "config.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Variables
@@ -19,8 +19,7 @@ extern u32 current_port;
 extern bool emulator_running;
 extern HINSTANCE PuruPuru_hInst;
 
-extern bool canSDL;
-extern bool canXInput;
+extern Supported_Status Support;
 
 //HINSTANCE config_hInst;
 //HWND config_HWND;
@@ -56,7 +55,7 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 0, &tci); 
 		tci.pszText = current_port == 1 ? L"->Controller 2<-" : L"Controller 2"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 1, &tci); 
-#else		
+#elif defined BUILD_DREAMCAST	
 		tci.pszText = current_port == 0 ? L"->Controller 1<-" : L"Controller 1"; 
 		TabCtrl_InsertItem(GetDlgItem(hDlg,IDC_PORTTAB), 0, &tci); 
 		tci.pszText = current_port == 1 ? L"->Controller 2<-" : L"Controller 2"; 
@@ -92,7 +91,8 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 			SendMessage(ControlType, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_JOYSTICK_SDL]);				
 			SendMessage(ControlType, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_JOYSTICK_XINPUT]);
 			SendMessage(ControlType, CB_ADDSTRING, 0, (LPARAM)ControllerType[CTL_TYPE_KEYBOARD]);
-				
+			
+			// Dreadzone Dropbox
 			wchar buffer[8];				
 			ControlType = GetDlgItem(hDlg, IDC_DEADZONE);
 			SendMessage(ControlType, CB_RESETCONTENT, 0, 0);
@@ -101,12 +101,21 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 				wsprintf(buffer, L"%d %%", x);
 				SendMessage(ControlType, CB_ADDSTRING, 0, (LPARAM)buffer);				
 			}
+
+			// Pakku Intensity Dropbox							
+			ControlType = GetDlgItem(hDlg, IDC_PAKKU);
+			SendMessage(ControlType, CB_RESETCONTENT, 0, 0);
+			for(int x = 1; x <= 100; x++)
+			{				
+				wsprintf(buffer, L"%d %%", 2*x);
+				SendMessage(ControlType, CB_ADDSTRING, 0, (LPARAM)buffer);				
+			}
 		}
 
 		SetControllerAll(hDlg, current_port);
 						
 		// Search for devices and add the to the device list
-		if( canSDL )
+		if( Support.SDL )
 		{
 			HWND CB = GetDlgItem(hDlg, IDC_JOYNAME_SDL);
 
@@ -125,7 +134,7 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 			ComboBox_Enable(CB, FALSE);
 		}
 
-		if( canXInput )
+		if( Support.XInput )
 		{
 			HWND CB = GetDlgItem(hDlg, IDC_JOYNAME_XINPUT);
 
@@ -201,7 +210,7 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 				// Selected a different joystick
 				if(HIWORD(wParam) == CBN_SELCHANGE)
 				{
-					joysticks[current_port].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0);					
+					joysticks[current_port].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0);										
 					UpdateVisibleItems(hDlg, joysticks[current_port].controllertype);
 				}
 				return TRUE;
@@ -226,8 +235,7 @@ INT_PTR CALLBACK OpenConfig( HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam 
 			case IDC_SERVICE2:
 			case IDC_TEST1:
 			case IDC_TEST2:
-#else
-
+#elif defined BUILD_DREAMCAST
 			case IDC_SHOULDERL:
 			case IDC_SHOULDERR:
 			case IDC_A:
@@ -294,13 +302,19 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 	bool waiting = true;
 	bool succeed = false;
 	int pressed = 0;
-	int threshold = 10000;
+	int threshold = 16384;
 
 	int counter1 = 0;
 	int counter2 = 10;
 	
 	wsprintf(format, L"[%d]", counter2);
 	SetDlgItemText(hDlg, buttonid, format);		
+
+	// To get the "always pressed" keys.
+	unsigned char keycheck[255] = {0};
+	for(int i=0; i<255; i++) 
+	keycheck[i] = GetAsyncKeyState(i) >> 14;
+
 
 	while(waiting)
 	{					
@@ -361,14 +375,14 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 		}
 
 		// TRIGGERS
-		if(xoyinfo[pad].state.Gamepad.bLeftTrigger > 50)
+		if(xoyinfo[pad].state.Gamepad.bLeftTrigger > 128)
 		{
 			wsprintf(format, L"LT");		
 			succeed = true;
 			waiting = false;			
 		}
 
-		if(xoyinfo[pad].state.Gamepad.bRightTrigger > 50)
+		if(xoyinfo[pad].state.Gamepad.bRightTrigger > 128)
 		{
 			wsprintf(format, L"RT");		
 			succeed = true;
@@ -467,9 +481,11 @@ bool GetInputXInput(HWND hDlg, int buttonid, int controller)
 		// KEYBOARD
 		if(joysticks[controller].keys)
 		{
-			for(int k = 1; k < 255; k++)
+			for(int k = 0; k < 255; k++)
 			{
-				if(GetAsyncKeyState(k)>>12)
+				unsigned char key = GetAsyncKeyState(k) >> 14;				
+
+				if(key && !keycheck[k])
 				{
 					pressed = k;
 					waiting = false;
@@ -520,12 +536,19 @@ bool GetInputKey(HWND hDlg, int buttonid, int controller)
 	wsprintf(format, L"[%d]", counter2);
 	SetDlgItemText(hDlg, buttonid, format);	
 
+	// To get the "always pressed" keys.
+	unsigned char keycheck[255] = {0};
+	for(int i=0; i<255; i++) 
+	keycheck[i] = GetAsyncKeyState(i) >> 14;
+
 	while(waiting)
 	{													
 
 		for(int k = 1; k < 255; k++)
 		{												
-			if(GetAsyncKeyState(k)>>12)
+			unsigned char key = GetAsyncKeyState(k) >> 14;				
+
+			if(key && !keycheck[k])
 			{				
 				pressed = k;
 				waiting = false;
@@ -584,10 +607,17 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 
 	int counter1 = 0;
 	int counter2 = 10;
+
+	int threshold = 16384;
 	
 	wsprintf(format, L"[%d]", counter2);
 	SetDlgItemText(hDlg, buttonid, format);
 	
+	// To get the "always pressed" keys.
+	unsigned char keycheck[255] = {0};
+	for(int i=0; i<255; i++) 
+	keycheck[i] = GetAsyncKeyState(i) >> 14;
+
 	while(waiting)
 	{			
 		SDL_JoystickUpdate();		
@@ -596,7 +626,7 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 		for(int b = 0; b < axes; b++)
 		{		
 			value = SDL_JoystickGetAxis(joy, b);
-			if(value > 10000)
+			if(value > threshold)
 			{
 				pressed = b;	
 				plus = true;
@@ -605,7 +635,7 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 				AXIS = true;
 				break;
 			}
-			else if ( value < -10000 )
+			else if ( value < -threshold )
 			{
 				pressed = b;	
 				waiting = false;
@@ -672,7 +702,9 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 		{
 			for(int k = 1; k < 255; k++)
 			{
-				if(GetAsyncKeyState(k)>>12)
+				unsigned char key = GetAsyncKeyState(k) >> 14;				
+
+				if(key && !keycheck[k])
 				{
 					pressed = k;
 					waiting = false;
@@ -728,27 +760,61 @@ bool GetInputSDL(HWND hDlg, int buttonid, int controller)
 
 void UpdateVisibleItems(HWND hDlg, int controllertype)
 {	
-	if(controllertype == CTL_TYPE_JOYSTICK_SDL) 
+#ifdef BUILD_DREAMCAST
+	ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), FALSE);
+	ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON2), FALSE);
+	ShowWindow(GetDlgItem(hDlg, IDC_PAKKU), FALSE);
+	ShowWindow(GetDlgItem(hDlg, IDC_PAKKU_TEXT), FALSE);
+#endif
+	
+	switch(controllertype)
 	{
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), FALSE);
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), FALSE);
-		ShowWindow(GetDlgItem(hDlg, IDC_KEY), TRUE);
-	}
-	else if (controllertype == CTL_TYPE_JOYSTICK_XINPUT)
-	{		
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), FALSE);		
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), FALSE);
-		ShowWindow(GetDlgItem(hDlg, IDC_KEY), TRUE);
-	}
-	else
-	{
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), TRUE);
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), FALSE);
-		ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), FALSE);			
-		ShowWindow(GetDlgItem(hDlg, IDC_KEY), FALSE);
-	}
+	case CTL_TYPE_JOYSTICK_SDL: 
+		{
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), TRUE);
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), FALSE);
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), FALSE);
+			ShowWindow(GetDlgItem(hDlg, IDC_KEY), TRUE);
+#ifdef BUILD_DREAMCAST			
+			if(joyinfo[joysticks[current_port].ID].canRumble)
+			{
+				ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON2), TRUE);			
+				ShowWindow(GetDlgItem(hDlg, IDC_PAKKU), TRUE);
+				ShowWindow(GetDlgItem(hDlg, IDC_PAKKU_TEXT), TRUE);	
+			}
+			else
+				ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), TRUE);
+#endif
+		}
+		break;
+
+	case CTL_TYPE_JOYSTICK_XINPUT:
+		{
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), TRUE);
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), FALSE);		
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), FALSE);
+			ShowWindow(GetDlgItem(hDlg, IDC_KEY), TRUE);
+#ifdef BUILD_DREAMCAST			
+			ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON2), TRUE);
+			ShowWindow(GetDlgItem(hDlg, IDC_PAKKU), TRUE);
+			ShowWindow(GetDlgItem(hDlg, IDC_PAKKU_TEXT), TRUE);
+#endif
+		}
+		break;
+
+	case CTL_TYPE_KEYBOARD: 
+		{
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_KEY), TRUE);
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_SDL), FALSE);
+			ShowWindow(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), FALSE);			
+			ShowWindow(GetDlgItem(hDlg, IDC_KEY), FALSE);
+#ifdef BUILD_DREAMCAST
+			ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), TRUE);
+#endif
+		}
+		break;
+	}				
+	
 }
 
 // Set dialog items
@@ -758,39 +824,31 @@ void SetControllerAll(HWND hDlg, int controller)
 	SendMessage(GetDlgItem(hDlg, IDC_JOYNAME_SDL), CB_SETCURSEL, joysticks[controller].ID, 0);
 	SendMessage(GetDlgItem(hDlg, IDC_JOYNAME_XINPUT), CB_SETCURSEL, joysticks[controller].ID, 0);
 
+#ifdef BUILD_DREAMCAST
+	ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), FALSE);
+	ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON2), FALSE);
+	ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), FALSE);
+
 	if( joysticks[controller].enabled )
 	{
-		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), TRUE);
+		switch(joysticks[controller].controllertype)
+		{
+		case CTL_TYPE_JOYSTICK_SDL: 
+			{
+				if(joyinfo[joysticks[controller].ID].canRumble)
+					ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON2), TRUE);
+				else
+					ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), TRUE);
+			}
+		case CTL_TYPE_JOYSTICK_XINPUT: ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON2), TRUE); break;
+		case CTL_TYPE_KEYBOARD: ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), TRUE); break;
+		}			
+
 		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), FALSE);
 	}
-	else
-	{
-		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_ON), FALSE);
-		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), TRUE);
-	}
+	else			
+		ShowWindow(GetDlgItem(hDlg, IDC_CONFIG_OFF), TRUE);	
 
-#ifdef BUILD_NAOMI
-
-	SetButton(hDlg, IDTEXT_SERVICE1,	joysticks[controller].names[MAPN_SERVICE1]);
-	SetButton(hDlg, IDTEXT_SERVICE2,	joysticks[controller].names[MAPN_SERVICE2]);
-	SetButton(hDlg, IDTEXT_TEST1,		joysticks[controller].names[MAPN_TEST1]);
-	SetButton(hDlg, IDTEXT_TEST2,		joysticks[controller].names[MAPN_TEST2]);
-
-	SetButton(hDlg, IDTEXT_NBUTTON1,	joysticks[controller].names[MAPN_BUTTON1]);
-	SetButton(hDlg, IDTEXT_NBUTTON2,	joysticks[controller].names[MAPN_BUTTON2]);
-	SetButton(hDlg, IDTEXT_NBUTTON3,	joysticks[controller].names[MAPN_BUTTON3]);	
-	SetButton(hDlg, IDTEXT_NBUTTON4,	joysticks[controller].names[MAPN_BUTTON4]);
-	SetButton(hDlg, IDTEXT_NBUTTON5,	joysticks[controller].names[MAPN_BUTTON5]);
-	SetButton(hDlg, IDTEXT_NBUTTON6,	joysticks[controller].names[MAPN_BUTTON6]);
-	
-	SetButton(hDlg, IDTEXT_START,		joysticks[controller].names[MAPN_START]);	
-	SetButton(hDlg, IDTEXT_COIN,		joysticks[controller].names[MAPN_COIN]);
-
-	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].names[MAPN_D_UP]);
-	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].names[MAPN_D_DOWN]);
-	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].names[MAPN_D_LEFT]);
-	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].names[MAPN_D_RIGHT]);	
-#else
 	SetButton(hDlg, IDTEXT_SHOULDERL,	joysticks[controller].names[MAP_LT]);
 	SetButton(hDlg, IDTEXT_SHOULDERR,	joysticks[controller].names[MAP_RT]);
 	SetButton(hDlg, IDTEXT_A,			joysticks[controller].names[MAP_A]);
@@ -813,6 +871,27 @@ void SetControllerAll(HWND hDlg, int controller)
 	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].names[MAP_D_RIGHT]);	
 
 	SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_SETCURSEL, joysticks[controller].deadzone, 0);	
+	SendMessage(GetDlgItem(hDlg, IDC_PAKKU), CB_SETCURSEL, (joysticks[controller].pakku_intensity>>1)-1, 0);
+#elif defined BUILD_NAOMI
+	SetButton(hDlg, IDTEXT_SERVICE1,	joysticks[controller].names[MAPN_SERVICE1]);
+	SetButton(hDlg, IDTEXT_SERVICE2,	joysticks[controller].names[MAPN_SERVICE2]);
+	SetButton(hDlg, IDTEXT_TEST1,		joysticks[controller].names[MAPN_TEST1]);
+	SetButton(hDlg, IDTEXT_TEST2,		joysticks[controller].names[MAPN_TEST2]);
+
+	SetButton(hDlg, IDTEXT_NBUTTON1,	joysticks[controller].names[MAPN_BUTTON1]);
+	SetButton(hDlg, IDTEXT_NBUTTON2,	joysticks[controller].names[MAPN_BUTTON2]);
+	SetButton(hDlg, IDTEXT_NBUTTON3,	joysticks[controller].names[MAPN_BUTTON3]);	
+	SetButton(hDlg, IDTEXT_NBUTTON4,	joysticks[controller].names[MAPN_BUTTON4]);
+	SetButton(hDlg, IDTEXT_NBUTTON5,	joysticks[controller].names[MAPN_BUTTON5]);
+	SetButton(hDlg, IDTEXT_NBUTTON6,	joysticks[controller].names[MAPN_BUTTON6]);
+	
+	SetButton(hDlg, IDTEXT_START,		joysticks[controller].names[MAPN_START]);	
+	SetButton(hDlg, IDTEXT_COIN,		joysticks[controller].names[MAPN_COIN]);
+
+	SetButton(hDlg, IDTEXT_DPAD_UP,		joysticks[controller].names[MAPN_D_UP]);
+	SetButton(hDlg, IDTEXT_DPAD_DOWN,	joysticks[controller].names[MAPN_D_DOWN]);
+	SetButton(hDlg, IDTEXT_DPAD_LEFT,	joysticks[controller].names[MAPN_D_LEFT]);
+	SetButton(hDlg, IDTEXT_DPAD_RIGHT,	joysticks[controller].names[MAPN_D_RIGHT]);	
 #endif
 	SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_SETCURSEL, joysticks[controller].controllertype, 0);		
 	UpdateVisibleItems(hDlg, joysticks[controller].controllertype);
@@ -874,6 +953,7 @@ void GetControllerAll(HWND hDlg, int controller)
 	GetButton(hDlg, IDTEXT_MY_D,			joysticks[controller].names[MAP_A_YD]);
 
 	joysticks[controller].deadzone = (int)SendMessage(GetDlgItem(hDlg, IDC_DEADZONE), CB_GETCURSEL, 0, 0);
+	joysticks[controller].pakku_intensity = (int)(SendMessage(GetDlgItem(hDlg, IDC_PAKKU), CB_GETCURSEL, 0, 0)+1)<<1;
 #endif
 	joysticks[current_port].keys = IsDlgButtonChecked(hDlg, IDC_KEY) == BST_CHECKED? 1:0;
 	joysticks[controller].controllertype = (int)SendMessage(GetDlgItem(hDlg, IDC_CONTROLTYPE), CB_GETCURSEL, 0, 0); 		

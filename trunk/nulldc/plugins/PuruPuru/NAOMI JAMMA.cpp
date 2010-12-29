@@ -352,7 +352,7 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 				return (8);
 								
 			default:
-				printf("Unknown 0x86 : SubCommand 0x%X - State: Cmd 0x%X Mode :  0x%X Node : 0x%X\n",subcode,State.Cmd,State.Mode,State.Node);
+				printf("PuruPuru => Unknown 0x86: Sub 0x%X - State: 0x%X Mode: 0x%X Node: 0x%X\n",subcode,State.Cmd,State.Mode,State.Node);
 				printState(Command,buffer_in,buffer_in_len);
 			}
 
@@ -378,102 +378,36 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 		WORD		max_power;//2
 	} maple_devinfo_t;*/
 	case 1: 
-		{
-			//header
-			//WriteMem32(ptr_out,(u32)(0x05 | //response
-			//			(((u16)sendadr << 8) & 0xFF00) |
-			//			((((recadr == 0x20) ? 0x20 : 0) << 16) & 0xFF0000) |
-			//			(((112/4) << 24) & 0xFF000000))); ptr_out += 4;
-
-
-			//caps
-			//4
-			w32(1 << 24);
-
-			//struct data
-			//3*4
-			w32( 0xfe060f00); 
+		{			
+			w32(1 << 24); // Caps						
+			w32( 0xfe060f00); //struct data
 			w32( 0);
-			w32( 0);
-			//1	area code
-			w8(0xFF);
-			//1	direction
-			w8(0);
-			//30
-			for (u32 i = 0; i < 30; i++)
-			{
-				if (Joy_strName[i]!=0)
-				{
-					w8((u8)Joy_strName[i]);
-				}
-				else
-				{
-					w8(0x20);
-				}
-				//if (!testJoy_strName[i])
-				//	break;
-			}
-			//ptr_out += 30;
-
-			//60
-			for (u32 i = 0; i < 60; i++)
-			{
-				if (Joy_strBrand_2[i]!=0)
-				{
-					w8((u8)Joy_strBrand_2[i]);
-				}
-				else
-				{
-					w8(0x20);
-				}
-				//if (!testJoy_strBrand[i])
-				//	break;
-			}
-			//ptr_out += 60;
-
-			//2
-			w16(0xAE01); 
-
-			//2
-			w16(0xF401); 
+			w32( 0);			
+			w8(0xFF); //1	area code
+			
+			w8(0); //1	direction
+			
+			wStrings(Joy_strName, Joy_strBrand_2);
+			
+			//ptr_out += 60;			
+			w16(0xAE01); //2			
+			w16(0xF401); //2
 		}
 		return 5;
 
-	/* controller condition structure 
-	typedef struct {//8 bytes
-	WORD buttons;			///* buttons bitfield	/2
-	u8 rtrig;			///* right trigger			/1
-	u8 ltrig;			///* left trigger 			/1
-	u8 joyx;			////* joystick X 			/1
-	u8 joyy;			///* joystick Y				/1
-	u8 joy2x;			///* second joystick X 		/1
-	u8 joy2y;			///* second joystick Y 		/1
-	} cont_cond_t;*/
 	case 9:
 		{
-			//header
-			//WriteMem32(ptr_out, (u32)(0x08 | // data transfer (response)
-			//			(((u16)sendadr << 8) & 0xFF00) |
-			//			((((recadr == 0x20) ? 0x20 : 1) << 16) & 0xFF0000) |
-			//			(((12 / 4 ) << 24) & 0xFF000000))); ptr_out += 4;
-			//caps
-			//4
-			//WriteMem32(ptr_out, (1 << 24)); ptr_out += 4;
-			w32(1 << 24);
-			//struct data
-			//2
-			w16(kcode[0] | 0xF901); 
-				
-			//trigger			
-			w8(0x0);			
+			w32(1 << 24); //struct data
+						
+			w16(kcode[0] | 0xF901); //2
+							
+			w8(0x0); //triggers
 			w8(0x0); 
-			
-			// Analog XY
-			w8(0x80); 			
+						
+			w8(0x80); // Analog XY
 			w8(0x80); 
-			
-			// XY2
-			w8(0x80); 			
+						
+			w8(0x80); // XY2
 			w8(0x80); 
 
 			//are these needed ?
@@ -485,7 +419,7 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 		return 8;
 
 	default:
-		printf("unknown MAPLE Frame\n");
+		printf("PuruPuru => unknown MAPLE Frame: ");
 		printState(Command,buffer_in,buffer_in_len);
 		return 7;		
 	}

@@ -91,12 +91,6 @@ u32 FASTCALL PakkuDMA(void* device_instance, u32 Command, u32* buffer_in, u32 bu
 	u8 port = ((maple_subdevice_instance*)device_instance)->port>>6;
 	Status *m_status = &m_state[port];
 
-
-	// Update the xpad the thread uses...
-	//EnterCriticalSection(&m_status.section);
-	//m_status.currentXPad = 
-	//LeaveCriticalSection(&m_status.section);
-
 	u8* buffer_out_b = (u8*)buffer_out;
 
 	switch (Command)
@@ -170,9 +164,9 @@ u32 FASTCALL PakkuDMA(void* device_instance, u32 Command, u32* buffer_in, u32 bu
 				u16 ASR = (u16)*(buffer_in) & 0x0000FFFF; // don't swap ASR because I am lazy
 				if (numAST == 1 && ASR == 0x0200) // yeah, we'll handle it
 				{
-					//EnterCriticalSection(&m_status.section);
+					EnterCriticalSection(&m_status->section);
 					m_status->AST = (*(buffer_in) & 0x00FF0000) >> 16;
-					//LeaveCriticalSection(&m_status.section);					
+					LeaveCriticalSection(&m_status->section);					
 				}
 				else
 				{
@@ -199,9 +193,9 @@ u32 FASTCALL PakkuDMA(void* device_instance, u32 Command, u32* buffer_in, u32 bu
 			if (numSources > (u8)(0x00000101))
 				return 252; // 252 = TransmitAgain
 
-			//EnterCriticalSection(&m_status.section);
+			EnterCriticalSection(&m_status->section);
 			m_status->config.U32 = *(++buffer_in);
-			//LeaveCriticalSection(&m_status.section);
+			LeaveCriticalSection(&m_status->section);
 
 			// convergent and divergent can't be set at the same time
 			if (m_status->config.INH && m_status->config.EXH)
@@ -227,7 +221,7 @@ u32 FASTCALL PakkuDMA(void* device_instance, u32 Command, u32* buffer_in, u32 bu
 }
 
 extern CONTROLLER_MAPPING joysticks[4];
-extern CONTROLLER_STATE   joystate[4];
+extern CONTROLLER_INFO_SDL *joyinfo;
 
 void XInput_VibrationThread(void *_status)
 {							
@@ -407,11 +401,20 @@ void XInput_VibrationThread(void *_status)
 void SDL_VibrationThread(void* _status)
 {
 	Status *status = (Status *)_status;
-	Config *config = &status->config;
+	Config *config = &status->config;	
 
-	printf("PuruPuru Pakku => [%d] Using SDL Rumble.\n", status->port);
+	SDL_Haptic *rumble = SDL_HapticOpenFromJoystick(joyinfo[joysticks[status->port].ID].joy);
+	
+	if(rumble != NULL)
+		printf("PuruPuru Pakku => [%d] Using SDL Rumble.\n", status->port);
+	else
+	{
+		printf("PuruPuru Pakku => [%d] Could not create Haptic device!\n", status->port);
+		return;
+	}
 
-	SDL_Haptic *rumble = joystate[status->port].rumble;
+	// For closing later.
+	joyinfo[joysticks[status->port].ID].rumble = rumble;
 	
 	SDL_HapticEffect FX;
 	memset(&FX, 0, sizeof(SDL_HapticEffect));
@@ -515,15 +518,13 @@ void Start_Vibration(int port)
 	m_state[port].srcSettings.Fm0= 0x07;
 	m_state[port].srcSettings.Fm1= 0x3B;
 		
-	if(joysticks[port].canRumble)
-	{	
-		if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_XINPUT)		
-			m_state[port].thread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)XInput_VibrationThread, &m_state[port], 0, NULL);
-		else 
-			m_state[port].thread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)SDL_VibrationThread, &m_state[port], 0, NULL);
+	
+	if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_XINPUT)		
+		m_state[port].thread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)XInput_VibrationThread, &m_state[port], 0, NULL);
+	else 					
+		m_state[port].thread = CreateThread(0, 0, (LPTHREAD_START_ROUTINE)SDL_VibrationThread, &m_state[port], 0, NULL);	
 
-		InitializeCriticalSection(&m_state[port].section);
-	}
+	InitializeCriticalSection(&m_state[port].section);	
 }
 
 void Stop_Vibration(int port)
@@ -537,8 +538,8 @@ void Stop_Vibration(int port)
 		}
 		else 
 		{
-			if(joystate[port].rumble != NULL)
-			SDL_HapticClose(joystate[port].rumble);
+			if(joyinfo[joysticks[port].ID].rumble != NULL)
+				SDL_HapticClose(joyinfo[joysticks[port].ID].rumble);
 		}
 		
 		CloseHandle(m_state[port].thread);

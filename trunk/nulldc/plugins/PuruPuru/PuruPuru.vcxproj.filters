@@ -70,6 +70,9 @@
     <None Include="images\Naomi.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="images\ICON_ON2.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="PuruPuru.rc">
