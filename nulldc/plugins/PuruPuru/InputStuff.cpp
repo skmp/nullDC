@@ -432,8 +432,8 @@ int GetStateXInput (int port, int type, int input)
 				{
 					if(num == X360_LT) 
 						return (xoyinfo[port].state.Gamepad.bLeftTrigger > 100)?1:0;
-					else if(num == X360_RT) 
-						return (xoyinfo[port].state.Gamepad.bLeftTrigger > 100)?1:0;
+					else
+						return (xoyinfo[port].state.Gamepad.bRightTrigger > 100)?1:0;
 				}
 			case inHAT:
 				{
@@ -524,11 +524,11 @@ int GetStateSDL (int port, int type, int input)
 	if(joysticks[port].keys)
 		memcpy(key,keyboard_map,sizeof(key));
 	
-	port = joysticks[port].ID;
+	port = joysticks[port].ID; // From Dreamcast port, to device port.
 
 	int num = input & 0xFF;
 	int mode = input >> 24;
-	int currentHat = SDL_JoystickGetHat(joystate[port].joy, 0);	
+	int currentHat = SDL_JoystickGetHat(joyinfo[port].joy, 0);	
 
 	switch(type)
 	{
@@ -538,21 +538,21 @@ int GetStateSDL (int port, int type, int input)
 			{
 			case inAXIS_0: 
 				{
-					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+					int axis = SDL_JoystickGetAxis(joyinfo[port].joy, num);
 
 					if(axis < 0)  return -axis;						
 					else		  return 0;					
 				}
 			case inAXIS_1: 
 				{
-					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+					int axis = SDL_JoystickGetAxis(joyinfo[port].joy, num);
 											
 					if(axis > 0)  return  axis;						
 					else		  return 0;										
 				}
 			case inBUTTON:
 				{
-					if( SDL_JoystickGetButton(joystate[port].joy, num) )
+					if( SDL_JoystickGetButton(joyinfo[port].joy, num) )
 						return 32767;
 					else
 						return 0;
@@ -576,7 +576,7 @@ int GetStateSDL (int port, int type, int input)
 			case inAXIS_0: 
 				{
 					
-					int axis = SDL_JoystickGetAxis(joystate[port].joy, num)/128;										
+					int axis = SDL_JoystickGetAxis(joyinfo[port].joy, num)/128;										
 							
 					if(axis < 0)
 					{
@@ -590,7 +590,7 @@ int GetStateSDL (int port, int type, int input)
 			case inAXIS_1: 
 				{
 					
-					int axis = SDL_JoystickGetAxis(joystate[port].joy, num)/128;										
+					int axis = SDL_JoystickGetAxis(joyinfo[port].joy, num)/128;										
 							
 					if(axis > 0)
 					{
@@ -603,7 +603,7 @@ int GetStateSDL (int port, int type, int input)
 				}
 			case inBUTTON: 
 				{
-					if( SDL_JoystickGetButton(joystate[port].joy, num) )
+					if( SDL_JoystickGetButton(joyinfo[port].joy, num) )
 						return 255;
 					else
 						return 0;
@@ -626,21 +626,21 @@ int GetStateSDL (int port, int type, int input)
 			{
 			case inAXIS_0: 
 				{						
-					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+					int axis = SDL_JoystickGetAxis(joyinfo[port].joy, num);
 											
 					if(axis <-22000) return 1;
 					else             return 0;					
 				}
 			case inAXIS_1: 
 				{						
-					int axis = SDL_JoystickGetAxis(joystate[port].joy, num);
+					int axis = SDL_JoystickGetAxis(joyinfo[port].joy, num);
 					
 					if(axis > 22000) return 1;
 					else		     return 0;										
 				}
 			case inBUTTON:
 				{
-					return SDL_JoystickGetButton(joystate[port].joy, num);
+					return SDL_JoystickGetButton(joyinfo[port].joy, num);
 				}
 			case inHAT: 
 				{	
@@ -718,12 +718,12 @@ void GetJoyStatus(int controller)
 	joystate[controller].control[CTL_MAIN_Y] -= GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YU]);		
 	joystate[controller].control[CTL_MAIN_Y] += GetInputStatus(controller, AXIS, joysticks[controller].control[MAP_A_YD]);		
 
-	joystate[controller].halfpress = GetInputStatus(controller, DIGITAL, joysticks[controller].control[MAP_HALF] );
+	joysticks[controller].halfpress = GetInputStatus(controller, DIGITAL, joysticks[controller].control[MAP_HALF]) != 0;
 
 	joystate[controller].control[CTL_L_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_LT]);
 	joystate[controller].control[CTL_R_SHOULDER] = GetInputStatus(controller, TRIGGER, joysticks[controller].control[MAP_RT]);
 		
-	if ( joystate[controller].halfpress ) 
+	if ( joysticks[controller].halfpress ) 
 	{
 		joystate[controller].control[CTL_L_SHOULDER] /= 2;
 		joystate[controller].control[CTL_R_SHOULDER] /= 2;

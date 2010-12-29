@@ -10,10 +10,14 @@
 //
 
 #include <windows.h>
+#include <stdio.h>
 #include <tchar.h>
 
 #include "..\..\nullDC\plugins\plugin_header.h"
-#include "config.h"
+#include "resource.h"
+
+#include <commctrl.h>   // includes the common control header
+#pragma comment(lib, "comctl32.lib")
 
 #include <SDL.h>
 #include <SDL_haptic.h>
@@ -21,7 +25,6 @@
 
 #include <XInput.h>
 #pragma comment(lib, "Xinput.lib")
-
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Define
@@ -38,45 +41,58 @@
 // Structures
 // ----------
 
-struct CONTROLLER_STATE		// DC PAD INFO/STATE
+struct CONTROLLER_STATE		// Dreamcast/NAOMI device information
 {
 	int control[16];		// Axis, buttons, dpad, triggers... + NAOMI
-	int halfpress;			// ...	
-	SDL_Joystick *joy;		// SDL joystick device
-	SDL_Haptic *rumble;     // SDL rumble device
+	
 };
 
-struct CONTROLLER_MAPPING   // GC PAD MAPPING
+struct CONTROLLER_MAPPING   // Player's controller information
 {	
-	wchar names[16][64];
-	int control[16];		// All of it too.
-	int enabled;			// Pad attached?
-	int canRumble;			// Is haptic supported?
-	int deadzone;			// Deadzone... what else?
-	int pakku_intensity;
-	int pakku_length;
-	int keys;
+	wchar names[16][64];	// Names from config file.
+
+	int control[16];		// All of it too.		
 	int ID;					// Joystick device ID
-	int controllertype;		// Joystick, Joystick no hat or a keyboard (perhaps a mouse later)
-	int eventnum;			// Linux Event Number, Can't be found dynamically yet
+	int controllertype;		// XInput, SDL, or just Keyboard	
+	int deadzone;			// Deadzone... what else?	
+
+	int pakku_intensity;    // Strength of vibration.
+	int pakku_length;		// Length of each vibration command.
+	
+	bool enabled;			// Pad attached?	
+	bool halfpress;			// Half the analog values
+	bool keys;				// Using keyboard
 };
 
-struct CONTROLLER_INFO_SDL	// CONNECTED WINDOWS DEVICES INFO
+struct CONTROLLER_INFO_SDL	// SDL Controllers information
 {
+	wchar Name[512];		// Joypad/stick name		
+	
+	SDL_Joystick *joy;		// SDL joystick device	
+	SDL_Haptic *rumble;		// SDL Haptic device, opened from joy.
+	
 	int NumAxes;			// Amount of Axes
 	int NumButtons;			// Amount of Buttons
 	int NumBalls;			// Amount of Balls
 	int NumHats;			// Amount of Hats (POV)
-	bool canRumble;
-	wchar Name[512];		// Joypad/stickname			
-	SDL_Joystick *joy;		// SDL joystick device
-	SDL_Haptic *rumble;		// SDL Rumble device
+		
+	bool canRumble;			// Haptic support.
 };
 
 struct CONTROLLER_INFO_XINPUT
 {
     XINPUT_STATE state;
     bool connected;
+};
+
+struct Supported_Status
+{
+	bool XInput;
+	bool SDL;
+	bool Haptic;
+
+	int numJoy;
+	int numHaptic;
 };
 
 struct _NaomiState
@@ -179,8 +195,6 @@ enum eInputType
 	inKEY
 }; 
 
-
-
 enum eMappedController
 {
 #ifdef BUILD_NAOMI
@@ -266,3 +280,6 @@ extern CONTROLLER_STATE joystate[4];
 extern CONTROLLER_INFO_SDL	*joyinfo;
 extern CONTROLLER_INFO_XINPUT xoyinfo[4];
 extern bool keyboard_map[256];
+
+//Config Function
+INT_PTR CALLBACK OpenConfig( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam );

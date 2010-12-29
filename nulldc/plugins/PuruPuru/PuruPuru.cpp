@@ -18,10 +18,7 @@ emu_info host;
 u32 current_port = 0;
 bool emulator_running  = FALSE;
 
-bool canSDL		= false;
-bool canHaptic	= false;
-bool canXInput  = false;
-
+Supported_Status Support;
 
 CONTROLLER_STATE		joystate[4];
 CONTROLLER_MAPPING		joysticks[4];
@@ -55,11 +52,13 @@ bool keyboard_map[256];
 
 void EXPORT_CALL dcGetInterface(plugin_interface* info)
 {
+	//printf("PuruPuru -> GetInterface\n");	
+	
 	// Set plugin info
 	info->InterfaceVersion = PLUGIN_I_F_VERSION;
 	info->common.InterfaceVersion = MAPLE_PLUGIN_I_F_VERSION;
 	wcscpy_s(info->common.Name, L"PuruPuru input plugin v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
-	
+
 	// Assign callback functions
 	info->common.Load = Load;
 	info->common.Unload = Unload;
@@ -69,35 +68,76 @@ void EXPORT_CALL dcGetInterface(plugin_interface* info)
 	info->maple.Init = Init;
 	info->maple.Term = Term;
 	info->maple.Destroy = Destroy;
-	
-#ifdef BUILD_DREAMCAST
-	wcscpy_s(info->maple.devices[0].Name, L"PuruPuru Dreamcast Controller v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
-	// Main device (Like controller, lightgun and such)
-	info->maple.devices[0].Type = MDT_Main;
-	// Can have 2 subdevices (a dc controller has 2 subdevice ports for vmus / etc)
-	// Can be 'hot plugged' (after emulation was started)
-	info->maple.devices[0].Flags = MDTF_Sub0 | MDTF_Sub1 | MDTF_Hotplug;
 
-	// PuruPuru Pack
-	wcscpy_s(info->maple.devices[1].Name, L"PuruPuru Pakku v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
-	info->maple.devices[1].Type = MDT_Sub;
-	info->maple.devices[1].Flags = MDTF_Hotplug;
-
-	//EOL marker
-	info->maple.devices[2].Type = MDT_EndOfList;	// wtf is this raz?
+	u8 id = 0;
+#ifdef BUILD_DREAMCAST	
+	wcscpy_s(info->maple.devices[id].Name, L"PuruPuru Dreamcast Controller v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");	
+	info->maple.devices[id].Type = MDT_Main;	
+	info->maple.devices[id].Flags = MDTF_Sub0 | MDTF_Sub1 | MDTF_Hotplug;
+	id++; // PuruPuru Pack
+	wcscpy_s(info->maple.devices[id].Name, L"PuruPuru Pakku v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
+	info->maple.devices[id].Type = MDT_Sub;
+	info->maple.devices[id].Flags = MDTF_Hotplug;	
 #elif defined BUILD_NAOMI
-	wcscpy_s(info->maple.devices[0].Name, L"PuruPuru NAOMI JAMMA Controller v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
-	info->maple.devices[0].Type = MDT_Main;
-	info->maple.devices[0].Flags = 0;
+	wcscpy_s(info->maple.devices[id].Name, L"PuruPuru NAOMI JAMMA Controller v" _T(INPUT_VERSION) L" by Falcon4ever [" _T(__DATE__) L"]");
+	info->maple.devices[id].Type = MDT_Main;
+	info->maple.devices[id].Flags = 0;
+#endif 
 
-	//EOL marker
-	info->maple.devices[1].Type = MDT_EndOfList;	// wtf is this raz?
-#endif
+	id++;//EOL marker
+	info->maple.devices[id].Type = MDT_EndOfList;	// wtf is this raz?	
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 // Common Input Plugin Functions
 // -----------------------------
+
+// Init SDL and check Joystick settings.
+void Init_Update()
+{
+	if(SDL_Init(SDL_INIT_JOYSTICK ) < 0)
+	{		
+		MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL!", MB_ICONERROR);				
+	}
+	else
+	{						
+		if(SDL_Init(SDL_INIT_HAPTIC) < 0)
+		{
+			MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL Haptic!", MB_ICONERROR);			
+		}
+		else
+		{
+			Support.numHaptic = SDL_NumHaptics();
+			if(Support.numHaptic>0)
+				Support.Haptic = true;
+		}
+		
+		int joys = Search_Devices();
+
+		if(joys == 0) wprintf(L"PuruPuru: No SDL Joystick Found!");
+	}
+
+	LoadConfig();
+
+	for(int i=0; i<4; i++)
+	{
+		switch(joysticks[i].controllertype)
+		{
+		case CTL_TYPE_JOYSTICK_SDL:
+			  {
+				  if(!SDL_JoystickOpened(joysticks[i].ID))
+					  joysticks[i].controllertype = CTL_TYPE_KEYBOARD;
+			  }
+			  break;
+		case CTL_TYPE_JOYSTICK_XINPUT:
+			  {
+				  if(!xoyinfo[joysticks[i].ID].connected)
+					  joysticks[i].controllertype = CTL_TYPE_KEYBOARD;
+			  }		
+			  break;
+		}
+	}
+}
 
 // Load plugin
 // -----------
@@ -108,27 +148,7 @@ s32 FASTCALL Load(emu_info* emu)
 
 	memcpy(&host, emu, sizeof(host));
 	memset(keyboard_map, 0, sizeof(keyboard_map));
-
-	if(SDL_Init(SDL_INIT_JOYSTICK ) < 0)
-	{		
-		MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL!", MB_ICONERROR);		
-		return rv_error;
-	}
-	else
-	{		
-		if(SDL_Init(SDL_INIT_HAPTIC) < 0)
-		{
-			MessageBoxA(NULL, SDL_GetError(), "Could not initialize SDL Haptic!", MB_ICONERROR);			
-		}
-		else
-		{
-			if(SDL_NumHaptics()>0)
-				canHaptic = true;
-		}
-		
-		int joys = Search_Devices();
-		if ( !joys ) wprintf(L"PuruPuru: No SDL Joystick Found!");
-	}	
+	memset(&Support,0,sizeof(Support));
 
 	if (oldptr==0)
 		oldptr = (dlgp*)SetWindowLongPtr((HWND)host.GetRenderTarget(),GWLP_WNDPROC,(LONG_PTR)sch);	
@@ -147,7 +167,7 @@ s32 FASTCALL Load(emu_info* emu)
 
 	RegisterRawInputDevices(Rid, 1, sizeof(Rid[0]));
 
-	LoadConfig();
+	Init_Update();
 
 	return rv_ok;
 }
@@ -165,8 +185,16 @@ void FASTCALL Unload()
 		oldptr=0;
 	}
 
+#ifdef BUILD_DREAMCAST
 	for(int i=0; i<4; i++) Stop_Vibration(i);
-	
+#endif
+
+	for(int i=0; i<Support.numJoy; i++)	
+	{
+		if(joyinfo[i].rumble != NULL) SDL_HapticClose(joyinfo[i].rumble);
+		if(joyinfo[i].joy != NULL) SDL_JoystickClose(joyinfo[i].joy);		
+	}
+
 	delete [] joyinfo;
 
 	SDL_Quit();
@@ -221,62 +249,25 @@ s32 FASTCALL CreateMain(maple_device_instance* inst, u32 id, u32 flags, u32 root
 	return rv_ok;
 }
 
-bool checkRumble(int port)
-{
-	switch(joysticks[port].controllertype)
-	{
-	case CTL_TYPE_JOYSTICK_SDL:
-		{
-			if(joyinfo[joysticks[port].ID].canRumble)
-			{
-				if(!SDL_JoystickOpened(joysticks[port].ID))
-					joystate[port].joy = SDL_JoystickOpen(joysticks[port].ID);
-				
-				joystate[port].rumble = SDL_HapticOpenFromJoystick(joystate[port].joy);
-
-				if(joystate[port].rumble != NULL) return true;
-				else return false;
-			}
-			else
-				return false;
-
-		}
-	case CTL_TYPE_JOYSTICK_XINPUT:
-		{
-			return true;
-		}
-	case CTL_TYPE_KEYBOARD:
-		{
-			return false;
-		}
-	}
-
-	return false;
-}
-
 // CreateSub
 // ---------
 // Notes: Called to create a sub device, uses same params as CreateMain
 s32 FASTCALL CreateSub(maple_subdevice_instance* inst, u32 id, u32 flags, u32 rootmenu)
 {		
-	int port = inst->port>>6;
-	
+	int port = inst->port>>6;	
 	//printf("PuruPuru -> CreateSub [%d]\n", port);
 
+#ifdef BUILD_DREAMCAST
 	inst->data = inst;
 	inst->dma  = PakkuDMA;
 
-	joysticks[port].canRumble = checkRumble(port);
-
-	if(joysticks[port].canRumble)	
-	{		
-		if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_SDL)
-			host.AddMenuItem(rootmenu, -1, L"Puru Puru Pakku (SDL)", 0, 0);
-		else
-			host.AddMenuItem(rootmenu, -1, L"Puru Puru Pakku (XInput)", 0, 0);		
-	}
+	if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_SDL && Support.Haptic)
+		host.AddMenuItem(rootmenu, -1, L"Puru Puru Pakku (SDL)", 0, 0);
+	else if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_XINPUT)
+		host.AddMenuItem(rootmenu, -1, L"Puru Puru Pakku (XInput)", 0, 0);		
 	else
 		host.AddMenuItem(rootmenu, -1, L"No Rumble Device", 0, 0);
+#endif
 
 	return rv_ok;
 }
@@ -294,27 +285,28 @@ s32 FASTCALL Init(void* data, u32 id, maple_init_params* params)
 	// Init input lib, this can also be done in Create*;	
 	emulator_running = TRUE;
 	u32 port = ((maple_device_instance*)data)->port >> 6;
-	//printf("PuruPuru -> Init [%d]\n", port);
+	printf("PuruPuru -> Init [%d]\n", port);
 
 	switch(id)
 	{
-	case 0: // Dreamcast Controller
+	case 0: // Dreamcast/NAOMI Controller
 		{
-			if(joysticks[port].enabled)
-			{
-				if(!SDL_JoystickOpened(joysticks[port].ID))
-				joystate[port].joy = SDL_JoystickOpen(joysticks[port].ID);
-			}
-			else
-				joystate[port].joy = NULL;
+			// Do nothing, already covered from settings and Load().
 		}
 		break;
+#ifdef BUILD_DREAMCAST
 	case 1: // PuruPuru Pakku
 		{
-			if(joysticks[port].canRumble)
-				Start_Vibration(port);
+			if(joysticks[port].controllertype != CTL_TYPE_KEYBOARD)
+			{
+				if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_SDL && Support.Haptic)
+					Start_Vibration(port);
+				else if(joysticks[port].controllertype == CTL_TYPE_JOYSTICK_XINPUT)
+					Start_Vibration(port);
+			}
 		}
 		break;
+#endif
 	}
 
 
@@ -356,9 +348,19 @@ void FASTCALL Destroy(void* data, u32 id)
 	{
 	case 0: // DC Controller
 		{
-			joysticks[port].enabled = 0;	
-			if(joystate[port].rumble != NULL) SDL_HapticClose(joystate[port].rumble);
-			if(joystate[port].joy != NULL) SDL_JoystickClose(joystate[port].joy);	
+			joysticks[port].enabled = 0; 
+			int joyID = joysticks[port].ID;
+
+			if(joyinfo[joyID].rumble != NULL)
+			{
+				SDL_HapticClose(joyinfo[joyID].rumble);
+				joyinfo[joyID].rumble = NULL;
+			}
+			if(joyinfo[joyID].joy != NULL) 	
+			{
+				SDL_JoystickClose(joyinfo[joyID].joy);
+				joyinfo[joyID].joy = NULL;
+			}
 		} 
 		break;
 	case 1: // Puru Pack
@@ -370,7 +372,6 @@ void FASTCALL Destroy(void* data, u32 id)
 #endif
 	
 }
-
 
 INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {			
@@ -412,8 +413,6 @@ INT_PTR CALLBACK sch( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 	
 	return oldptr(hWnd,uMsg,wParam,lParam);
 }
-
-
 
 // ConfigMenuCallback
 // ------------------
@@ -500,15 +499,14 @@ void SaveConfig()
 #endif			
 		host.ConfigSaveInt(SectionName, L"keyboard",		joysticks[port].keys);		
 		host.ConfigSaveInt(SectionName, L"joy_id",			joysticks[port].ID);
-		host.ConfigSaveInt(SectionName, L"controllertype",	joysticks[port].controllertype);
-		host.ConfigSaveInt(SectionName, L"eventnum",		joysticks[port].eventnum);
+		host.ConfigSaveInt(SectionName, L"controllertype",	joysticks[port].controllertype);		
 	}
 }
 
 // Load settings from file
 // -----------------------
 void LoadConfig()
-{
+{		
 	wchar SectionName[32];
 
 #ifdef BUILD_NAOMI
@@ -556,12 +554,12 @@ void LoadConfig()
 
 		joysticks[port].deadzone		= host.ConfigLoadInt(SectionName, L"deadzone",		24);
 		joysticks[port].pakku_intensity	= host.ConfigLoadInt(SectionName, L"pakku_intensity", 100);
+		joysticks[port].pakku_intensity = max(0, min(joysticks[port].pakku_intensity, 200));
 		joysticks[port].pakku_length	= host.ConfigLoadInt(SectionName, L"pakku_length", 175);
 #endif				
-		joysticks[port].keys			= host.ConfigLoadInt(SectionName, L"keyboard",		 0);
+		joysticks[port].keys			= host.ConfigLoadInt(SectionName, L"keyboard",		 0) == 0? false:true;
 		joysticks[port].ID				= host.ConfigLoadInt(SectionName, L"joy_id",		 0);
-		joysticks[port].controllertype	= host.ConfigLoadInt(SectionName, L"controllertype", 0);
-		joysticks[port].eventnum		= host.ConfigLoadInt(SectionName, L"eventnum",		 0);
+		joysticks[port].controllertype	= host.ConfigLoadInt(SectionName, L"controllertype", 0);		
 
 		Names2Control(port);
 	}
@@ -579,29 +577,28 @@ void AnsiToWide(wchar* dest, const char *src)
 
 int Search_Devices()
 {	
-	int numjoy = SDL_NumJoysticks();
+	Support.numJoy = SDL_NumJoysticks();
 
-	wprintf(L"\nPuruPuru -> SDL: %i Joystick(s) detected:\n", numjoy);
+	wprintf(L"\nPuruPuru -> SDL: %i Joystick(s) detected:\n", Support.numJoy);
 
-	if(numjoy > 0) 
-	{
-		canSDL = true;
-
+	if(Support.numJoy > 0) 
+	{		
+		Support.SDL = true;
+		
 		if(joyinfo)
 		{
 			delete [] joyinfo;
-			joyinfo = new CONTROLLER_INFO_SDL [numjoy];
+			joyinfo = new CONTROLLER_INFO_SDL [Support.numJoy];
 		}
 		else
 		{
-			joyinfo = new CONTROLLER_INFO_SDL [numjoy];
+			joyinfo = new CONTROLLER_INFO_SDL [Support.numJoy];
 		}
 	
-		for(int i = 0; i < numjoy; i++ )
+		for(int i = 0; i < Support.numJoy; i++ )
 		{
 			joyinfo[i].joy			= SDL_JoystickOpen(i);
-			joyinfo[i].rumble		= NULL;			
-			joyinfo[i].canRumble    = false;
+			joyinfo[i].rumble		= NULL;						
 			joyinfo[i].NumAxes		= SDL_JoystickNumAxes(joyinfo[i].joy);
 			joyinfo[i].NumButtons	= SDL_JoystickNumButtons(joyinfo[i].joy);
 			joyinfo[i].NumBalls		= SDL_JoystickNumBalls(joyinfo[i].joy);
@@ -611,24 +608,17 @@ int Search_Devices()
 			
 			wprintf(L"\t[%d] %s. ", i, joyinfo[i].Name);
 			
-			if(canHaptic)
+			if(Support.Haptic)
 			{
 				if(SDL_JoystickIsHaptic(joyinfo[i].joy) == 1)
-					joyinfo[i].rumble =  SDL_HapticOpenFromJoystick(joyinfo[i].joy);
-
-				if(joyinfo[i].rumble != NULL)
 				{
-					wprintf(L"Rumble supported.");
+					wprintf(L"Rumble supported.");					
 					joyinfo[i].canRumble = true;
 				}
 				else				
 					wprintf(L"Rumble not supported.");						
 				
 			}
-
-			// Close them if opened.
-			if(joyinfo[i].rumble != NULL) SDL_HapticClose(joyinfo[i].rumble);
-			if(joyinfo[i].joy != NULL) SDL_JoystickClose(joyinfo[i].joy);
 		
 			wprintf(L"\n");
 		}
@@ -637,8 +627,9 @@ int Search_Devices()
 
 	ZeroMemory( xoyinfo, sizeof( CONTROLLER_INFO_XINPUT ) * 4 );
 
-	DWORD status;
-    canXInput = false;
+	DWORD status;    
+
+	int xjoy = 0;
 
 	for( int i = 0; i < 4; i++ )
     {        
@@ -647,11 +638,14 @@ int Search_Devices()
         if( status == ERROR_SUCCESS )
 		{            
 			xoyinfo[i].connected = true;
-			canXInput = true;
+			Support.XInput = true;
+			xjoy++;
 		}			
         else
             xoyinfo[i].connected = false;
     }  	    	
 
-	return numjoy;
+	if(xjoy == 0) wprintf(L"PuruPuru: No XInput Joystick Found!");
+
+	return Support.numJoy;
 }

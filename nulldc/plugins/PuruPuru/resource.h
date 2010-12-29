@@ -5,15 +5,17 @@
 #define IDD_CONFIG_DC                   101
 #define IDB_BITMAP1                     103
 #define IDB_BITMAP_ON                   104
-#define IDD_ABOUT                       105
+#define IDB_BITMAP_ON2                  105
 #define IDB_BITMAP_OFF                  106
-#define IDD_CONFIG1                     106
-#define IDD_CONFIG_NAOMI                106
-#define IDB_BITMAP4                     107
-#define IDC_PORTTAB                     108
-#define IDB_BITMAP2                     109
+#define IDD_ABOUT                       107
+#define IDD_CONFIG1                     108
+#define IDD_CONFIG_NAOMI                109
+#define IDB_BITMAP4                     110
+#define IDC_PORTTAB                     111
+#define IDB_BITMAP2                     112
 #define IDC_CONFIG_OFF                  200
 #define IDC_CONFIG_ON                   201
+#define IDC_CONFIG_ON2                  202
 #define IDC_JOYNAME_SDL                 1001
 #define IDC_JOYNAME_XINPUT              1002
 #define IDC_JOYNAME_KEY                 1003
@@ -27,6 +29,7 @@
 #define IDC_DEADZONE                    1019
 #define IDC_HALFPRESS                   1020
 #define IDC_ABOUT1                      1021
+#define IDC_PAKKU                       1021
 #define IDC_DPAD_UP                     1022
 #define IDC_DPAD_DOWN                   1023
 #define IDC_DPAD_LEFT                   1024
@@ -44,7 +47,10 @@
 #define IDC_DPAD_TEXT5                  1041
 #define IDC_DPAD_TEXT6                  1042
 #define IDC_DPAD_TEXT7                  1043
+#define IDC_DPAD_TEXT15                 1044
 #define IDC_DPAD_TEXT8                  1045
+#define IDC_DPAD_TEXT16                 1046
+#define IDC_DPAD_TEXT17                 1047
 #define IDC_DPAD_TEXT9                  1048
 #define IDC_DPAD_TEXT10                 1049
 #define IDC_DPAD_RIGHT3                 1052
@@ -52,6 +58,7 @@
 #define IDC_DPAD_TEXT12                 1054
 #define IDC_DPAD_TEXT13                 1055
 #define IDC_DPAD_TEXT14                 1056
+#define IDC_PAKKU_TEXT                  1065
 #define IDC_NBUTTON1                    1100
 #define IDC_NBUTTON2                    1101
 #define IDC_NBUTTON3                    1102
@@ -101,7 +108,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        109
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1065
+#define _APS_NEXT_CONTROL_VALUE         1066
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
