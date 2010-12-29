@@ -87,11 +87,12 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 	IDirect3DTexture9* pal_texture=0;
 	IDirect3DTexture9* fb_texture8888=0,* fb_texture565=0,*fb_texture1555=0;
 	IDirect3DTexture9* fog_texture=0;
-	IDirect3DTexture9* rtt_texture=0;
+	IDirect3DTexture9* rtt_texture[2]={0,0};
+	u32 rtt_index;
 	IDirect3DTexture9* fb_texture=0;
 	u32 rtt_address=0;
 	u32 rtt_FrameNumber=0xFFFFFFFF;
-	IDirect3DSurface9* fb_surf=0,* rtt_surf=0,* fb_surface8888=0,* fb_surface565=0,* fb_surface1555=0;
+	IDirect3DSurface9* fb_surf=0,* rtt_surf[2]={0,0},* fb_surface8888=0,* fb_surface565=0,* fb_surface1555=0;
 	IDirect3DSurface9* backbuffer=0;
 	D3DSURFACE_DESC fb_surf_desc;
 	ID3DXFont* font;
@@ -586,7 +587,8 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		if (addr==rtt_address)
 		{
 			rtt_FrameNumber=FrameNumber;
-			return rtt_texture;
+			//printf("Reading to %d\n",rtt_index);
+			return rtt_texture[rtt_index];
 		}
 
 		//EnterCriticalSection(&tex_cache_cs);
@@ -2220,7 +2222,9 @@ __error_out:
 		{
 			rtt_FrameNumber=FrameNumber;
 			rtt_address=FB_W_SOF1&VRAM_MASK;
-			verifyc(dev->SetRenderTarget(0,rtt_surf));
+			//write to the 'other' rtt buffer, read from the last writen one
+			verifyc(dev->SetRenderTarget(0,rtt_surf[rtt_index^1]));
+			//printf("Writing to %d\n",rtt_index^1);
 		}
 		else
 		{
@@ -2637,6 +2641,12 @@ __error_out:
 			// End the scene
 			dev->EndScene();
 		}
+
+		if (rtt)
+		{
+			//swap RTT target for next time !
+			rtt_index^=1;
+		}
 	}
 	//
 	volatile bool running=false;
@@ -2779,8 +2789,12 @@ __error_out:
 		for(;w<ppar_BackBufferWidth;w<<=1)
 			;
 		w>>=1;
-		verifyc(dev->CreateTexture(w,h,1,D3DUSAGE_RENDERTARGET,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&rtt_texture,NULL));
-		rtt_texture->GetSurfaceLevel(0,&rtt_surf);
+
+		for (int rtid=0;rtid<2;rtid++)
+		{
+			verifyc(dev->CreateTexture(w,h,1,D3DUSAGE_RENDERTARGET,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&rtt_texture[rtid],NULL));
+			rtt_texture[rtid]->GetSurfaceLevel(0,&rtt_surf[rtid]);
+		}
 
 		verifyc(dev->CreateTexture(ppar_BackBufferWidth,ppar_BackBufferHeight,1,D3DUSAGE_RENDERTARGET,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&fb_texture,NULL));
 		fb_texture->GetSurfaceLevel(0,&fb_surf);
@@ -3004,7 +3018,8 @@ nl:
 		
 		safe_release(fb_surf);
 		safe_release(backbuffer);
-		safe_release(rtt_surf);
+		safe_release(rtt_surf[0]);
+		safe_release(rtt_surf[1]);
 		safe_release(fb_surface8888);
 		safe_release(fb_surface1555);
 		safe_release(fb_surface565);
@@ -3014,7 +3029,8 @@ nl:
 		safe_release(fb_texture565);
 		safe_release(pal_texture);
 		safe_release(fog_texture);
-		safe_release(rtt_texture);
+		safe_release(rtt_texture[0]);
+		safe_release(rtt_texture[1]);
 		safe_release(fb_texture);
 
 		
@@ -3576,6 +3592,10 @@ nl:
 		vert_float_color_(cv->spc,FaceOffsColor[3],FaceOffsColor[0],FaceOffsColor[1],FaceOffsColor[2]);	 \
 		vert_int_offs(offsint);
 #else
+	//Notes:
+	//Alpha doesn't get intensity
+	//Intesity is clamped before the mul, as well as on face color to work the same as the hardware. [Fixes red dog]
+
 	//Notes:
 	//Alpha doesn't get intensity
 	//Intesity is clamped before the mul, as well as on face color to work the same as the hardware. [Fixes red dog]
