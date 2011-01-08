@@ -592,24 +592,19 @@ sh4op(i0011_nnnn_mmmm_1111)
 	//s64 br=(s64)(s32)r[n]+(s64)(s32)r[m];
 	u32 rm=r[m];
 	u32 rn=r[n];
+	u8 tmp;
 
-	__asm //over
+	__asm
 	{
-		mov sr.T,0
 		mov eax,rm;
 		mov ecx,rn;
 		add eax,ecx;
-		adc sr.T,0; //0 + carry ( use adc instead seto since rm/rn are both unsigned )
-		mov rn,eax;
-		lea eax,r; //@(r)
-		mov ebx,n;
-		shl ebx,2; //ptr[loc] = 32bits 
-		add eax,ebx;
-		mov ebx,rn;
-		mov [eax],ebx;//*(t*)p = rn
-	};//kill :|
+		seto tmp;//cond = (@cf ==> flip(F(o)[msb]))
+		lea ebx,tmp;//cond = 8bit, so load address and read back to 32bit var
+		mov [sr.T],ebx;
+	};
 
-	//r[n]=rn;
+	r[n]=rn;
 	/*
 	if (br >=0x80000000)
 		sr.T=1;
@@ -667,24 +662,19 @@ sh4op(i0011_nnnn_mmmm_1011)
 	//r[n]-=r[m];
 	u32 rm=r[m];
 	u32 rn=r[n];
+	u8 tmp;
 
-	__asm //over
+	__asm 
 	{
-		mov sr.T,0
 		mov eax,rm;
 		mov ecx,rn;
 		sub eax,ecx;
-		adc sr.T,0; //0 + carry ( use adc instead seto since rm/rn are both unsigned )
-		mov rn,eax;
-		lea eax,r; //@(r)
-		mov ebx,n;
-		shl ebx,2; //ptr[loc] = 32bits 
-		add eax,ebx;
-		mov ebx,rn;
-		mov [eax],ebx;//*(t*)p = rn
-	};//kill :|
+		seto sr.T;//cond = (@cf ==> flip(F(o)[msb]))
+		lea ebx,tmp;//cond = 8bit, so load address and read back to 32bit var
+		mov [sr.T],ebx;
+	};
 
-	//r[n]=rn;
+	r[n]=rn;
 }
 //dt <REG_N>                    
 sh4op(i0100_nnnn_0001_0000)
