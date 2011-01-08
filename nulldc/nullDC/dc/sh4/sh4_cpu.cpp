@@ -600,7 +600,7 @@ sh4op(i0011_nnnn_mmmm_1111)
 		mov ecx,rn;
 		add eax,ecx;
 		seto tmp;//cond = (@cf ==> flip(F(o)[msb]))
-		lea ebx,tmp;//cond = 8bit, so load address and read back to 32bit var
+		movzx ebx,tmp;
 		mov [sr.T],ebx;
 	};
 
@@ -669,8 +669,8 @@ sh4op(i0011_nnnn_mmmm_1011)
 		mov eax,rm;
 		mov ecx,rn;
 		sub eax,ecx;
-		seto sr.T;//cond = (@cf ==> flip(F(o)[msb]))
-		lea ebx,tmp;//cond = 8bit, so load address and read back to 32bit var
+		seto tmp;//cond = (@cf ==> flip(F(o)[msb]))
+		movzx ebx,tmp;
 		mov [sr.T],ebx;
 	};
 

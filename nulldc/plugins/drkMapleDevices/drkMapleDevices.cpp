@@ -31,6 +31,7 @@ emu_info host;
 #include <commctrl.h>
 #include "resource.h"
 
+#undef  _HAS_LGLCD_
 #ifdef _HAS_LGLCD_
 
 	#include <lglcd.h>
