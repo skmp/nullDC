@@ -784,19 +784,26 @@ bool naomi_LoadRom(wchar* file)
 
 bool NaomiSelectFile(void* handle)
 {
-	
-	ZeroMemory(&ofn, sizeof(OPENFILENAME));
-	ofn.lStructSize		= sizeof(OPENFILENAME);
-	ofn.hInstance		= (HINSTANCE)GetModuleHandle(0);
-	ofn.lpstrFile		= SelectedFile;
-	ofn.nMaxFile		= MAX_PATH;
-	ofn.lpstrFilter		= L"*.lst\0*.lst\0\0";
-	ofn.nFilterIndex	= 0;
-	ofn.hwndOwner		=(HWND)handle;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+	if(cfgLoadInt(L"Naomi", L"LoadDefaultImage",0)!=0)
+	{
+		cfgLoadStr(L"Naomi", L"DefaultImage", SelectedFile, L"default.lst");
+		wprintf(L"Loading default image: %s\n", SelectedFile);
+	}
+	else
+	{
+		ZeroMemory(&ofn, sizeof(OPENFILENAME));
+		ofn.lStructSize		= sizeof(OPENFILENAME);
+		ofn.hInstance		= (HINSTANCE)GetModuleHandle(0);
+		ofn.lpstrFile		= SelectedFile;
+		ofn.nMaxFile		= MAX_PATH;
+		ofn.lpstrFilter		= L"*.lst\0*.lst\0\0";
+		ofn.nFilterIndex	= 0;
+		ofn.hwndOwner		=(HWND)handle;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
-	if(GetOpenFileName(&ofn)<=0)
-		return true;
+		if(GetOpenFileName(&ofn)<=0)
+			return true;
+	}
 
 	if (!naomi_LoadRom(SelectedFile))
 	{
