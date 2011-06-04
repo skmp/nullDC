@@ -48,6 +48,38 @@ Sh4RegType dyna_reg_id_xd[8];
 
 void rec_shil_iNimp(u32 pc,u32 op ,char * text)
 {
+	printf("SHIL: Internal fatal error: %s",text);
+
+	printf("PC 0x%x , OP = 0x%x\n",pc,op);
+
+	printf("GPR regs : \n"); //dump the useful only
+	for(s32 i = 0;i < 16;i++)
+		printf("r[%d] : 0x%x,",i,r[i]);
+	printf("\nFP regs : \n");
+	for(s32 i = 0;i < 16;i++)
+		printf("fr[%d] : %f,",i,fr[i]);
+
+	printf("\nControl regs : \n"); 
+	printf("RM %d DN : %d PR %d SZ %d FR %d PR_SZ %d NIL %d\n",fpscr.RM,fpscr.DN,fpscr.PR,fpscr.SZ,fpscr.FR,fpscr.PR_SZ,fpscr.nil);
+	printf("finexact %d,",fpscr.finexact);
+	printf("funderflow %d,",fpscr.funderflow);
+	printf("foverflow %d,",fpscr.foverflow);
+	printf("fdivbyzero %d,",fpscr.fdivbyzero);
+	printf("finvalidop %d,",fpscr.finvalidop);
+	printf("einexact %d,",fpscr.einexact);
+	printf("eunderflow %d,",fpscr.eunderflow);
+	printf("eoverflow %d,",fpscr.eoverflow);
+	printf("edivbyzero %d,",fpscr.edivbyzero);
+	printf("einvalidop %d,",fpscr.einvalidop);
+	printf("cinexact %d,",fpscr.cinexact);
+	printf("cunderflow %d,",fpscr.cunderflow);
+	printf("coverflow %d,",fpscr.coverflow);
+	printf("cdivbyzero %d,",fpscr.cdivbyzero);
+	printf("cinvalid %d,",fpscr.cinvalid);
+	printf("cfpuerr %d\n",fpscr.cfpuerr);
+
+	//while(1){}
+	die("SHIL: Internal fatal error");
 }
 //************************ TLB/Cache ************************
 //ldtlb                         
@@ -1238,17 +1270,11 @@ sh4op(i1111_nnnn_1001_1101)
 //flds <FREG_N>,FPUL       
 sh4op(i1111_nnnn_0001_1101)
 {
-	//iNimp("flds <FREG_N>,FPUL");
-	if (fpscr.PR == 0)
-	{
-		u32 n = GetN(op);
-		//fpul = fr_hex[n];
-		ilst->mov(reg_fpul,fr[n]);
-	}
-	else
-	{
-		iNimp("flds <DREG_N>,FPUL");
-	}
+	//this seems to be a valid opcode even if double precicion is activated 
+	//carrier requires this
+	//u32 n = GetN(op);
+	//fpul = fr_hex[n];
+	ilst->mov(reg_fpul,fr[GetN(op)]);
 }
 
 
@@ -1345,23 +1371,14 @@ sh4op(i1111_nnnn_0110_1101)
 	}
 }
 
-
-
-
 //fsts FPUL,<FREG_N>       
 sh4op(i1111_nnnn_0000_1101)
 {
-	//iNimp("fsts FPUL,<FREG_N>");
-	if (fpscr.PR == 0)
-	{
-		u32 n = GetN(op);
-		//fr_hex[n] = fpul;
-		ilst->mov(fr[n],reg_fpul);
-	}
-	else
-	{
-		iNimp("fsts FPUL,<DREG_N>");
-	}
+	//this seems to be a valid opcode even if double precicion is activated 
+	//carrier requires it
+	//u32 n = GetN(op);
+	ilst->mov(fr[GetN(op)],reg_fpul);
+
 }
 
 //fmac <FREG_0>,<FREG_M>,<FREG_N> 
