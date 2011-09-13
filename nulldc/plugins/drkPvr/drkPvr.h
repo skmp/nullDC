@@ -68,14 +68,14 @@ void SaveSettings();
 #elif  REND_API == REND_SW
 	#define REND_NAME L"Software SBR"
 	#define GetRenderer GetSWRenderer
-#elif REND_API == REND_D3D_V2
-	#define REND_NAME L"Direct3D HAL/V2"
-	#define GetRenderer GetDirect3DRenderer2
+#elif REND_API == REND_D3D11
+	#define REND_NAME L"Direct3D11 HAL"
+	#define GetRenderer GetDirect3DRenderer
 #elif  REND_API == REND_NONE
 	#define REND_NAME L"No Rendering"
 	#define GetRenderer GetNORenderer
 #else
-	#error invalid config.REND_API must be set with one of REND_D3D/REND_OGL/REND_SW/REND_D3D_V2
+	#error invalid config (REND_API)
 #endif
 
 struct _settings_type

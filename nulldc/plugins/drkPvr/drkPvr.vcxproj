@@ -131,6 +131,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="d3dRend11.cpp" />
     <ClCompile Include="drkPvr.cpp" />
     <ClCompile Include="ta.cpp" />
     <ClCompile Include="SPG.cpp" />
@@ -142,6 +143,7 @@
     <ClCompile Include="helper_classes.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="d3dRend11.h" />
     <ClInclude Include="drkPvr.h" />
     <ClInclude Include="ta.h" />
     <ClInclude Include="ta_const_df.h" />
@@ -156,6 +158,7 @@
     <ClInclude Include="helper_classes.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="d3d11.fx" />
     <None Include="exports.def" />
     <None Include="ps_hlsl.fx" />
     <None Include="vs_hlsl.fx" />
