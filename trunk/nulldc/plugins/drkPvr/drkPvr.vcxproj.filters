@@ -58,6 +58,9 @@
     <ClCompile Include="helper_classes.cpp">
       <Filter>plugin</Filter>
     </ClCompile>
+    <ClCompile Include="d3dRend11.cpp">
+      <Filter>Renderer\Direct3D</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="drkPvr.h">
@@ -92,6 +95,9 @@
     </ClInclude>
     <ClInclude Include="config.h" />
     <ClInclude Include="helper_classes.h" />
+    <ClInclude Include="d3dRend11.h">
+      <Filter>Renderer\Direct3D</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">
@@ -101,6 +107,9 @@
       <Filter>Renderer\Direct3D</Filter>
     </None>
     <None Include="ps_hlsl.fx">
+      <Filter>Renderer\Direct3D</Filter>
+    </None>
+    <None Include="d3d11.fx">
       <Filter>Renderer\Direct3D</Filter>
     </None>
   </ItemGroup>

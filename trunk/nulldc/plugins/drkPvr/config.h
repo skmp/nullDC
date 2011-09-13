@@ -9,6 +9,7 @@
 #define REND_SW   3
 #define REND_D3D_V2 4
 #define REND_NONE   5
+#define REND_D3D11  6
 
 #define REND_API REND_D3D
 
