@@ -209,11 +209,11 @@ void WriteSample(s16 r, s16 l)
 	rawout.Write(l,r);
 	#endif
 
-	speed_limit.Reset();
 	if (!asRingFreeCount())
 	{
 		if (settings.LimitFPS)
 		{
+			speed_limit.Reset();
 			speed_limit.Wait();
 		}
 		else
