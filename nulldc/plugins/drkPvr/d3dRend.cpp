@@ -3106,9 +3106,9 @@ nl:
 	{
 		SetCurrentPVRRC(PARAM_BASE);
 		VertexCount+= pvrrc.verts.used;
-		render_end_pending_cycles= pvrrc.verts.used*25;
-		if (render_end_pending_cycles<500000)
-			render_end_pending_cycles=500000;
+		render_end_pending_cycles= pvrrc.verts.used*45;
+		//if (render_end_pending_cycles<500000)
+			render_end_pending_cycles+=500000;
 
 		if (!d3d_init_done)
 		{
