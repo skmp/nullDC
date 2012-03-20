@@ -9,8 +9,22 @@ struct CHDDisc : Disc
 
 	u32 hunkbytes;
 	u32 sph;
+	
+	CHDDisc()
+	{
+		chd=0;
+		hunk_mem=0;
+	}
 
 	bool TryOpen(wchar* file);
+
+	~CHDDisc() 
+	{ 
+		if (hunk_mem)
+			delete [] hunk_mem;
+		if (chd)
+			chd_close(chd);
+	}
 };
 
 struct CHDTrack:TrackFile
@@ -75,13 +89,18 @@ bool CHDDisc::TryOpen(wchar* file)
 
 	for(;;)
 	{
+		char type[64],subtype[32]="NONE",pgtype[32],pgsub[32];
+		int tkid,frames,pregap=0,postgap=0;
 		err=chd_get_metadata(chd,CDROM_TRACK_METADATA2_TAG,tracks.size(),temp,sizeof(temp),&temp_len,&tag,&flags);
-		if (err!=CHDERR_NONE)
+		if (err==CHDERR_NONE)
+			//CDROM_TRACK_METADATA2_TAG 	"TRACK:%d TYPE:%s SUBTYPE:%s FRAMES:%d PREGAP:%d PGTYPE:%s PGSUB:%s POSTGAP:%d"
+			sscanf(temp,CDROM_TRACK_METADATA2_FORMAT,&tkid,type,subtype,&frames,&pregap,pgtype,pgsub,&postgap);
+		else if (CHDERR_NONE== (err=chd_get_metadata(chd,CDROM_TRACK_METADATA_TAG,tracks.size(),temp,sizeof(temp),&temp_len,&tag,&flags)) )
+			//CDROM_TRACK_METADATA_FORMAT	"TRACK:%d TYPE:%s SUBTYPE:%s FRAMES:%d"
+			sscanf(temp,CDROM_TRACK_METADATA_FORMAT,&tkid,type,subtype,&frames);
+		else
 			break;
-		//"TRACK:%d TYPE:%s SUBTYPE:%s FRAMES:%d PREGAP:%d PGTYPE:%s PGSUB:%s POSTGAP:%d"
-		char type[64],subtype[32],pgtype[32],pgsub[32];
-		int tkid,frames,pregap,postgap;
-		sscanf(temp,CDROM_TRACK_METADATA2_FORMAT,&tkid,type,subtype,&frames,&pregap,pgtype,pgsub,&postgap);
+
 
 		if (tkid!=(tracks.size()+1) || (strcmp(type,"MODE1_RAW")!=0 && strcmp(type,"AUDIO")!=0) || strcmp(subtype,"NONE")!=0 || pregap!=0 || postgap!=0)
 			return false;
