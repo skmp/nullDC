@@ -78,13 +78,25 @@ void term_mem()
 //00802800~00802FFF @COMMON_DATA 
 //00803000~00807FFF @DSP_DATA 
 
+//Force alignment for read/writes to mem
+#define ACCESS_MASK (ARAM_MASK-(sz-1))
+
 template<int sz,typename T>
 T fastcall ReadMemArm(u32 addr)
 {
 	addr&=0x00FFFFFF;
 	if (addr<0x800000)
 	{
-		return *(T*)&aica_ram[addr&ARAM_MASK];
+		T rv=*(T*)&aica_ram[addr&ACCESS_MASK];
+		
+		if (sz==4)
+		{
+			//32 bit misalligned reads: rotated
+			u32 rot=(addr&3)<<3;
+			return (rv>>rot) | (rv<<(32-rot));
+		}
+		else
+			return rv;
 	}
 	else
 	{
@@ -98,7 +110,7 @@ void fastcall WriteMemArm(u32 addr,T data)
 	addr&=0x00FFFFFF;
 	if (addr<0x800000)
 	{
-		*(T*)&aica_ram[addr&ARAM_MASK]=data;
+		*(T*)&aica_ram[addr&ACCESS_MASK]=data;
 	}
 	else
 	{
