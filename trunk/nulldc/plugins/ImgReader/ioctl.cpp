@@ -285,6 +285,8 @@ struct PhysicalDrive:Disc
 			use_scsi=true;
 		else
 			use_scsi=false;
+
+		return true;
 	}
 };
 
