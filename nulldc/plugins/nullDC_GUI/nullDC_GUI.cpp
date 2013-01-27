@@ -14,9 +14,9 @@ void SaveSettings()
 
 void LoadSettings()
 {
-	settings.AutoHideMenu=emu.ConfigLoadInt(L"nullDC_GUI",L"AutoHideMenu",1);
-	settings.Fullscreen=emu.ConfigLoadInt(L"nullDC_GUI",L"Fullscreen",0);
-	settings.AlwaysOnTop=emu.ConfigLoadInt(L"nullDC_GUI",L"AlwaysOnTop",0);
+	settings.AutoHideMenu=emu.ConfigLoadInt(L"nullDC_GUI",L"AutoHideMenu",1) ? true : false;
+	settings.Fullscreen=emu.ConfigLoadInt(L"nullDC_GUI",L"Fullscreen",0) ? true : false;
+	settings.AlwaysOnTop=emu.ConfigLoadInt(L"nullDC_GUI",L"AlwaysOnTop",0) ? true : false;
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,

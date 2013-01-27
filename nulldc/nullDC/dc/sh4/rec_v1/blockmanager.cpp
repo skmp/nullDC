@@ -201,7 +201,7 @@ public :
 	//optimise blocklist for best lookup times
 	void Optimise()
 	{
-		if (ItemCount==0)
+		if (ItemCount < 2)
 			return;
 
 		if (size())
@@ -667,8 +667,16 @@ void RegisterBlock(CompiledBlockInfo* block)
 {
 	all_block_list.Add(block);
 
-	u32 start=(block->start&RAM_MASK)/PAGE_SIZE;
-	u32 end=(block->end&RAM_MASK)/PAGE_SIZE;
+	u32 start=(block->start&RAM_MASK);
+	u32 end=(block->end&RAM_MASK);
+
+	if (0U != start) {//The compiler turns this into a shift in high opt levels but play safe while in debug mode;)
+		start /= PAGE_SIZE;
+	}
+
+	if (0U != end) {//just in case
+		end /= PAGE_SIZE;
+	}
 
 	//AddToBlockList(GetLookupBlockList(block->start),block);
 	GetLookupBlockList(block->start)->Add(block);
@@ -693,8 +701,16 @@ void RegisterBlock(CompiledBlockInfo* block)
 
 void UnRegisterBlock(CompiledBlockInfo* block)
 {
-	u32 start=(block->start&RAM_MASK)/PAGE_SIZE;
-	u32 end=(block->end&RAM_MASK)/PAGE_SIZE;
+	u32 start=(block->start&RAM_MASK);
+	u32 end=(block->end&RAM_MASK);
+
+	if (0U != start) { //The compiler turns this into a shift in high opt levels but play safe while in debug mode;)
+		start /= PAGE_SIZE;
+	}
+
+	if (0U != end) {//just in case
+		end /= PAGE_SIZE;
+	}
 
 	GetLookupBlockList(block->start)->Remove(block);
 
@@ -797,7 +813,7 @@ bool RamLockedWrite(u8* address,u32* sp)
 
 	if (offset<RAM_SIZE)
 	{
-		size_t addr_hash = offset/PAGE_SIZE;
+		size_t addr_hash = (0U!=offset) ? offset/PAGE_SIZE : 0;
 		BlockList* list=&BlockPageLists[addr_hash];
 		if (list->ItemCount==0)
 			return false;

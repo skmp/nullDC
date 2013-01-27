@@ -349,15 +349,13 @@ bool LoadRomFiles(wchar* root)
 	}
 	if (!sys_nvmem.Load(root,ROM_PREFIX,L"%nvmem.bin;%flash_wb.bin;%flash.bin;%flash.bin.bin",L"nvram"))
 	{
-		if (NVR_OPTIONAL)
-		{
+#if NVR_OPTIONAL
+
 			log("flash/nvmem is missing, will create new file ..");
-		}
-		else
-		{
+#else
 			msgboxf(_T("Unable to find flash/nvmem in \n%s\nExiting .."),MBX_ICONERROR,root);
 			return false;
-		}
+#endif
 	}
 	
 	return true;
@@ -440,12 +438,12 @@ T __fastcall ReadMem_area0(u32 addr)
 	//map 0x0000 to 0x001F
 	if ((base_start<=0x001F))//	:MPX	System/Boot ROM
 	{
-		return ReadBios(addr,sz);
+		return (T)ReadBios(addr,sz);
 	}
 	//map 0x0020 to 0x0021
 	else if ((base_start>= 0x0020) && (base_end<= 0x0021))		//	:Flash Memory
 	{
-		return ReadFlash(addr&0x1FFFF,sz);
+		return (T)ReadFlash(addr&0x1FFFF,sz);
 	}
 	//map 0x005F to 0x005F
 	else if ((base_start >=0x005F) && (base_end <=0x005F) /*&& (addr>= 0x00400000)*/ && (addr<= 0x005F67FF))		//	:Unassigned

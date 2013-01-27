@@ -72,7 +72,7 @@ bool Screenshot(LPCTSTR FileName, HWND hwnd)
 		// For that we need to select it into a device context. We create one.
 		if ((OffscrDC = CreateCompatibleDC(SurfDC)) == NULL) ERROR_BREAK(3);
 		// Select OffscrBmp into OffscrDC:
-		HBITMAP OldBmp = (HBITMAP)SelectObject(OffscrDC, OffscrBmp);
+		SelectObject(OffscrDC, OffscrBmp);
 		// Now we can copy the contents of the surface to the offscreen bitmap:
 		BitBlt(OffscrDC, 0, 0, Width, Height, SurfDC, windowRect.left, windowRect.top, SRCCOPY);
 

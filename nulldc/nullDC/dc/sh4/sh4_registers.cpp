@@ -19,7 +19,9 @@ fpscr_type fpscr;
 
 
 
+const u32 k_sin_table_size = 0x10000+0x4000;//+0x4000 to avoid having to warp around twice on cos
 __declspec(align(64)) f32 sin_table[0x10000+0x4000];	//+0x4000 to avoid having to warp around twice on cos
+
 
 u32*  xf_hex=(u32*)xf,*fr_hex=(u32*)fr;
 
@@ -184,6 +186,10 @@ void UpdateFPSCR()
 	SetFloatStatusReg();//ensure they are on sync :)
 }
 
+void CleanupSinCos() {
+ 
+}
+
 void GenerateSinCos()
 {
 	wchar* path=GetEmuPath(L"data\\fsca-table.bin");
@@ -191,6 +197,9 @@ void GenerateSinCos()
 	free(path);
 	if (!tbl)
 		die("fsca-table.bin is missing!");
+
+ 
+
 	fread(sin_table,1,4*0x8000,tbl);
 	fclose(tbl);
 

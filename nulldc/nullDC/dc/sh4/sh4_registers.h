@@ -9,6 +9,7 @@ union mac_type
 };
 
 __declspec(align(32)) extern f32 sin_table[0x10000+0x4000];
+
 struct Sh4RegContext
 {
 	u32 r[16];
@@ -31,6 +32,7 @@ struct Sh4RegContext
 	fpscr_type old_fpscr;
 };
 void GenerateSinCos();
+void CleanupSinCos();
 __declspec(align(64)) extern u32 r[16];
 __declspec(align(64)) extern u32 r_bank[8];
 

@@ -185,7 +185,8 @@ void FASTCALL gdrom_get_cdda(s16* sector)
 			cdda.playing=false;
 			cdda.repeats = 0;
 			SecNumber.Status=GD_STANDBY;
-			goto cleanup_cdda;
+			memset(sector,0,2352);
+			return;
 		}
 
 		libGDR.ReadSector((u8*)sector,cdda.CurrAddr.FAD,1,2352);
@@ -209,16 +210,6 @@ void FASTCALL gdrom_get_cdda(s16* sector)
 		}
 		
 		return;
-	}
-	
-	cleanup_cdda:
-	{
-		register const u64 zeroReg = 0x0000000000000000;
-		register u64* sec = (u64*)sector;
-		register u32 steps = (2352 >> 3);
-
-		while(steps--)
-			*(sec++) = zeroReg;
 	}
 }
 

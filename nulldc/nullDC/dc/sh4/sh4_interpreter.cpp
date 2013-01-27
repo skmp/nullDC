@@ -268,6 +268,7 @@ void Sh4_int_Init()
 void Sh4_int_Term() 
 {
 	Sh4_int_Stop();
+	CleanupSinCos();
 	log("Sh4 Term\n");
 }
 
@@ -524,7 +525,7 @@ void maple_periodical(u32 cycl);
 
 void __fastcall MediumUpdate()
 {
-	#ifdef INCLUDE_DEV_TOOLS
+	#if 0
 	if(!GetAsyncKeyState(DEV_TOOL_FAST_FW_KEY))
 	#endif
 	{

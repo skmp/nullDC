@@ -4,7 +4,7 @@
 #ifdef DEFAULT_LOGGING
 	#define logSetMode(_newMode_)
 	#define logSetModeEx(_newMode_,_arg0_)
-	#define log(_fmt_,...) printf(_fmt_,__VA_ARGS__)
+	#define log(_fmt_,...) //printf(_fmt_,__VA_ARGS__)
 	#define logEx(_field_,_fmt_,...)
 #else
 	#include "logging.h"

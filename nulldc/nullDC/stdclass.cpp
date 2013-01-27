@@ -4,18 +4,18 @@
 #include "dc/mem/_vmem.h"
 #include "plugins/plugin_manager.h"
 
+
 //comonly used classes across the project
 
-//bah :P since it's template needs to be on .h pfftt
-//anyhow , this is needed here ;P
-u32 Array_T_id_count=0;
+static std::mt19937 random_dev;
+static bool r_seeded = false;
 
-u32 fastrand_seed=0xDEADCAFE;
-
-u32 fastrand()
-{
-	fastrand_seed=(fastrand_seed>>9)^(fastrand_seed<<11)^(fastrand_seed>>24);//^1 is there 
-	return fastrand_seed++;//if it got 0 , take good care of it :)
+u32 fastrand() {
+	if (!r_seeded) {
+		r_seeded = true;
+		random_dev.seed((u32)__rdtsc());
+	}
+	return random_dev();
 }
 
 //Misc function to get relative source directory for log's
@@ -282,15 +282,33 @@ u32 rv;
 }
 
 
-void VArray2::LockRegion(u32 offset,u32 size)
-{
+void VArray2::LockRegion(u32 offset,u32 size) {
+#if 0
+	if ((offset == m_last_lock_offs) && (size == m_last_lock_size)) {
+		//printf("Skip Lock %u %u\n",offset,size);
+		return;
+	}
+#endif
 	DWORD old;
 	VirtualProtect(((u8*)data)+offset , size, PAGE_READONLY,&old);
+	m_last_lock_offs = offset;
+	m_last_lock_size = size;
+	m_last_unlock_offs = (u32)-1;
+	m_last_unlock_size = (u32)-1;
 }
-void VArray2::UnLockRegion(u32 offset,u32 size)
-{
+void VArray2::UnLockRegion(u32 offset,u32 size) {
+#if 0
+	if ((offset == m_last_unlock_offs) && (size == m_last_unlock_size)) {
+		//printf("Skip UNLock %u %u\n",offset,size);
+		return;
+	}
+#endif
 	DWORD old;
 	VirtualProtect(((u8*)data)+offset , size, PAGE_READWRITE,&old);
+	m_last_unlock_offs = offset;
+	m_last_unlock_size = size;
+	m_last_lock_offs = (u32)-1;
+	m_last_lock_size = (u32)-1;
 }
 
 #include "dc\sh4\rec_v1\compiledblock.h"

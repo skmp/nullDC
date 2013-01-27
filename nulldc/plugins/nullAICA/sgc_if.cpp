@@ -5,9 +5,9 @@
 #undef FAR
 
 //#define CLIP_WARN
-#define key_printf(x)
-#define aeg_printf(x)
-#define step_printf(x)
+#define key_printf(...)
+#define aeg_printf(...)
+#define step_printf(...)
 
 #ifdef CLIP_WARN
 #define clip_verify(x) verify(x)

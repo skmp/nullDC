@@ -2,6 +2,8 @@
 #include "types.h"
 #include <memory.h>
 #include <vector>
+#include <array>
+#include <random>
 #include "log/logging_interface.h"
 
 #define PAGE_SIZE 4096
@@ -13,158 +15,7 @@ void GetPathFromFileName(wchar* full);
 void GetFileNameFromPath(wchar* path,wchar* outp);
 u32 fastrand();
 //comonly used classes across the project
-//Simple Array class for helping me out ;P
-template<class T>
-class Array
-{
-public:
-	T* data;
-	u32 Size;
-	u32 id;
-
-	Array(T* Source,u32 ellements)
-	{
-		//initialise array
-		Array_T_id_count+=1;
-		id=Array_T_id_count;
-		data=Source;
-		Size=ellements;
-	}
-
-	Array(u32 ellements)
-	{
-		//initialise array
-		Array_T_id_count+=1;
-		id=Array_T_id_count;
-		data=0;
-		Resize(ellements,false);
-		Size=ellements;
-	}
-
-	Array(u32 ellements,bool zero)
-	{
-		//initialise array
-		Array_T_id_count+=1;
-		id=Array_T_id_count;
-		data=0;
-		Resize(ellements,zero);
-		Size=ellements;
-	}
-
-	Array()
-	{
-		//initialise array
-		Array_T_id_count+=1;
-		id=Array_T_id_count;
-		data=0;
-		Size=0;
-	}
-
-
-	~Array()
-	{
-		if  (data)
-		{
-			#ifdef MEM_ALLOC_TRACE
-			log("WARNING : DESTRUCTOR WITH NON FREED ARRAY [arrayid:%d]\n",id);
-			#endif
-			Free();
-		}
-	}
-	void SetPtr(T* Source,u32 ellements)
-	{
-		//initialise array
-		Free();
-		data=Source;
-		Size=ellements;
-	}
-	T* Resize(u32 size,bool bZero)
-	{
-		if (size==0)
-		{
-			if (data)
-			{
-				#ifdef MEM_ALLOC_TRACE
-				log("Freeing data -> resize to zero[Array:%d]\n",id);
-				#endif
-				Free();
-			}
-
-		}
-		
-		if (!data)
-			data=(T*)malloc(size*sizeof(T));
-		else
-			data=(T*)realloc(data,size*sizeof(T));
-
-		//TODO : Optimise this
-		//if we allocated more , Zero it out
-		if (bZero)
-		{
-			if (size>Size)
-			{
-				for (u32 i=Size;i<size;i++)
-				{
-					u8*p =(u8*)&data[i];
-					for (int j=0;j<sizeof(T);j++)
-					{
-						p[j]=0;
-					}
-				}
-			}
-		}
-		Size=size;
-
-		return data;
-	}
-	void Zero()
-	{
-		memset(data,0,sizeof(T)*Size);
-	}
-	void Free()
-	{
-		if (Size!=0)
-		{
-			if (data)
-				free(data);
-			else
-				log("Data allready freed [Array:%d]\n",id);
-			data=0;
-		}
-		else
-		{
-			if (data)
-				log("Free : Size=0 , data ptr !=null [Array:%d]\n",id);
-
-		}
-	}
-
-
-	INLINE T& operator [](const u32 i)
-    {
-#ifdef MEM_BOUND_CHECK
-        if (i>=Size)
-		{
-			log("Error: Array %d , index out of range (%d>%d)\n",id,i,Size-1);
-			MEM_DO_BREAK;
-		}
-#endif
-		return data[i];
-    }
-
-	INLINE T& operator [](const s32 i)
-    {
-#ifdef MEM_BOUND_CHECK
-        if (!(i>=0 && i<(s32)Size))
-		{
-			log("Error: Array %d , index out of range (%d > %d)\n",id,i,Size-1);
-			MEM_DO_BREAK;
-		}
-#endif
-		return data[i];
-    }
-};
-
+ 
 //Windoze code
 //Threads
 #define THREADCALL __stdcall
@@ -218,14 +69,10 @@ public:
 	void* GetProcAddress(char* name);
 };
 
-//L00k f0r f1l3s
-//bah
 typedef void FileFoundCB(wchar* file,void* param);
 void FindAllFiles(FileFoundCB* callback,wchar* dir,void* param);
 void GetApplicationPath(wchar* path,u32 size);
 wchar* GetEmuPath(const wchar* subpath);
-
-
 
 class VArray2
 {
@@ -238,6 +85,7 @@ public:
 	void LockRegion(u32 offset,u32 size);
 	void UnLockRegion(u32 offset,u32 size);
 
+	VArray2() : m_last_lock_offs((u32)-1),m_last_lock_size((u32)-1),m_last_unlock_offs((u32)-1),m_last_unlock_size((u32)-1) {}
 	void Zero()
 	{
 		UnLockRegion(0,size);
@@ -255,6 +103,9 @@ public:
 #endif
 		return data[i];
     }
+private:
+	u32 m_last_lock_offs,m_last_lock_size;
+	u32 m_last_unlock_offs,m_last_unlock_size;
 };
 
 int ExeptionHandler(u32 dwCode, void* pExceptionPointers);

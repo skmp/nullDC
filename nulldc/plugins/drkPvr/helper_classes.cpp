@@ -6,6 +6,8 @@ u32 buffer_pool_count;
 
 u8* GetBuffer()
 {
+	//return new u8[ChunkSize];
+
 	if (buffer_pool_count!=0)
 	{
 		u8* rv=buffer_pool[--buffer_pool_count];
@@ -27,6 +29,8 @@ u8* GetBuffer()
 
 void FreeBuffer(u8* buffer)
 {
+	//delete[] buffer;
+	//return;
 	if (buffer_pool_count!=1024)
 	{
 		//VirtualUnlock(buffer,ChunkSize);
