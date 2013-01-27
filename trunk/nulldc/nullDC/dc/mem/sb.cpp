@@ -16,7 +16,7 @@
 #include "../../naomi/naomi.h"
 #endif
 
-Array<RegisterStruct> sb_regs(0x540);	
+std::array<RegisterStruct,0x540> sb_regs;	
 
 //(addr>= 0x005F6800) && (addr<=0x005F7CFF) -> 0x1500 bytes -> 0x540 possible registers , 125 actualy exist olny
 //	System Control Reg.		//0x100 bytes
@@ -522,9 +522,7 @@ void sb_implement_unk(u32 loc,u32 base,const u32 size = 4)
 
 void sb_Init()
 {
-	sb_regs.Zero();
-
-	for (u32 i=0;i<sb_regs.Size;i++)
+	for (u32 i=0;i<sb_regs.size();i++)
 	{
 		sb_regs[i].flags=REG_NOT_IMPL;
 

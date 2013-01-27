@@ -224,7 +224,7 @@ int pcap_io_recv(void* packet, int max_len)
 		return 0;
 
 	u32 len=*(u32*)&PacketBuffer[ReadCursor];
-	if (max_len<len)
+	if ((u32)max_len<len)
 		__debugbreak;
 	
 	memcpy(packet,(void*)&PacketBuffer[ReadCursor+4],len);

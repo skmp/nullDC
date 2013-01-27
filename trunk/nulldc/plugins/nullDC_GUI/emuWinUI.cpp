@@ -198,25 +198,18 @@ void uiTerm()
 	DestroyWindow(g_hWnd);
 }
 
-void uiMain()
-{
+void uiMain() {
 	static MSG msg;
-	static HACCEL hAccel = LoadAccelerators(g_hInst, NULL);
-	
-	//proc all waiting messages
-	DWORD bRet;
-	while( (bRet = GetMessage( &msg, NULL, 0, 0 )) != 0)
-	{ 
-		if (bRet == -1)
-		{
-			printf("nullDC_GUI: FATAL ERROR, GetMessage failed, err=%d\n",GetLastError());
-			return;
-			// handle the error and possibly exit
-		}
-		else
-		{
+
+	LoadAccelerators(g_hInst,NULL);
+
+	while (1) {
+		if (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
 			TranslateMessage(&msg); 
 			DispatchMessage(&msg); 
+			if (msg.message == WM_QUIT) {
+				return;
+			}
 		}
 	}
 }
@@ -375,7 +368,7 @@ void _MenuItem::Insert(MenuStrip* menu,u32 pos)
 		mif.fState=MFS_GRAYED;
 
 	owner=menu;
-	BOOL rv=InsertMenuItem(owner->hmenu,pos,TRUE,&mif);
+	InsertMenuItem(owner->hmenu,pos,TRUE,&mif);
 }
 void _MenuItem::Remove(HMENU menu)
 {
@@ -475,7 +468,7 @@ u32 EXPORT_CALL AddMenuItem(u32 parent,s32 pos,const wchar* text,MenuItemSelecte
 		MenuItems[parent]->submenu.AddItem(rv,(u32)pos);
 	}
 
-	SetMenuItemStyle(rv,checked?MIS_Checked:0,MIS_Checked);
+	SetMenuItemStyle(rv,checked?(u32)MIS_Checked:0,(u32)MIS_Checked);
 	
 	return rv;
 }
@@ -750,7 +743,7 @@ MENU_HANDLER( Handle_Options_AutoHideMenu)
 		settings.AutoHideMenu=1;
 
 	SaveSettings();
-	SetMenuItemStyle(id,settings.AutoHideMenu?MIS_Checked:0,MIS_Checked);
+	SetMenuItemStyle(id,settings.AutoHideMenu?(u32)MIS_Checked:0,(u32)MIS_Checked);
 }
 
 MENU_HANDLER( Handle_Options_AlwaysOnTop )
@@ -769,7 +762,7 @@ MENU_HANDLER( Handle_Options_AlwaysOnTop )
 
 	ShowWindow(g_hWnd,emu.nCmdShow);
 	SaveSettings();
-	SetMenuItemStyle(id,settings.AlwaysOnTop?MIS_Checked:0,MIS_Checked);
+	SetMenuItemStyle(id,settings.AlwaysOnTop?(u32)MIS_Checked:0,(u32)MIS_Checked);
 }
 
 MENU_HANDLER( Handle_Options_Fullscreen )
@@ -781,7 +774,7 @@ MENU_HANDLER( Handle_Options_Fullscreen )
 
 	ToggleFullscreen((HWND)hWnd);
 	SaveSettings();
-	SetMenuItemStyle(id,settings.Fullscreen?MIS_Checked:0,MIS_Checked);
+	SetMenuItemStyle(id,settings.Fullscreen?(u32)MIS_Checked:0,(u32)MIS_Checked);
 }
 
 MENU_HANDLER( Handle_Options_SelectPlugins)
@@ -810,12 +803,12 @@ MENU_HANDLER( Handle_Profiler_Enable )
 	if (GetMenuItemStyle(id) & MIS_Checked)
 	{
 		EmuStopProfiler();
-		SetMenuItemStyle(id,0,MIS_Checked);
+		SetMenuItemStyle(id,0,(u32)MIS_Checked);
 	}
 	else
 	{
 		EmuStartProfiler();
-		SetMenuItemStyle(id,MIS_Checked,MIS_Checked);
+		SetMenuItemStyle(id,(u32)MIS_Checked,(u32)MIS_Checked);
 	}
 }
 //Help
@@ -843,37 +836,37 @@ void UpdateMenus()
 {
 	if(GetSettingI(NDCS_DYNAREC_ENABLED))
 	{
-		SetMenuItemStyle(rec_enb_mid,MIS_Checked,MIS_Checked);
-		SetMenuItemStyle(rec_cpp_mid,0,MIS_Grayed);
-		SetMenuItemStyle(rec_safe_mid,0,MIS_Grayed);
-		SetMenuItemStyle(rec_ufpu_mid,0,MIS_Grayed);
+		SetMenuItemStyle(rec_enb_mid,(u32)MIS_Checked,(u32)MIS_Checked);
+		SetMenuItemStyle(rec_cpp_mid,0,(u32)MIS_Grayed);
+		SetMenuItemStyle(rec_safe_mid,0,(u32)MIS_Grayed);
+		SetMenuItemStyle(rec_ufpu_mid,0,(u32)MIS_Grayed);
 	}
 	else
 	{
-		SetMenuItemStyle(rec_enb_mid,0,MIS_Checked);
-		SetMenuItemStyle(rec_cpp_mid,MIS_Grayed,MIS_Grayed);
-		SetMenuItemStyle(rec_safe_mid,MIS_Grayed,MIS_Grayed);
-		SetMenuItemStyle(rec_ufpu_mid,MIS_Grayed,MIS_Grayed);
+		SetMenuItemStyle(rec_enb_mid,0,(u32)MIS_Checked);
+		SetMenuItemStyle(rec_cpp_mid,(u32)MIS_Grayed,(u32)MIS_Grayed);
+		SetMenuItemStyle(rec_safe_mid,(u32)MIS_Grayed,(u32)MIS_Grayed);
+		SetMenuItemStyle(rec_ufpu_mid,(u32)MIS_Grayed,(u32)MIS_Grayed);
 	}
 
 
-	SetMenuItemStyle(rec_cpp_mid,GetSettingI(NDCS_DYNAREC_CPPASS)?MIS_Checked:0,MIS_Checked);
-	SetMenuItemStyle(rec_safe_mid,GetSettingI(NDCS_DYNAREC_SAFEMODE)?MIS_Checked:0,MIS_Checked);
-	SetMenuItemStyle(rec_ufpu_mid,GetSettingI(NDCS_DYNAREC_UCFPU)?MIS_Checked:0,MIS_Checked);
+	SetMenuItemStyle(rec_cpp_mid,GetSettingI(NDCS_DYNAREC_CPPASS)?(u32)MIS_Checked:0,(u32)MIS_Checked);
+	SetMenuItemStyle(rec_safe_mid,GetSettingI(NDCS_DYNAREC_SAFEMODE)?(u32)MIS_Checked:0,(u32)MIS_Checked);
+	SetMenuItemStyle(rec_ufpu_mid,GetSettingI(NDCS_DYNAREC_UCFPU)?(u32)MIS_Checked:0,(u32)MIS_Checked);
 
 	for (int i=0;i<4;i++)
 	{
-		SetMenuItemStyle(ct_menu[i],GetSettingI(NDCS_DREAMCAST_CABLE)==i?MIS_Checked:0,MIS_Checked);
+		SetMenuItemStyle(ct_menu[i],GetSettingI(NDCS_DREAMCAST_CABLE)==(u32)i?(u32)MIS_Checked:0,(u32)MIS_Checked);
 	}
 	
 	for (int i=0;i<4;i++)
 	{
-		SetMenuItemStyle(sr_menu[i],GetSettingI(NDCS_DREAMCAST_REGION)==i?MIS_Checked:0,MIS_Checked);
+		SetMenuItemStyle(sr_menu[i],GetSettingI(NDCS_DREAMCAST_REGION)==(u32)i?(u32)MIS_Checked:0,(u32)MIS_Checked);
 	}
 	
 	for (int i=0;i<5;i++)
 	{
-		SetMenuItemStyle(bf_menu[i],GetSettingI(NDCS_DREAMCAST_BROADCAST)==i?MIS_Checked:0,MIS_Checked);
+		SetMenuItemStyle(bf_menu[i],GetSettingI(NDCS_DREAMCAST_BROADCAST)==(u32)i?(u32)MIS_Checked:0,(u32)MIS_Checked);
 	}
 }
 MENU_HANDLER( Handle_Option_EnableCP )
@@ -1106,8 +1099,8 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 			long hmWidth=hm.cx,hmHeight=hm.cy; // HIMETRIC units
 			//ndclogo.GetHIMETRICSize(hmWidth, hmHeight);
 
-			int h=hmHeight*width/(float)hmWidth+0.5f;
-			int w=hmWidth*height/(float)hmHeight+0.5f;
+			int h=(int)(hmHeight*width/(float)hmWidth+0.5f);
+			int w=(int)(hmWidth*height/(float)hmHeight+0.5f);
 			
 			if (h>height)
 			{
@@ -1197,7 +1190,7 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		{
 			NDC_WINDOW_RECT r = { LOWORD(lParam),HIWORD(lParam) };
 			if (r.height>0 && r.width>0)
-				emu.BroardcastEvent(MT_All,NDE_GUI_RESIZED,&r,0);
+				emu.BroardcastEvent((u32)MT_All,NDE_GUI_RESIZED,&r,0);
 		}
 		break;
 	case WM_CREATE:
@@ -1381,7 +1374,6 @@ INT_PTR CALLBACK DlgProcModal_config( HWND hWnd, UINT uMsg, WPARAM wParam, LPARA
 	{
 	case WM_INITDIALOG:
 		{
-			int tmp;
 			CheckDlgButton(hWnd,IDC_REC,GetSettingI(NDCS_DYNAREC_ENABLED)!=0?BST_CHECKED:BST_UNCHECKED);
 			CheckDlgButton(hWnd,IDC_REC_CPP,GetSettingI(NDCS_DYNAREC_CPPASS)!=0?BST_CHECKED:BST_UNCHECKED);
 			CheckDlgButton(hWnd,IDC_REC_UFPU,GetSettingI(NDCS_DYNAREC_UCFPU)!=0?BST_CHECKED:BST_UNCHECKED);
@@ -1599,7 +1591,7 @@ INT_PTR CALLBACK DlgProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 		case IDB_REMOVEMBP:
 			{
 			GetDlgItemText( hWnd, IDC_ADDR, szAddr, 32 );
-			u32 addr=htoi(szAddr);
+			//u32 addr=htoi(szAddr);
 			//DWORD old;
 			//VirtualProtect((void*)addr,4,PAGE_READWRITE,&old);
 			}

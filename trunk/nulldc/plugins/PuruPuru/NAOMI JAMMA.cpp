@@ -155,6 +155,7 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 
 							default:
 								printf("unknown CAP %X\n",State.Cmd);
+							return 0;
 						}
 						buffer_out_len=4*4;
 					}
@@ -423,5 +424,6 @@ u32 FASTCALL ControllerDMA_NAOMI(void* device_instance,u32 Command,u32* buffer_i
 		printState(Command,buffer_in,buffer_in_len);
 		return 7;		
 	}
+	return 0;
 }
 #endif

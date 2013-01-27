@@ -23,25 +23,25 @@ __declspec(align(64)) u8 sq_both[64];
 //i know , its because of templates :)
 #pragma warning( disable : 4127 /*4244*/)
 
-Array<u8> OnChipRAM;
+std::array<u8,OnChipRAM_SIZE> OnChipRAM;
 
 //All registers are 4 byte alligned
 
-Array<RegisterStruct> CCN(16,true);			//CCN  : 14 registers
-Array<RegisterStruct> UBC(9,true);			//UBC  : 9 registers
-Array<RegisterStruct> BSC(19,true);			//BSC  : 18 registers
-Array<RegisterStruct> DMAC(17,true);		//DMAC : 17 registers
-Array<RegisterStruct> CPG(5,true);			//CPG  : 5 registers
-Array<RegisterStruct> RTC(16,true);			//RTC  : 16 registers
-Array<RegisterStruct> INTC(4,true);			//INTC : 4 registers
-Array<RegisterStruct> TMU(12,true);			//TMU  : 12 registers
-Array<RegisterStruct> SCI(8,true);			//SCI  : 8 registers
-Array<RegisterStruct> SCIF(10,true);		//SCIF : 10 registers
+std::array<RegisterStruct,16> CCN;			//CCN  : 14 registers
+std::array<RegisterStruct,9> UBC;			//UBC  : 9 registers
+std::array<RegisterStruct,19> BSC;			//BSC  : 18 registers
+std::array<RegisterStruct,17> DMAC;		//DMAC : 17 registers
+std::array<RegisterStruct,5> CPG;			//CPG  : 5 registers
+std::array<RegisterStruct,16> RTC;			//RTC  : 16 registers
+std::array<RegisterStruct,4> INTC;			//INTC : 4 registers
+std::array<RegisterStruct,12> TMU;			//TMU  : 12 registers
+std::array<RegisterStruct,8> SCI;			//SCI  : 8 registers
+std::array<RegisterStruct,10> SCIF;		//SCIF : 10 registers
 
 
 //helper functions
 template <u32 size>
-INLINE u32 RegSRead(Array<RegisterStruct>& reg,u32 offset)
+INLINE u32 RegSRead(RegisterStruct* reg,u32 offset)
 {
 #ifdef TRACE
 	if (offset & 3/*(size-1)*/) //4 is min allign size
@@ -88,7 +88,7 @@ INLINE u32 RegSRead(Array<RegisterStruct>& reg,u32 offset)
 	return 0;
 }
 template <u32 size>
-INLINE void RegSWrite(Array<RegisterStruct>& reg,u32 offset,u32 data)
+INLINE void RegSWrite(RegisterStruct* reg,u32 offset,u32 data)
 {
 #ifdef TRACE
 	if (offset & 3/*(size-1)*/) //4 is min allign size
@@ -160,34 +160,31 @@ T __fastcall ReadMem_P4(u32 addr)
 	case 0xE2:
 	case 0xE3:
 		log("Unhandled p4 read [Store queue] 0x%x\n",addr);
-		return 0;
-		break;
+		return (T)0;
 
 	case 0xF0:
 		//log("Unhandled p4 read [Instruction cache address array] 0x%x\n",addr);
-		return 0;
-		break;
+		return (T)0;
 
 	case 0xF1:
 		//log("Unhandled p4 read [Instruction cache data array] 0x%x\n",addr);
-		return 0;
-		break;
+		return (T)0;
 
 	case 0xF2:
 		//log("Unhandled p4 read [Instruction TLB address array] 0x%x\n",addr);
 		{
 			u32 entry=(addr>>8)&3;
-			return ITLB[entry].Address.reg_data | (ITLB[entry].Data.V<<8);
+			return (T)(ITLB[entry].Address.reg_data | (ITLB[entry].Data.V<<8));
 		}
-		break;
+
 
 	case 0xF3:
 		//log("Unhandled p4 read [Instruction TLB data arrays 1 and 2] 0x%x\n",addr);
 		{
 			u32 entry=(addr>>8)&3;
-			return ITLB[entry].Data.reg_data;
+			return (T)ITLB[entry].Data.reg_data;
 		}
-		break;
+
 
 	case 0xF4:
 		{
@@ -196,14 +193,14 @@ T __fastcall ReadMem_P4(u32 addr)
 			//A=(addr>>3)&1;
 			//Set=(addr>>5)&0xFF;
 			//log("Unhandled p4 read [Operand cache address array] %d:%d,%d  0x%x\n",Set,W,A,addr);
-			return 0;
+			return (T)0;
 		}
-		break;
+
 
 	case 0xF5:
 		//log("Unhandled p4 read [Operand cache data array] 0x%x",addr);
-		return 0;
-		break;
+		return (T)0;
+
 
 	case 0xF6:
 		//log("Unhandled p4 read [Unified TLB address array] 0x%x\n",addr);
@@ -212,17 +209,17 @@ T __fastcall ReadMem_P4(u32 addr)
 			u32 rv=UTLB[entry].Address.reg_data;
 			rv|=UTLB[entry].Data.D<<9;
 			rv|=UTLB[entry].Data.V<<8;
-			return rv;
+			return (T)rv;
 		}
-		break;
+		
 
 	case 0xF7:
 		//log("Unhandled p4 read [Unified TLB data arrays 1 and 2] 0x%x\n",addr);
 		{
 			u32 entry=(addr>>8)&63;
-			return UTLB[entry].Data.reg_data;
+			return (T)UTLB[entry].Data.reg_data;
 		}
-		break;
+	
 
 	case 0xFF:
 		log("Unhandled p4 read [area7] 0x%x\n",addr);
@@ -234,7 +231,7 @@ T __fastcall ReadMem_P4(u32 addr)
 	}
 
 	EMUERROR2("Read from P4 not implemented , addr=%x",addr);
-	return 0;
+	return (T)0;
 
 }
 bool mmu_match(u32 va,CCN_PTEH_type Address,CCN_PTEL_type Data);
@@ -439,7 +436,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(CCN_BASE_addr):
 		if (addr<=0x1F00003C)
 		{
-			return (T)RegSRead<sz>(CCN,addr & 0xFF);
+			return (T)RegSRead<sz>(CCN.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -450,7 +447,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(UBC_BASE_addr):
 		if (addr<=0x1F200020)
 		{
-			return (T)RegSRead<sz>(UBC,addr & 0xFF);
+			return (T)RegSRead<sz>(UBC.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -461,7 +458,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(BSC_BASE_addr):
 		if (addr<=0x1F800048)
 		{
-			return (T)RegSRead<sz>(BSC,addr & 0xFF);
+			return (T)RegSRead<sz>(BSC.data(),addr & 0xFF);
 		}
 		else if ((addr>=BSC_SDMR2_addr) && (addr<= 0x1F90FFFF))
 		{
@@ -484,7 +481,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(DMAC_BASE_addr):
 		if (addr<=0x1FA00040)
 		{
-			return (T)RegSRead<sz>(DMAC,addr & 0xFF);
+			return (T)RegSRead<sz>(DMAC.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -495,7 +492,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(CPG_BASE_addr):
 		if (addr<=0x1FC00010)
 		{
-			return (T)RegSRead<sz>(CPG,addr & 0xFF);
+			return (T)RegSRead<sz>(CPG.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -506,7 +503,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(RTC_BASE_addr):
 		if (addr<=0x1FC8003C)
 		{
-			return (T)RegSRead<sz>(RTC,addr & 0xFF);
+			return (T)RegSRead<sz>(RTC.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -517,7 +514,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(INTC_BASE_addr):
 		if (addr<=0x1FD0000C)
 		{
-			return (T)RegSRead<sz>(INTC,addr & 0xFF);
+			return (T)RegSRead<sz>(INTC.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -528,7 +525,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(TMU_BASE_addr):
 		if (addr<=0x1FD8002C)
 		{
-			return (T)RegSRead<sz>(TMU,addr & 0xFF);
+			return (T)RegSRead<sz>(TMU.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -539,7 +536,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(SCI_BASE_addr):
 		if (addr<=0x1FE0001C)
 		{
-			return (T)RegSRead<sz>(SCI,addr & 0xFF);
+			return (T)RegSRead<sz>(SCI.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -550,7 +547,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(SCIF_BASE_addr):
 		if (addr<=0x1FE80024)
 		{
-			return (T)RegSRead<sz>(SCIF,addr & 0xFF);
+			return (T)RegSRead<sz>(SCIF.data(),addr & 0xFF);
 		}
 		else
 		{
@@ -590,7 +587,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(CCN_BASE_addr):
 		if (addr<=0x1F00003C)
 		{
-			RegSWrite<sz>(CCN,addr & 0xFF,data);
+			RegSWrite<sz>(CCN.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -602,7 +599,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(UBC_BASE_addr):
 		if (addr<=0x1F200020)
 		{
-			RegSWrite<sz>(UBC,addr & 0xFF,data);
+			RegSWrite<sz>(UBC.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -614,7 +611,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(BSC_BASE_addr):
 		if (addr<=0x1F800048)
 		{
-			RegSWrite<sz>(BSC,addr & 0xFF,data);
+			RegSWrite<sz>(BSC.data(),addr & 0xFF,data);
 			return;
 		}
 		else if ((addr>=BSC_SDMR2_addr) && (addr<= 0x1F90FFFF))
@@ -638,7 +635,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(DMAC_BASE_addr):
 		if (addr<=0x1FA00040)
 		{
-			RegSWrite<sz>(DMAC,addr & 0xFF,data);
+			RegSWrite<sz>(DMAC.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -650,7 +647,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(CPG_BASE_addr):
 		if (addr<=0x1FC00010)
 		{
-			RegSWrite<sz>(CPG,addr & 0xFF,data);
+			RegSWrite<sz>(CPG.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -662,7 +659,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(RTC_BASE_addr):
 		if (addr<=0x1FC8003C)
 		{
-			RegSWrite<sz>(RTC,addr & 0xFF,data);
+			RegSWrite<sz>(RTC.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -674,7 +671,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(INTC_BASE_addr):
 		if (addr<=0x1FD0000C)
 		{
-			RegSWrite<sz>(INTC,addr & 0xFF,data);
+			RegSWrite<sz>(INTC.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -686,7 +683,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(TMU_BASE_addr):
 		if (addr<=0x1FD8002C)
 		{
-			RegSWrite<sz>(TMU,addr & 0xFF,data);
+			RegSWrite<sz>(TMU.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -698,7 +695,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(SCI_BASE_addr):
 		if (addr<=0x1FE0001C)
 		{
-			RegSWrite<sz>(SCI,addr & 0xFF,data);
+			RegSWrite<sz>(SCI.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -710,7 +707,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(SCIF_BASE_addr):
 		if (addr<=0x1FE80024)
 		{
-			RegSWrite<sz>(SCIF,addr & 0xFF,data);
+			RegSWrite<sz>(SCIF.data(),addr & 0xFF,data);
 			return;
 		}
 		else
@@ -793,20 +790,18 @@ void __fastcall WriteMem_area7_OCR_T(u32 addr,T data)
 //Init/Res/Term
 void sh4_internal_reg_Init()
 {
-	OnChipRAM.Resize(OnChipRAM_SIZE,false);
-
 	for (u32 i=0;i<30;i++)
 	{
-		if (i<CCN.Size)	CCN[i].flags=REG_NOT_IMPL;	//(16,true);	//CCN  : 14 registers
-		if (i<UBC.Size)	UBC[i].flags=REG_NOT_IMPL;	//(9,true);		//UBC  : 9 registers
-		if (i<BSC.Size)	BSC[i].flags=REG_NOT_IMPL;	//(19,true);	//BSC  : 18 registers
-		if (i<DMAC.Size)DMAC[i].flags=REG_NOT_IMPL;	//(17,true);	//DMAC : 17 registers
-		if (i<CPG.Size)	CPG[i].flags=REG_NOT_IMPL;	//(5,true);		//CPG  : 5 registers
-		if (i<RTC.Size)	RTC[i].flags=REG_NOT_IMPL;	//(16,true);	//RTC  : 16 registers
-		if (i<INTC.Size)INTC[i].flags=REG_NOT_IMPL;	//(4,true);		//INTC : 4 registers
-		if (i<TMU.Size)	TMU[i].flags=REG_NOT_IMPL;	//(12,true);	//TMU  : 12 registers
-		if (i<SCI.Size)	SCI[i].flags=REG_NOT_IMPL;	//(8,true);		//SCI  : 8 registers
-		if (i<SCIF.Size)SCIF[i].flags=REG_NOT_IMPL;	//(10,true);	//SCIF : 10 registers
+		if (i<CCN.size())	CCN[i].flags=REG_NOT_IMPL;	//(16,true);	//CCN  : 14 registers
+		if (i<UBC.size())	UBC[i].flags=REG_NOT_IMPL;	//(9,true);		//UBC  : 9 registers
+		if (i<BSC.size())	BSC[i].flags=REG_NOT_IMPL;	//(19,true);	//BSC  : 18 registers
+		if (i<DMAC.size())DMAC[i].flags=REG_NOT_IMPL;	//(17,true);	//DMAC : 17 registers
+		if (i<CPG.size())	CPG[i].flags=REG_NOT_IMPL;	//(5,true);		//CPG  : 5 registers
+		if (i<RTC.size())	RTC[i].flags=REG_NOT_IMPL;	//(16,true);	//RTC  : 16 registers
+		if (i<INTC.size())INTC[i].flags=REG_NOT_IMPL;	//(4,true);		//INTC : 4 registers
+		if (i<TMU.size())	TMU[i].flags=REG_NOT_IMPL;	//(12,true);	//TMU  : 12 registers
+		if (i<SCI.size())	SCI[i].flags=REG_NOT_IMPL;	//(8,true);		//SCI  : 8 registers
+		if (i<SCIF.size())SCIF[i].flags=REG_NOT_IMPL;	//(10,true);	//SCIF : 10 registers
 	}
 
 	//initialise Register structs
@@ -824,7 +819,10 @@ void sh4_internal_reg_Init()
 
 void sh4_internal_reg_Reset(bool Manual)
 {
-	OnChipRAM.Zero();
+	for (u32 i = 0;i < OnChipRAM.size();++i) {
+		OnChipRAM[i] = 0;
+	}
+
 	//Reset register values
 	bsc_Reset(Manual);
 	ccn_Reset(Manual);
@@ -851,7 +849,6 @@ void sh4_internal_reg_Term()
 	cpg_Term();
 	ccn_Term();
 	bsc_Term();
-	OnChipRAM.Free();
 }
 //Mem map :)
 

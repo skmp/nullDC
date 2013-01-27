@@ -235,4 +235,4 @@ struct gui_plugin_info
 
 typedef void EXPORT_CALL ndcGetInterfaceFP(gui_plugin_info* gpi);
 
-#define GuiPluginInterfaceVersion DC_MakeVersion(1,0,0,DC_VER_NORMAL);
+#define GuiPluginInterfaceVersion DC_MakeVersion(1,0,0);

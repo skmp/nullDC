@@ -5,6 +5,9 @@
 #endif
 #include <d3dx9.h>
 
+#include "pvr_algo/pvr_algo.hpp"
+#include "../../nullDC/algo/algo.hpp"
+#include "../../nullDC/timing/timer.hpp"
 #include "nullRend.h"
 #include <algorithm>
 #include "d3dRend.h"
@@ -13,18 +16,21 @@
 #include "regs.h"
 #include <vector>
 //#include <xmmintrin.h>
-
+ 
 #if REND_API == REND_D3D
 #pragma comment(lib, "d3d9.lib") 
 #pragma comment(lib, "d3dx9.lib") 
 
+#define use_states_mgr
 #define MODVOL 1
 #define _float_colors_
 //#define _HW_INT_
 //#include <D3dx9shader.h>
 
 using namespace TASplitter;
-volatile bool render_restart = false;
+
+timer_if* g_pvr_timer = 0;
+bool render_restart = false;
 bool UseSVP=false;
 bool UseFixedFunction=false;
 bool dosort=false;
@@ -45,8 +51,10 @@ bool dosort=false;
 */
 #define scale_type_1
 
+
+
 //Convert offset32 to offset64
-u32 vramlock_ConvOffset32toOffset64(u32 offset32)
+u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 {
 		//64b wide bus is archevied by interleaving the banks every 32 bits
 		//so bank is Address<<3
@@ -71,11 +79,14 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 //#define D3DXGetPixelShaderProfile(x) "ps_2_0"
 //#define D3DXGetVertexShaderProfile(x) "vs_2_0"
 
+
 #define PS_SHADER_COUNT (384*4)
+	
+
 	bool RenderWasStarted=false;
-	volatile bool d3d_init_done=false;
-	volatile bool d3d_do_resize=false;
-	volatile bool d3d_do_restart=false;
+	bool d3d_init_done=false;
+	bool d3d_do_resize=false;
+	bool d3d_do_restart=false;
 	IDirect3D9* d3d9;
 	IDirect3DDevice9* dev;
 	IDirect3DVertexBuffer9* vb;
@@ -103,6 +114,7 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 
 	CRITICAL_SECTION d3d_lock;
 	
+
 	struct 
 	{
 		IDirect3DVertexShader9* vs;
@@ -125,11 +137,11 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 	u32 clear_rt=0;
 	u32 last_ps_mode=0xFFFFFFFF;
 	float current_scalef[4];
-	//CRITICAL_SECTION tex_cache_cs;
-	
+	CRITICAL_SECTION rend_op_lock;
 	u32 FrameNumber=0;
 	u32 fb_FrameNumber=0;
 
+	u32 max_anisotropy = 0;
 	u32 frameStart = 0;
 	u32 frameRate = 0;
 	DWORD timer, timeStart = GetTickCount();
@@ -149,6 +161,63 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		"Z Scale mode 42 (D24yada)",
 	};
 
+ 
+	pvr_algo::pvr_state_manager_c g_pvr_states_manager;
+	//u32 g_pvr_state_frame = 0;
+
+	HRESULT r_set_texture_stage_state(DWORD s,u32 t,DWORD v) {
+#ifdef use_states_mgr
+
+		u64 trans;
+		if (g_pvr_states_manager.cached(s,t,v)) {
+			return D3D_OK;
+		}
+
+		g_pvr_states_manager.translate(t,trans);
+		return dev->SetTextureStageState(s,(D3DTEXTURESTAGESTATETYPE)trans,v);
+#else
+		return dev->SetTextureStageState(s,t,v);
+#endif
+	}
+
+	HRESULT r_set_texture(DWORD s,IDirect3DBaseTexture9* t) {
+#ifdef use_states_mgr
+
+		if (g_pvr_states_manager.cached(s,R_EXT_OP_TEXTURE_BASE,(u64)t)) {
+			return D3D_OK;
+		}
+		return dev->SetTexture(s,t);
+#else
+		return dev->SetTexture(s,t);
+#endif
+	}
+
+	HRESULT r_set_state(u32 s,DWORD v) { //Temporary(single pass) states
+#ifdef use_states_mgr
+		u64 trans;
+		if (g_pvr_states_manager.cached(R_NO_SAMPLER,s,v)) {
+			return D3D_OK;
+		}
+		g_pvr_states_manager.translate(s,trans);
+		return dev->SetRenderState((D3DRENDERSTATETYPE)trans,v);
+#else
+		return dev->SetRenderState(s,v);
+#endif
+	}
+
+	HRESULT r_set_sampler_state(DWORD s,u32 t,DWORD v) {
+#ifdef use_states_mgr
+		u64 trans;
+		if (g_pvr_states_manager.cached(s,t,v)) {
+			return D3D_OK;
+		}
+
+		g_pvr_states_manager.translate(t,trans);
+		return dev->SetSamplerState(s,(D3DSAMPLERSTATETYPE)trans,v);
+#else
+		return dev->SetSamplerState(s,t,v);
+#endif
+	}
 	//x=emulation mode
 	//y=filter mode
 	//result = {d3dmode,shader id}
@@ -167,8 +236,8 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		res_scale[0]=rect[0];
 		res_scale[1]=rect[1];
 
-		res_scale[2]=rect[2]/2;
-		res_scale[3]=-rect[3]/2;
+		res_scale[2]=rect[2] * 0.5f;
+		res_scale[3]=-rect[3] * 0.5f;
 
 		if(do_clear)
 			clear_rt|=1;
@@ -293,28 +362,44 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 	};
 
 
-#define twidle_tex(format)\
-						if (tcw.NO_PAL.VQ_Comp)\
-					{\
-						vq_codebook=(u8*)&params.vram[sa];\
-						if (tcw.NO_PAL.MipMapped)\
+#if 0
+static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
+	return (addr + ((w + h) * comps)) <= VRAM_SIZE;//Not Vram.Size-1 since we basically check the bounds
+}
+#else
+#define vram_valid_offs(_a_,_b_,_c_,_d_) (true)
+#endif
+
+#define twidle_tex(format,components)\
+						if (tcw.NO_PAL.VQ_Comp) {\
+						vq_codebook = (sa < VRAM_SIZE) ? (u8*)&params.vram[sa] : vq_codebook;\
+						if (tcw.NO_PAL.MipMapped) {\
 							sa+=MipPoint[tsp.TexU];\
-						##format##to8888_VQ(&pbt,(u8*)&params.vram[sa],w,h);\
+						}\
+							if (vram_valid_offs(sa,w,h,components)) {\
+								##format##to8888_VQ(&pbt,(u8*)&params.vram[sa],w,h);\
+							}\
 					}\
 					else\
 					{\
-						if (tcw.NO_PAL.MipMapped)\
+						if (tcw.NO_PAL.MipMapped) {\
 							sa+=MipPoint[tsp.TexU]<<3;\
-						##format##to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);\
+						}\
+						if (vram_valid_offs(sa,w,h,components)) {\
+							##format##to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);\
+						}\
 					}
-#define norm_text(format) \
-	u32 sr;\
-	if (tcw.NO_PAL.StrideSel)\
-					{sr=(TEXT_CONTROL&31)*32;}\
-					else\
-					{sr=w;}\
-					format(&pbt,(u8*)&params.vram[sa],sr,h);
 
+#define norm_text(format,components) { \
+		u32 sr;\
+		if (tcw.NO_PAL.StrideSel)  \
+						{sr=(TEXT_CONTROL&31)<<5;}\
+						else\
+						{sr=w;}\
+						if (vram_valid_offs(sa,sr,h,components)) {\
+							format(&pbt,(u8*)&params.vram[sa],sr,h);\
+						}\
+		}
 	typedef void fastcall texture_handler_FP(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
 
 	/*
@@ -344,26 +429,44 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 	*/
 	struct TextureCacheData;
 	std::vector<TextureCacheData*> lock_list;
-	//Texture Cache :)
-	struct TextureCacheData
-	{
-		TCW tcw;TSP tsp;
-		IDirect3DTexture9* Texture;
+
+	struct TextureCacheData {
+		TCW tcw;
+		TSP tsp;
 		u32 Lookups;
 		u32 Updates;
 		u32 LastUsed;
 		u32 w,h;
 		u32 size;
-		bool dirty;
 		u32 pal_rev;
+		IDirect3DTexture9* Texture;
 		vram_block* lock_block;
+		bool dirty;
 
-		//Releases any resources , EXEPT the texture :)
-		void Destroy()
-		{
-			if (lock_block)
+		TextureCacheData() : Texture(0),lock_block(0){
+		}
+
+		~TextureCacheData() {
+			this->Drop();
+		}
+
+		void Drop() {
+
+			this->Destroy();
+
+			if (Texture != 0) {
+				Texture->Release();
+				Texture = 0;
+			}
+
+			this->Reset();
+		}
+
+		void Destroy() {
+			if (lock_block != 0) {
 				params.vram_unlock(lock_block);
-			lock_block=0;
+				lock_block = 0;
+			}
 		}
 		//Called when texture entry is reused , resets any texture type info (dynamic/static)
 		void Reset()
@@ -403,6 +506,11 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 			dirty=false;
 
 			u32 sa=(tcw.NO_PAL.TexAddr<<3) & VRAM_MASK;
+			//printf("SA = 0x%x/FMT %u\n",sa,tcw.NO_PAL.PixelFmt);
+			//if ((sa == 0xfbfff8) && (7 == tcw.NO_PAL.PixelFmt)) {
+				//printf("Skip skip\n");
+				//return;
+			//}
 
 			if (Texture==0)
 			{
@@ -423,6 +531,7 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 			PixelBuffer pbt; 
 			pbt.init(rect.pBits,rect.Pitch);
 			
+			
 			switch (tcw.NO_PAL.PixelFmt)
 			{
 			case 0:
@@ -432,13 +541,13 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 				if (tcw.NO_PAL.ScanOrder)
 				{
 					//verify(tcw.NO_PAL.VQ_Comp==0);
-					norm_text(argb1555to8888);
+					norm_text(argb1555to8888,2);
 					//argb1555to8888(&pbt,(u16*)&params.vram[sa],w,h);
 				}
 				else
 				{
 					//verify(tsp.TexU==tsp.TexV);
-					twidle_tex(argb1555);
+					twidle_tex(argb1555,2);
 				}
 				break;
 
@@ -448,13 +557,13 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 				if (tcw.NO_PAL.ScanOrder)
 				{
 					//verify(tcw.NO_PAL.VQ_Comp==0);
-					norm_text(argb565to8888);
+					norm_text(argb565to8888,2);
 					//(&pbt,(u16*)&params.vram[sa],w,h);
 				}
 				else
 				{
 					//verify(tsp.TexU==tsp.TexV);
-					twidle_tex(argb565);
+					twidle_tex(argb565,2);
 				}
 				break;
 
@@ -465,61 +574,66 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 				{
 					//verify(tcw.NO_PAL.VQ_Comp==0);
 					//argb4444to8888(&pbt,(u16*)&params.vram[sa],w,h);
-					norm_text(argb4444to8888);
+					norm_text(argb4444to8888,2);
 				}
 				else
 				{
-					twidle_tex(argb4444);
+					twidle_tex(argb4444,2);
 				}
 
 				break;
 				//3	YUV422 32 bits per 2 pixels; YUYV values: 8 bits each
 			case 3:
-				if (tcw.NO_PAL.ScanOrder)
-				{
-					norm_text(YUV422to8888);
+				if (tcw.NO_PAL.ScanOrder) {
+					norm_text(YUV422to8888,2);
 					//norm_text(ANYtoRAW);
-				}
-				else
-				{
+				} else {
 					//it cant be VQ , can it ?
 					//docs say that yuv can't be VQ ...
 					//HW seems to support it ;p
-					twidle_tex(YUV422);
+					twidle_tex(YUV422,2);
 				}
 				break;
 				//4	Bump Map	16 bits/pixel; S value: 8 bits; R value: 8 bits
 			case 5:
 				//5	4 BPP Palette	Palette texture with 4 bits/pixel
 				verify(tcw.PAL.VQ_Comp==0);
-				if (tcw.NO_PAL.MipMapped)
-							sa+=MipPoint[tsp.TexU]<<1;
+
+				if (tcw.PAL.MipMapped) {
+					sa+=MipPoint[tsp.TexU]<<1;
+				}
+
 				palette_index = tcw.PAL.PalSelect<<4;
 				pal_rev=pal_rev_16[tcw.PAL.PalSelect];
-				if (settings.Emulation.PaletteMode<2)
-				{
-					PAL4to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
-				}
-				else
-				{
-					PAL4toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
+				if (settings.Emulation.PaletteMode<2) {
+					if (vram_valid_offs(sa,w,h,1)) {
+						PAL4to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
+					}
+				} else {
+					if (vram_valid_offs(sa,w,h,1)) {
+						PAL4toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
+					}
 				}
 
 				break;
 			case 6:
 				//6	8 BPP Palette	Palette texture with 8 bits/pixel
 				verify(tcw.PAL.VQ_Comp==0);
-				if (tcw.NO_PAL.MipMapped)
-							sa+=MipPoint[tsp.TexU]<<2;
+
+				if (tcw.PAL.MipMapped) {
+					sa+=MipPoint[tsp.TexU]<<2;
+				}
+
 				palette_index = (tcw.PAL.PalSelect<<4)&(~0xFF);
 				pal_rev=pal_rev_256[tcw.PAL.PalSelect>>4];
-				if (settings.Emulation.PaletteMode<2)
-				{
-					PAL8to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
-				}
-				else
-				{
-					PAL8toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
+				if (settings.Emulation.PaletteMode<2) {
+					if (vram_valid_offs(sa,w,h,1)) {
+						PAL8to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
+					}
+				} else {
+					if (vram_valid_offs(sa,w,h,1)) {
+						PAL8toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
+					}
 				}
 				break;
 			default:
@@ -553,8 +667,8 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		}
 	};
 
-	TexCacheList<TextureCacheData> TexCache;
-	TexCacheList<TextureCacheData> TexCache_Discard;
+	tex_cache_list_c<TextureCacheData> TexCache;
+
 
 	TextureCacheData* __fastcall GenText(TSP tsp,TCW tcw,TextureCacheData* tf)
 	{
@@ -573,16 +687,18 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 
 	TextureCacheData* __fastcall GenText(TSP tsp,TCW tcw)
 	{
-		//add new entry to tex cache
-		TextureCacheData* tf = &TexCache.Add(0)->data;
-		//Generate texture 
-		return GenText(tsp,tcw,tf);
+		TextureCacheData* ret;
+		TextureCacheData* tf = new TextureCacheData;
+		TexCache.add(tcw.NO_PAL.TexAddr,tf);
+		ret = GenText(tsp,tcw,tf);
+		return ret;
 	}
 
 	u32 RenderToTextureAddr;
 
 	IDirect3DTexture9* __fastcall GetTexture(TSP tsp,TCW tcw)
 	{	
+		
 		u32 addr=(tcw.NO_PAL.TexAddr<<3) & VRAM_MASK;
 		if (addr==rtt_address)
 		{
@@ -591,9 +707,27 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 			return rtt_texture[rtt_index];
 		}
 
-		//EnterCriticalSection(&tex_cache_cs);
-		TextureCacheData* tf = TexCache.Find(tcw.full,tsp.full);
-		if (tf)
+		tex_cache_node_t<TextureCacheData>* tf_ent = TexCache.find(tcw.NO_PAL.TexAddr);
+		TextureCacheData* tf = (tf_ent) ? tf_ent->data : 0;
+
+		//This is an optimization for games that do massive writes to vram textures of pre-cached addresses
+		if ( (tf) && ((tf->tcw.full != tcw.full) || (tf->tsp.full != tsp.full))) {
+			tf->Lookups++;
+			tf->Updates++;
+			tf->tsp = tsp;
+			tf->tcw = tcw;
+			if ( (tf->w != (8<<tsp.TexU)) || (tf->h != (8<<tsp.TexV))  ) {
+				if (tf->Texture) {
+					tf->Texture->Release();
+					tf->Texture = 0;
+				}
+				tf->Destroy();
+				tf->dirty = true;
+			}
+			tf->w=8<<tsp.TexU;
+			tf->h=8<<tsp.TexV;
+			return tf->Texture;
+		} else if ( (tf) && (tf->tcw.full == tcw.full) && (tf->tsp.full == tsp.full))
 		{
 			tf->LastUsed=FrameNumber;
 			if (tf->dirty)
@@ -614,32 +748,24 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 				}
 			}
 			tf->Lookups++;
-			//LeaveCriticalSection(&tex_cache_cs);
 			return tf->Texture;
-		}
-		else
-		{
-			tf = GenText(tsp,tcw);
-			//LeaveCriticalSection(&tex_cache_cs);
-			return tf->Texture;
-		}
-		return 0;
+		} 
+
+		tf = GenText(tsp,tcw);
+		return tf->Texture;
 	}
 	
 	void VramLockedWrite(vram_block* bl)
 	{
-		//EnterCriticalSection(&tex_cache_cs);
 		TextureCacheData* tcd = (TextureCacheData*)bl->userdata;
 		tcd->dirty=true;
 		tcd->lock_block=0;
-		/*
-		if (tcd->Updates==0)
+		
+		/*if (tcd->Updates < 2)
 		{
-			tcd->Texture->Release();
-			tcd->Texture=0;
+			tcd->Drop();
 		}*/
 		params.vram_unlock(bl);
-		//LeaveCriticalSection(&tex_cache_cs);
 	}
 	extern cThread rth;
 
@@ -657,6 +783,8 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 	void DrawOSD();
 	void VBlank()
 	{
+
+		EnterCriticalSection(&d3d_lock);
 		FrameNumber++;
 		
 		u32 field=0;//default from field 1
@@ -722,7 +850,6 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 		u32 addr1=vramlock_ConvOffset32toOffset64(src);
 		u32* ptest=(u32*)&params.vram[addr1];
 
-		EnterCriticalSection(&d3d_lock);
 		if (d3d_init_done)
 		{
 			IDirect3DTexture9* tex=fb_texture;
@@ -890,12 +1017,12 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 				if (rd.bottom>(LONG)ppar.BackBufferHeight)
 					rd.bottom=(LONG)ppar.BackBufferHeight;
 
-				dev->StretchRect(surf,&rs,backbuffer,&rd, D3DTEXF_LINEAR);	//add an option for D3DTEXF_POINT for pretty pixels?
+				dev->StretchRect(surf,&rs,backbuffer,&rd, D3DTEXF_POINT);	
 			}
 
 			dev->SetRenderTarget(0,backbuffer);
-			dev->SetTexture(0,tex);
-			dev->SetTexture(1,tex);
+			r_set_texture(0,tex);
+			r_set_texture(1,tex);
 			dev->SetVertexShader(Composition.vs);
 			dev->SetPixelShader(Composition.ps_DrawFB);
 			
@@ -915,11 +1042,11 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 				640		,480	,0.5,1,		1,1,1,1,	1,1,
 			};
 
-			dev->SetRenderState(D3DRS_CULLMODE,D3DCULL_NONE);
+			r_set_state(R_CULLMODE,D3DCULL_NONE);
 			verifyc(dev->SetVertexDeclaration(vdecl_osd));
 			
-			dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
-			dev->SetRenderState(D3DRS_ZENABLE,FALSE);
+			r_set_state(R_ALPHABLENDENABLE,FALSE);
+			r_set_state(R_ZENABLE,FALSE);
 
 			//(dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,2,fsq,10*4));
 
@@ -1125,6 +1252,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 			pvrrc.global_param_tr.data[i].zMin=zmin;*/
 		}
 
+		//printf("poly2 %u\n",pvrrc.global_param_tr.used);
 		std::stable_sort(pvrrc.global_param_tr.data,pvrrc.global_param_tr.data+pvrrc.global_param_tr.used);
 	}
 
@@ -1194,17 +1322,20 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 	PolyParam* CurrentPP=0;
 	List<PolyParam>* CurrentPPlist;
 	
-	template<D3DSAMPLERSTATETYPE state>
+	template<u32 state>
 	void SetTexMode(u32 clamp,u32 mirror)
 	{
-		if (clamp)
-			dev->SetSamplerState(0,state,D3DTADDRESS_CLAMP);
+		if (clamp) {
+				r_set_sampler_state(0,state,D3DTADDRESS_CLAMP);
+		}
 		else 
 		{
-			if (mirror)
-				dev->SetSamplerState(0,state,D3DTADDRESS_MIRROR);
-			else
-				dev->SetSamplerState(0,state,D3DTADDRESS_WRAP);
+			if (mirror) {
+					r_set_sampler_state(0,state,D3DTADDRESS_MIRROR);
+			}
+			else {
+						r_set_sampler_state(0,state,D3DTADDRESS_WRAP);
+			}
 		}
 		
 	}
@@ -1235,7 +1366,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 	{
 		if (gp->pcw.Texture)
 		{
-			dev->SetRenderState(D3DRS_SPECULARENABLE,gp->pcw.Offset );
+			r_set_state(R_SPECULARENABLE,gp->pcw.Offset );
 
 			//if (gp->tsp.ShadInstr!=cache_tsp.ShadInstr ||  ( gp->tsp.UseAlpha != cache_tsp.UseAlpha) )
 			{
@@ -1244,20 +1375,20 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 					//PIXRGB = TEXRGB + OFFSETRGB
 					//PIXA    = TEXA
 				case 0:	// Decal
-					dev->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
-					dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+					r_set_texture_stage_state(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+					r_set_texture_stage_state(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
 
-					dev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
+					r_set_texture_stage_state(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
 
 					if (gp->tsp.IgnoreTexA)
 					{
 						//a=1
-						dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
+						r_set_texture_stage_state(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
 					}
 					else
 					{
 						//a=tex.a
-						dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+						r_set_texture_stage_state(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 					}
 					break;
 
@@ -1266,21 +1397,21 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 					//PIXRGB = COLRGB x TEXRGB + OFFSETRGB
 					//PIXA   = TEXA
 				case 1:	// Modulate
-					dev->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_MODULATE);
-					dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-					dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+					r_set_texture_stage_state(0, D3DTSS_COLOROP,   D3DTOP_MODULATE);
+					r_set_texture_stage_state(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+					r_set_texture_stage_state(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 
-					dev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
+					r_set_texture_stage_state(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
 
 					if (gp->tsp.IgnoreTexA)
 					{
 						//a=1
-						dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
+						r_set_texture_stage_state(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
 					}
 					else
 					{
 						//a=tex.a
-						dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+						r_set_texture_stage_state(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
 					}
 					break;
 					//The texture color value is blended with the Shading Color 
@@ -1293,23 +1424,23 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 					if (gp->tsp.IgnoreTexA)
 					{
 						//Tex.a=1 , so Color = Tex
-						dev->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
+						r_set_texture_stage_state(0, D3DTSS_COLOROP,   D3DTOP_SELECTARG1);
 					}
 					else
 					{
-						dev->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_BLENDTEXTUREALPHA);
+						r_set_texture_stage_state(0, D3DTSS_COLOROP,   D3DTOP_BLENDTEXTUREALPHA);
 					}
-					dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-					dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+					r_set_texture_stage_state(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+					r_set_texture_stage_state(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 
-					dev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
+					r_set_texture_stage_state(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
 					if(gp->tsp.UseAlpha)
 					{
-						dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
+						r_set_texture_stage_state(0, D3DTSS_ALPHAARG1, D3DTA_DIFFUSE);
 					}
 					else
 					{
-						dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
+						r_set_texture_stage_state(0, D3DTSS_ALPHAARG1, D3DTA_TFACTOR);
 					}
 					break;
 
@@ -1318,21 +1449,21 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 					//PIXRGB= COLRGB x  TEXRGB + OFFSETRGB
 					//PIXA   = COLA  x TEXA
 				case 3:	// Modulate Alpha
-					dev->SetTextureStageState(0, D3DTSS_COLOROP,   D3DTOP_MODULATE);
-					dev->SetTextureStageState(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
-					dev->SetTextureStageState(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
+					r_set_texture_stage_state(0, D3DTSS_COLOROP,   D3DTOP_MODULATE);
+					r_set_texture_stage_state(0, D3DTSS_COLORARG1, D3DTA_TEXTURE);
+					r_set_texture_stage_state(0, D3DTSS_COLORARG2, D3DTA_DIFFUSE);
 
 					if(gp->tsp.UseAlpha)
 					{
 						if (gp->tsp.IgnoreTexA)
 						{
 							//a=Col.a
-							dev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG2);
+							r_set_texture_stage_state(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG2);
 						}
 						else
 						{
 							//a=Text.a*Col.a
-							dev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE);
+							r_set_texture_stage_state(0, D3DTSS_ALPHAOP,   D3DTOP_MODULATE);
 						}
 					}
 					else
@@ -1340,16 +1471,16 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 						if (gp->tsp.IgnoreTexA)
 						{
 							//a= 1
-							dev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTA_TFACTOR);
+							r_set_texture_stage_state(0, D3DTSS_ALPHAOP,   D3DTA_TFACTOR);
 						}
 						else
 						{
 							//a= Text.a*1
-							dev->SetTextureStageState(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
+							r_set_texture_stage_state(0, D3DTSS_ALPHAOP,   D3DTOP_SELECTARG1);
 						}
 					}
-					dev->SetTextureStageState(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
-					dev->SetTextureStageState(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
+					r_set_texture_stage_state(0, D3DTSS_ALPHAARG1, D3DTA_TEXTURE);
+					r_set_texture_stage_state(0, D3DTSS_ALPHAARG2, D3DTA_DIFFUSE);
 
 					break;
 				}
@@ -1359,8 +1490,8 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		else
 		{
 			//Offset color is enabled olny if Texture is enabled ;)
-			dev->SetRenderState(D3DRS_SPECULARENABLE,FALSE);
-			dev->SetTexture(0,NULL);
+			r_set_state(R_SPECULARENABLE,FALSE);
+			r_set_texture(0,NULL);
 		}
 	}
 	//fox pixel shaders
@@ -1523,10 +1654,14 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 			if (chunk_size<0)
 				break;
 			u8* databuf=(u8*)malloc(chunk_size);
-			if (fread(databuf,chunk_size,1,f)!=1)
+			if (fread(databuf,chunk_size,1,f)!=1) {
+				free(databuf);
 				goto __error_out;
-			if (FAILED(dev->CreatePixelShader((DWORD*)databuf,&compiled_ps[chunk_mode])))
+			}
+			if (FAILED(dev->CreatePixelShader((DWORD*)databuf,&compiled_ps[chunk_mode]))) {
+				free(databuf);
 				goto __error_out;
+				}
 			free(databuf);
 		}
 
@@ -1534,6 +1669,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		return true;
 
 __error_out:
+
 		for (u32 i=0;i<PS_SHADER_COUNT;i++)
 		{
 			if (compiled_ps[i])
@@ -1686,13 +1822,19 @@ __error_out:
 				{
 					cur_pal_index[1]=gp->tcw.PAL.PalSelect/64.0f;
 					mode|=pal_mode;
-					dev->SetPixelShaderConstantF(0,cur_pal_index,1);
+					
+
+					/*if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_ps_pal_index,pf))*/ {
+						dev->SetPixelShaderConstantF(0,cur_pal_index,1);
+					}
 				}
 				else if (pf==6)
 				{
 					cur_pal_index[1]=(gp->tcw.PAL.PalSelect&~0xF)/64.0f;
 					mode|=pal_mode;
-					dev->SetPixelShaderConstantF(0,cur_pal_index,1);
+					/*if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_ps_pal_index,pf))*/ {
+						dev->SetPixelShaderConstantF(0,cur_pal_index,1);
+					}
 				}
 			}
 			
@@ -1731,15 +1873,15 @@ __error_out:
 
 		if (clipmode<2 ||clipmode&1 )
 		{
-			dev->SetRenderState(D3DRS_CLIPPLANEENABLE,0);
+			r_set_state(R_CLIPPLANEENABLE,0);
 		}
 		else
 		{
 			clipmode&=1; 
 			/*if (clipmode&1)
-				dev->SetRenderState(D3DRS_CLIPPLANEENABLE,3);
+				r_set_state(R_CLIPPLANEENABLE,3);
 			else*/
-				dev->SetRenderState(D3DRS_CLIPPLANEENABLE,15);
+				r_set_state(R_CLIPPLANEENABLE,15);
 
 			float x_min=(float)(val&63);
 			float x_max=(float)((val>>6)&63);
@@ -1805,13 +1947,14 @@ __error_out:
 	//
 	template <u32 Type,bool FFunction,bool df,bool SortingEnabled>
 	__forceinline
-	void SetGPState(PolyParam* gp,u32 cflip=0)
-	{	/*
-		if (gp->tsp.DstSelect ||
-			gp->tsp.SrcSelect)
-			printf("DstSelect  DstSelect\n"); */
+	void SetGPState(PolyParam* gp,u32 cflip=0) {
 
-		SetTileClip(gp->tileclip);
+		{
+			/*if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_tile_clip,gp->tileclip))*/ {
+				SetTileClip(gp->tileclip);
+			}
+		}
+
 		//has to preserve cache_tsp/cache_isp
 		//can freely use cache_tcw
 		if (FFunction)
@@ -1822,12 +1965,12 @@ __error_out:
 		{
 			SetGPState_ps(gp);
 		}
-
+ 
 		const u32 stencil=(gp->pcw.Shadow!=0)?0x80:0;
-		if (cache_stencil_modvol_on!=stencil && settings.Emulation.ModVolMode==MVM_NormalAndClip)
+		if ((cache_stencil_modvol_on!=stencil) && (settings.Emulation.ModVolMode==MVM_NormalAndClip))
 		{
 			cache_stencil_modvol_on=stencil;
-			dev->SetRenderState(D3DRS_STENCILREF,stencil);						//Clear/Set bit 7 (Clear for non 2 volume stuff)
+			r_set_state(R_STENCILREF,stencil);						//Clear/Set bit 7 (Clear for non 2 volume stuff)
 		}
 		
 
@@ -1838,15 +1981,16 @@ __error_out:
 
 			if ( gp->tsp.FilterMode == 0 || (settings.Emulation.PaletteMode>1 && ( gp->tcw.PAL.PixelFmt==5|| gp->tcw.PAL.PixelFmt==6) ))
 			{
-				dev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_POINT);
-				dev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_POINT);
-				dev->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_POINT);	//_NONE ? this disables mipmapping alltogether ?
+
+				r_set_sampler_state(0, R_MINFILTER, D3DTEXF_POINT);
+				r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_POINT);
+				r_set_sampler_state(0, R_MIPFILTER, D3DTEXF_POINT);	//_NONE ? this disables mipmapping alltogether ?
 			}
 			else
 			{
-				dev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-				dev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
-				dev->SetSamplerState(0, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);	//LINEAR for Trilinear filtering
+				r_set_sampler_state(0, R_MINFILTER, D3DTEXF_LINEAR);
+				r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_LINEAR);
+				r_set_sampler_state(0, R_MIPFILTER, D3DTEXF_LINEAR);	//LINEAR for Trilinear filtering
 			}
 
 			if (gp->tsp.full!=cache_tsp.full)
@@ -1855,64 +1999,87 @@ __error_out:
 
 				if (Type==ListType_Translucent)
 				{
-					dev->SetRenderState(D3DRS_SRCBLEND, SrcBlendGL[gp->tsp.SrcInstr]);
-					dev->SetRenderState(D3DRS_DESTBLEND, DstBlendGL[gp->tsp.DstInstr]);
+
+					r_set_state(R_SRCBLEND, SrcBlendGL[gp->tsp.SrcInstr]);
+					r_set_state(R_DESTBLEND, DstBlendGL[gp->tsp.DstInstr]);
+				
+
 					bool clip_alpha_on_zero=gp->tsp.SrcInstr==4 && (gp->tsp.DstInstr==1 || gp->tsp.DstInstr==5);
 					if (clip_alpha_on_zero!=cache_clip_alpha_on_zero)
 					{
 						cache_clip_alpha_on_zero=clip_alpha_on_zero;
-						dev->SetRenderState(D3DRS_ALPHATESTENABLE,clip_alpha_on_zero);
+						r_set_state(R_ALPHATESTENABLE,clip_alpha_on_zero);
 					}
 				}
 
-				SetTexMode<D3DSAMP_ADDRESSV>(gp->tsp.ClampV,gp->tsp.FlipV);
-				SetTexMode<D3DSAMP_ADDRESSU>(gp->tsp.ClampU,gp->tsp.FlipU);
+				SetTexMode<R_ADDRESSV>(gp->tsp.ClampV,gp->tsp.FlipV);
+				SetTexMode<R_ADDRESSU>(gp->tsp.ClampU,gp->tsp.FlipU);
 			}
 
 			if (gp->pcw.Texture)
 			{
 				IDirect3DTexture9* tex=GetTexture(gp->tsp,gp->tcw);
-				dev->SetTexture(0,tex);
-				float tsz[4];
-				tsz[0]=TextureSizes[gp->tsp.TexU][0];
-				tsz[2]=TextureSizes[gp->tsp.TexU][1];
-				tsz[1]=TextureSizes[gp->tsp.TexV][0];
-				tsz[3]=TextureSizes[gp->tsp.TexV][1];
+				
 
-				dev->SetPixelShaderConstantF(1,tsz,1);
-				dev->SetVertexShaderConstantF(3,tsz,1);
+					/*u64 tex_pair = ((u64)gp->tsp.full << 32U) | (u64)gp->tcw.full;
+					
+					if (  g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_tex_ld,tex_pair)
+					    )*/ {
+						r_set_texture(0,tex);
+						/*u64 tex_uv = ((u64)gp->tsp.TexU << 32U) | (u64)gp->tsp.TexV;
+						if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_tex_uv,tex_uv))*/ {
+							float tsz[4];
+							tsz[0]=TextureSizes[gp->tsp.TexU][0];
+							tsz[2]=TextureSizes[gp->tsp.TexU][1];
+							tsz[1]=TextureSizes[gp->tsp.TexV][0];
+							tsz[3]=TextureSizes[gp->tsp.TexV][1];
+
+							dev->SetPixelShaderConstantF(1,tsz,1);
+							dev->SetVertexShaderConstantF(3,tsz,1);
+						}
+					}
+					
+				
 			}
 		}
 
 		if (df)
 		{
-			dev->SetRenderState(D3DRS_CULLMODE,CullMode[gp->isp.CullMode+cflip]);
+				r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode+cflip]);
 		}
 		if (gp->isp.full!= cache_isp.full)
 		{
 			cache_isp.full=gp->isp.full;
 			//set cull mode !
-			if (!df)
-				dev->SetRenderState(D3DRS_CULLMODE,CullMode[gp->isp.CullMode]);
+			if (!df) {
+				r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode]);
+			}
 			//set Z mode !
 			if (Type==ListType_Opaque)
 			{
-				dev->SetRenderState(D3DRS_ZFUNC,Zfunction[gp->isp.DepthMode]);
+					r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
+
 			}
 			else if (Type==ListType_Translucent)
 			{
-				if (SortingEnabled)
-					dev->SetRenderState(D3DRS_ZFUNC,Zfunction[6]); // : GEQ
-				else
-					dev->SetRenderState(D3DRS_ZFUNC,Zfunction[gp->isp.DepthMode]);
+				if (SortingEnabled) {
+						r_set_state(R_ZFUNC,Zfunction[6]); // : GEQ
+				}
+				else {
+						r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
+				}
 			}
 			else
 			{
 				//gp->isp.DepthMode=6;
-				dev->SetRenderState(D3DRS_ZFUNC,Zfunction[6]); //PT : LEQ //GEQ ?!?! wtf ? seems like the docs ARE wrong on this one =P
+				
+						r_set_state(R_ZFUNC,Zfunction[6]); //PT : LEQ //GEQ ?!?! wtf ? seems like the docs ARE wrong on this one =P
+				
 			}
 
-			dev->SetRenderState(D3DRS_ZWRITEENABLE,gp->isp.ZWriteDis==0);
+		
+				r_set_state(R_ZWRITEENABLE,gp->isp.ZWriteDis==0);
+		
 		}
 	}
 	template <u32 Type,bool FFunction,bool SortingEnabled>
@@ -1957,27 +2124,35 @@ __error_out:
 		//return left.zMin<right.zMax;
 	}
 
+	pvr_algo::pvr_sort_c g_pvr_sort_algo;
+	
+
+	vector<pvr_algo::poly_indice_pair_t> pvr_srt_tmp0;
+	vector<pvr_algo::poly_indice_pair_t> pvr_srt_tmp1;
+
 	vector<SortTrig> sorttemp;
-
-
+	vector<SortTrig> sort_tmp2;
+	vector<PolyParam> sort_tmp3;
+	u32 pvr_srt_tmp1_best_size = 0;
+ 
 	//sort and render , only for alpha blended stuff
 	template <bool FFunction>
 	void SortRendPolyParamList(List<PolyParam>& gpl)
 	{
-		if (gpl.used==0)
+		if ( (gpl.used==0) || (pvrrc.verts.allocate_list_sz->size()==0)) {
 			return;
-		//we want at least 1 PParam
-
-		sorttemp.reserve(pvrrc.verts.used>>2);
-
-		if (pvrrc.verts.allocate_list_sz->size()==0)
-			return;
+		}
+		
+		pvr_srt_tmp0.clear();
 
 		u32 base=0;
 		u32 csegc=0;
 		u32 cseg=-1;
 		Vertex* bptr=0;
 	//	f32 t1=0;
+
+		pvr_algo::poly_indice_pair_t poly_sort_ref;
+
 		for (u32 i=0;i<pvrrc.global_param_tr.used;i++)
 		{
 			PolyParam* gp=&gpl.data[i];
@@ -1997,70 +2172,74 @@ __error_out:
 					bptr-=csegc;
 					csegc+=(*pvrrc.verts.allocate_list_sz)[cseg]/sizeof(Vertex);
 				}
-				SortTrig t;
-				t.z=bptr[j].z;//+bptr[j+1].z+bptr[j+2].z;
-				//*p1+=t.z;
-				//*p2+=t.z;
 
-				t.id=j;
-				t.pparam=gp;
-				
-				sorttemp.push_back(t);
-				//p1=p2;
-				//p2=&sorttemp[sorttemp.size()-1].z;
+				poly_sort_ref.z = bptr[j].z;
+				poly_sort_ref.id = j;
+				poly_sort_ref.gp = i;
+	 
+				pvr_srt_tmp0.push_back(poly_sort_ref);
 			}
 		}
-		if (sorttemp.size()==0)
+
+		if (pvr_srt_tmp0.empty()) {
 			return;
-		stable_sort(&sorttemp[0],&sorttemp[0]+sorttemp.size());
-
-		//reset the cache state
-		GPstate_cache_reset(sorttemp[0].pparam);
-
-		for (u32 i=0;i<sorttemp.size();i++)
-		{
-			u32 fl=((sorttemp[i].id - sorttemp[i].pparam->first)&1)<<2;
-			SetGPState<ListType_Translucent,FFunction,true,true>(sorttemp[i].pparam,fl);
-			dev->DrawPrimitive(D3DPT_TRIANGLESTRIP,sorttemp[i].id ,
-					1);
 		}
-		//printf("%d Render calls\n",sorttemp.size());
-		sorttemp.clear();
+
+		if (pvr_srt_tmp0.size() > pvr_srt_tmp1_best_size) {
+			pvr_srt_tmp1.clear();
+			pvr_srt_tmp1.resize(pvr_srt_tmp0.size());
+		} 
+
+		g_pvr_sort_algo.sort(&pvr_srt_tmp0[0],&pvr_srt_tmp1[0],(u32)pvr_srt_tmp0.size());
+ 
+		//reset the cache state
+		GPstate_cache_reset( &gpl.data[ pvr_srt_tmp0[0].gp ]);
+
+		for (u32 i=0,j = (u32)pvr_srt_tmp0.size();i<j;i++) {
+			PolyParam* gp = &gpl.data[ pvr_srt_tmp0[i].gp ];
+			u32 id = pvr_srt_tmp0[i].id;
+			u32 fl=((id - gp->first)&1)<<2;
+			SetGPState<ListType_Translucent,FFunction,true,true>(gp,fl);
+			dev->DrawPrimitive(D3DPT_TRIANGLESTRIP,id,1); //FIXME
+		}
+		//printf("%d Render calls\n",pvr_srt_tmp0.size());
+		pvr_srt_tmp0.clear();
 	}
 
 	void DrawOSD()
 	{
-		//dev->SetRenderState(D3DRS_ZFUNC,D3DCMP_ALWAYS);
-		dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-		dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA);
-		dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
+		//r_set_state(R_ZFUNC,D3DCMP_ALWAYS);
+		r_set_state(R_SRCBLEND, D3DBLEND_SRCALPHA);
+		r_set_state(R_DESTBLEND, D3DBLEND_INVSRCALPHA);
+		r_set_state(R_ALPHABLENDENABLE,TRUE);
 		
-		dev->SetRenderState( D3DRS_ALPHATESTENABLE,  TRUE );
-		dev->SetRenderState( D3DRS_ALPHAREF,         0x08 );
-		dev->SetRenderState( D3DRS_ALPHAFUNC,  D3DCMP_GREATEREQUAL );
-		dev->SetRenderState( D3DRS_FILLMODE,   D3DFILL_SOLID );
-		dev->SetRenderState( D3DRS_CULLMODE,   D3DCULL_CCW );
-		dev->SetRenderState( D3DRS_STENCILENABLE,    FALSE );
-		dev->SetRenderState( D3DRS_CLIPPING,         TRUE );
-		dev->SetRenderState( D3DRS_CLIPPLANEENABLE,  FALSE );
-		dev->SetRenderState( D3DRS_VERTEXBLEND,      D3DVBF_DISABLE );
-		dev->SetRenderState( D3DRS_INDEXEDVERTEXBLENDENABLE, FALSE );
-		dev->SetRenderState( D3DRS_FOGENABLE,        FALSE );
-		dev->SetRenderState( D3DRS_COLORWRITEENABLE,
+		r_set_state( R_ALPHATESTENABLE,  TRUE );
+		r_set_state( R_ALPHAREF,         0x08 );
+		r_set_state( R_ALPHAFUNC,  D3DCMP_GREATEREQUAL );
+		r_set_state( R_FILLMODE,   D3DFILL_SOLID );
+		r_set_state( R_CULLMODE,   D3DCULL_CCW );
+		r_set_state( R_STENCILENABLE,    FALSE );
+		r_set_state( R_CLIPPING,         TRUE );
+		r_set_state( R_CLIPPLANEENABLE,  FALSE );
+		r_set_state( R_VERTEXBLEND,      D3DVBF_DISABLE );
+		r_set_state( R_INDEXEDVERTEXBLENDENABLE, FALSE );
+		r_set_state( R_FOGENABLE,        FALSE );
+		r_set_state( R_COLORWRITEENABLE,
 		D3DCOLORWRITEENABLE_RED  | D3DCOLORWRITEENABLE_GREEN |
 		D3DCOLORWRITEENABLE_BLUE | D3DCOLORWRITEENABLE_ALPHA );
 
-		dev->SetRenderState( D3DRS_ZENABLE,FALSE);
+		r_set_state( R_ZENABLE,FALSE);
 		
 		if (settings.OSD.ShowFPS)
 		{
 			// Create a rectangle to indicate where on the screen it should be drawn						
 			
-			timer = GetTickCount() - timeStart;
+			u64 ticks_now = g_pvr_timer->ticks();
+			timer = (DWORD)ticks_now - timeStart;
 			
 			if ( timer > 250 )
 			{				
-				timeStart = GetTickCount();
+				timeStart = (DWORD)ticks_now;
 
 				frameRate = (u32)((FrameNumber - frameStart) * 1000.0f / timer);
 				frameStart = FrameNumber;			
@@ -2158,12 +2337,12 @@ __error_out:
 		if (mv_mode==0)	//normal trigs
 		{
 			//set states
-			verifyc(dev->SetRenderState(D3DRS_ZENABLE,TRUE));
-			verifyc(dev->SetRenderState(D3DRS_STENCILWRITEMASK,2));	//write bit 1
-			verifyc(dev->SetRenderState(D3DRS_STENCILFUNC,D3DCMP_ALWAYS));	//allways pass
-			verifyc(dev->SetRenderState(D3DRS_STENCILPASS,D3DSTENCILOP_INVERT));	//flip bit 1
-			verifyc(dev->SetRenderState(D3DRS_STENCILZFAIL,D3DSTENCILOP_KEEP));		//else keep it
-			dev->SetRenderState(D3DRS_CULLMODE,CullMode[ispc.CullMode]); //-> needs to be properly set
+			verifyc(r_set_state(R_ZENABLE,TRUE));
+			verifyc(r_set_state(R_STENCILWRITEMASK,2));	//write bit 1
+			verifyc(r_set_state(R_STENCILFUNC,D3DCMP_ALWAYS));	//allways pass
+			verifyc(r_set_state(R_STENCILPASS,D3DSTENCILOP_INVERT));	//flip bit 1
+			verifyc(r_set_state(R_STENCILZFAIL,D3DSTENCILOP_KEEP));		//else keep it
+			r_set_state(R_CULLMODE,CullMode[ispc.CullMode]); //-> needs to be properly set
 		}
 		else
 		{
@@ -2178,10 +2357,10 @@ __error_out:
 				//1   : 1      : 01
 
 				//if !=0 -> set to 10
-				verifyc(dev->SetRenderState(D3DRS_STENCILFUNC,D3DCMP_LESSEQUAL));	//if (st>=1) st=1; else st=0;
-				verifyc(dev->SetRenderState(D3DRS_STENCILREF,1));					
-				verifyc(dev->SetRenderState(D3DRS_STENCILPASS,D3DSTENCILOP_REPLACE));
-				verifyc(dev->SetRenderState(D3DRS_STENCILFAIL,D3DSTENCILOP_ZERO));
+				verifyc(r_set_state(R_STENCILFUNC,D3DCMP_LESSEQUAL));	//if (st>=1) st=1; else st=0;
+				verifyc(r_set_state(R_STENCILREF,1));					
+				verifyc(r_set_state(R_STENCILPASS,D3DSTENCILOP_REPLACE));
+				verifyc(r_set_state(R_STENCILFAIL,D3DSTENCILOP_ZERO));
 			}
 			else
 			{
@@ -2194,16 +2373,16 @@ __error_out:
 				//1   : 0   : 00
 				//1   : 1   : 01
 
-				verifyc(dev->SetRenderState(D3DRS_STENCILFUNC,D3DCMP_GREATER));			//if (st>2) then st=1; else st=0
-				verifyc(dev->SetRenderState(D3DRS_STENCILREF,2));						
-				verifyc(dev->SetRenderState(D3DRS_STENCILPASS,D3DSTENCILOP_REPLACE));
-				verifyc(dev->SetRenderState(D3DRS_STENCILFAIL,D3DSTENCILOP_ZERO));
+				verifyc(r_set_state(R_STENCILFUNC,D3DCMP_GREATER));			//if (st>2) then st=1; else st=0
+				verifyc(r_set_state(R_STENCILREF,2));						
+				verifyc(r_set_state(R_STENCILPASS,D3DSTENCILOP_REPLACE));
+				verifyc(r_set_state(R_STENCILFAIL,D3DSTENCILOP_ZERO));
 			}
 
 			//common states :)
-			verifyc(dev->SetRenderState(D3DRS_ZENABLE,FALSE));	//no Z testing, we just want to sum up all of the modvol area ...
-			verifyc(dev->SetRenderState(D3DRS_STENCILWRITEMASK,3));	//write 2 lower bits
-			verifyc(dev->SetRenderState(D3DRS_STENCILMASK,3));		//read 2 lower ones
+			verifyc(r_set_state(R_ZENABLE,FALSE));	//no Z testing, we just want to sum up all of the modvol area ...
+			verifyc(r_set_state(R_STENCILWRITEMASK,3));	//write 2 lower bits
+			verifyc(r_set_state(R_STENCILMASK,3));		//read 2 lower ones
 		}
 	}
 	//
@@ -2235,7 +2414,9 @@ __error_out:
 		// Clear the backbuffer to a blue color
 		//All of the screen is allways filled w/ smth , no need to clear the color buffer
 		//gives a nice speedup on large resolutions
-		dev->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE); 
+
+
+		r_set_state(R_SCISSORTESTENABLE, FALSE); 
 		if (rtt || clear_rt==0)
 		{
 			verifyc(dev->Clear( 0, NULL, ZBufferCF  , D3DCOLOR_XRGB(0,0,0), 0.0f, 0 ));
@@ -2265,22 +2446,22 @@ __error_out:
 		if( SUCCEEDED( dev->BeginScene() ) )
 		{	
 			if (ppar.MultiSampleType!=D3DMULTISAMPLE_NONE)
-				dev->SetRenderState(D3DRS_MULTISAMPLEANTIALIAS, true);
+				r_set_state(R_MULTISAMPLEANTIALIAS, true);
 			/*
 				Pal texture stuff
 			*/
 			if (pal_texture!=0)
 			{
-				verifyc(dev->SetTexture(1,pal_texture));
-				verifyc(dev->SetSamplerState(1, D3DSAMP_MINFILTER, D3DTEXF_POINT));
-				verifyc(dev->SetSamplerState(1, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
+				verifyc(r_set_texture(1,pal_texture));
+				verifyc(r_set_sampler_state(1, R_MINFILTER, D3DTEXF_POINT));
+				verifyc(r_set_sampler_state(1, R_MAGFILTER, D3DTEXF_POINT));
 			}
 
 			if (fog_texture!=0)
 			{
-				verifyc(dev->SetTexture(2,fog_texture));
-				verifyc(dev->SetSamplerState(2, D3DSAMP_MINFILTER, D3DTEXF_POINT));
-				verifyc(dev->SetSamplerState(2, D3DSAMP_MAGFILTER, D3DTEXF_POINT));
+				verifyc(r_set_texture(2,fog_texture));
+				verifyc(r_set_sampler_state(2, R_MINFILTER, D3DTEXF_POINT));
+				verifyc(r_set_sampler_state(2, R_MAGFILTER, D3DTEXF_POINT));
 			}
 
 			//Init stuff
@@ -2322,21 +2503,21 @@ __error_out:
 			/*
 				Setup initial render states
 			*/
-			dev->SetRenderState(D3DRS_ZENABLE,D3DZB_TRUE);
+			r_set_state(R_ZENABLE,D3DZB_TRUE);
 
 			dev->SetVertexDeclaration(vdecl);
 			dev->SetStreamSource(0,vb,0,sizeof(Vertex));
 
-			dev->SetSamplerState(0, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
-			dev->SetSamplerState(0, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+			r_set_sampler_state(0, R_MINFILTER, D3DTEXF_LINEAR);
+			r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_LINEAR);
 
-			dev->SetTextureStageState(0, D3DTSS_TEXTURETRANSFORMFLAGS,	D3DTTFF_COUNT4 | D3DTTFF_PROJECTED);
+			r_set_texture_stage_state(0, D3DTSS_TEXTURETRANSFORMFLAGS,	D3DTTFF_COUNT4 | D3DTTFF_PROJECTED);
 			
-			dev->SetRenderState(D3DRS_TEXTUREFACTOR, 0xFFFFFFFF);
+			r_set_state(R_TEXTUREFACTOR, 0xFFFFFFFF);
 
 			//Opaque
-			dev->SetRenderState(D3DRS_ALPHABLENDENABLE,FALSE);
-			dev->SetRenderState(D3DRS_ALPHATESTENABLE,FALSE);
+			r_set_state(R_ALPHABLENDENABLE,FALSE);
+			r_set_state(R_ALPHATESTENABLE,FALSE);
 
 			//Scale values have the sync values
 			//adjust em here for FB/AA/Stuff :)
@@ -2362,7 +2543,7 @@ __error_out:
 				current_scalef[1]=-(float)(FB_Y_CLIP.min/**scale_y*/);
 				current_scalef[2]=(float)(FB_X_CLIP.max+1)*0.5f*scale_x;
 				current_scalef[3]=-(float)((FB_Y_CLIP.max+1)*0.5f)/**scale_y*/;
-				dev->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE); 
+				r_set_state(R_SCISSORTESTENABLE, FALSE); 
 			}
 			else
 			{
@@ -2375,7 +2556,7 @@ __error_out:
 				if (settings.Enhancements.AspectRatioMode==2 && FB_Y_CLIP.min==0 && FB_Y_CLIP.max==479 && FB_X_CLIP.min==0 && FB_X_CLIP.max==639)
 				{
 					//rendering to frame buffer and not scissoring anything [yes this is a hack to allow widescreen hack]
-					dev->SetRenderState(D3DRS_SCISSORTESTENABLE, FALSE); 
+					r_set_state(R_SCISSORTESTENABLE, FALSE); 
 				}
 				else
 				{
@@ -2387,7 +2568,7 @@ __error_out:
 					srect.right=(int)(0.5f+(current_scalef[0]/(current_scalef[2]*x_scale_coef_aa)*fb_surf_desc.Width+((FB_X_CLIP.max+1)*fb_surf_desc.Width/(current_scalef[2]*x_scale_coef_aa))));
 
 					dev->SetScissorRect(&srect);
-					dev->SetRenderState(D3DRS_SCISSORTESTENABLE, TRUE); 
+					r_set_state(R_SCISSORTESTENABLE, TRUE); 
 				}
 			}
 
@@ -2400,17 +2581,17 @@ __error_out:
 			//stencil modes
 			if (settings.Emulation.ModVolMode==MVM_NormalAndClip)
 			{
-				verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,TRUE));
-				verifyc(dev->SetRenderState(D3DRS_STENCILWRITEMASK,0xFF));				//write bit 7.I set em all here as a speed optimisation to minimise RMW operations
-				verifyc(dev->SetRenderState(D3DRS_STENCILFUNC,D3DCMP_ALWAYS));			//allways pass
-				verifyc(dev->SetRenderState(D3DRS_STENCILPASS,D3DSTENCILOP_REPLACE));	//flip bit 1
-				verifyc(dev->SetRenderState(D3DRS_STENCILZFAIL,D3DSTENCILOP_KEEP));		//else keep it
+				verifyc(r_set_state(R_STENCILENABLE,TRUE));
+				verifyc(r_set_state(R_STENCILWRITEMASK,0xFF));				//write bit 7.I set em all here as a speed optimisation to minimise RMW operations
+				verifyc(r_set_state(R_STENCILFUNC,D3DCMP_ALWAYS));			//allways pass
+				verifyc(r_set_state(R_STENCILPASS,D3DSTENCILOP_REPLACE));	//flip bit 1
+				verifyc(r_set_state(R_STENCILZFAIL,D3DSTENCILOP_KEEP));		//else keep it
 				
-				verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
+				verifyc(r_set_state(R_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
 			}
 			else
 			{
-				verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,FALSE));
+				verifyc(r_set_state(R_STENCILENABLE,FALSE));
 			}
 			
 
@@ -2428,13 +2609,13 @@ __error_out:
 			}
 
 			//Punch Through
-			dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE);
+			r_set_state(R_ALPHATESTENABLE,TRUE);
 
-			dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATEREQUAL);
+			r_set_state(R_ALPHAFUNC,D3DCMP_GREATEREQUAL);
 
-			dev->SetRenderState(D3DRS_ALPHAREF,PT_ALPHA_REF &0xFF);
+			r_set_state(R_ALPHAREF,PT_ALPHA_REF &0xFF);
 			
-			verifyc(dev->SetRenderState(D3DRS_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
+			verifyc(r_set_state(R_STENCILREF,0x00));					//Clear/Set bit 7 (Clear for non 2 volume stuff)
 
 			if (!GetAsyncKeyState(VK_F2))
 			{
@@ -2460,27 +2641,27 @@ __error_out:
 					last *in*   : flip, merge*in* &clear from last merge
 					last *out*  : flip, merge*out* &clear from last merge
 					*/
-					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE); //->BUG on nvdrivers (163 && 169 tested so far)
-					dev->SetRenderState(D3DRS_ALPHATESTENABLE,FALSE);
-					dev->SetRenderState(D3DRS_COLORWRITEENABLE,0);
+					r_set_state(R_ALPHABLENDENABLE,TRUE); //->BUG on nvdrivers (163 && 169 tested so far)
+					r_set_state(R_ALPHATESTENABLE,FALSE);
+					r_set_state(R_COLORWRITEENABLE,0);
 
-					dev->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-					verifyc(dev->SetRenderState(D3DRS_ZFUNC,D3DCMP_GREATER));
+					r_set_state(R_ZWRITEENABLE,FALSE);
+					verifyc(r_set_state(R_ZFUNC,D3DCMP_GREATER));
 					
 					//TODO: Find out what ZPixelShader was supposed to be doing.
 					verifyc(dev->SetPixelShader(ZPixelShader));
-					verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,TRUE));
+					verifyc(r_set_state(R_STENCILENABLE,TRUE));
 
 					//we WANT stencil to have all 1's here for bit 1
 					//set it as needed here :) -> not realy , we want em 0'd
 					
 					f32 fsq[] = {-640*8,-480*8,pvrrc.invW_min, -640*8,480*8,pvrrc.invW_min, 640*8,-480*8,pvrrc.invW_min, 640*8,480*8,pvrrc.invW_min};
 					/*
-					verifyc(dev->SetRenderState(D3DRS_ZENABLE,FALSE));						//Z doesnt matter
-					verifyc(dev->SetRenderState(D3DRS_STENCILFUNC,D3DCMP_ALWAYS));			//allways pass
-					verifyc(dev->SetRenderState(D3DRS_STENCILWRITEMASK,3));					//write bit 1
-					verifyc(dev->SetRenderState(D3DRS_STENCILPASS,D3DSTENCILOP_REPLACE));	//Set to reference (2)
-					verifyc(dev->SetRenderState(D3DRS_STENCILREF,2));						//reference value(2)
+					verifyc(r_set_state(R_ZENABLE,FALSE));						//Z doesnt matter
+					verifyc(r_set_state(R_STENCILFUNC,D3DCMP_ALWAYS));			//allways pass
+					verifyc(r_set_state(R_STENCILWRITEMASK,3));					//write bit 1
+					verifyc(r_set_state(R_STENCILPASS,D3DSTENCILOP_REPLACE));	//Set to reference (2)
+					verifyc(r_set_state(R_STENCILREF,2));						//reference value(2)
 
 					verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,2,fsq,3*4));
 					*/
@@ -2492,6 +2673,7 @@ __error_out:
 
 					u32 cmv_count=(pvrrc.global_param_mvo.used-1);
 					//ISP_Modvol
+					
 					for (u32 cmv=0;cmv<cmv_count;cmv++)
 					{
 						u32 sz=pvrrc.global_param_mvo.data[cmv+1].id;
@@ -2503,7 +2685,7 @@ __error_out:
 						u32 mv_mode = ispc.DepthMode;
 						
 						//We read from Z buffer, but dont write :)
-						verifyc(dev->SetRenderState(D3DRS_ZENABLE,TRUE));
+						verifyc(r_set_state(R_ZENABLE,TRUE));
 						//enable stenciling, and set bit 1 for mod vols that dont pass the Z test as closed ones (not even count of em)
 
 
@@ -2515,6 +2697,7 @@ __error_out:
 						}
 						else if (mv_mode<3)
 						{
+							
 							while(sz)
 							{
 								//merge and clear all the prev. stencil bits
@@ -2539,12 +2722,12 @@ __error_out:
 					}
 
 					//black out any stencil with '1'
-					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-					dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-					dev->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA); 
+					r_set_state(R_ALPHABLENDENABLE,TRUE);
+					r_set_state(R_SRCBLEND, D3DBLEND_SRCALPHA);
+					r_set_state(R_DESTBLEND, D3DBLEND_INVSRCALPHA); 
 
-					dev->SetRenderState(D3DRS_COLORWRITEENABLE,0xF);
-					verifyc(dev->SetRenderState(D3DRS_STENCILFUNC,D3DCMP_EQUAL));	//only the odd ones are 'in'
+					r_set_state(R_COLORWRITEENABLE,0xF);
+					verifyc(r_set_state(R_STENCILFUNC,D3DCMP_EQUAL));	//only the odd ones are 'in'
 					
 					u32 RefValue=0x01;	//'in'
 
@@ -2553,41 +2736,41 @@ __error_out:
 						RefValue|=0x80;	//stencil volume mask
 					}
 
-					verifyc(dev->SetRenderState(D3DRS_STENCILREF,RefValue));	//allways (stencil volume mask && 'in')
-					verifyc(dev->SetRenderState(D3DRS_STENCILMASK,RefValue));	//allways (as above)
+					verifyc(r_set_state(R_STENCILREF,RefValue));	//allways (stencil volume mask && 'in')
+					verifyc(r_set_state(R_STENCILMASK,RefValue));	//allways (as above)
 
-					verifyc(dev->SetRenderState(D3DRS_STENCILWRITEMASK,0));	//dont write to stencil
+					verifyc(r_set_state(R_STENCILWRITEMASK,0));	//dont write to stencil
 
-					verifyc(dev->SetRenderState(D3DRS_ZENABLE,FALSE));
+					verifyc(r_set_state(R_ZENABLE,FALSE));
 
 					verifyc(dev->SetPixelShader(ShadeColPixelShader));
 					//render a fullscreen quad
 
 					verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLESTRIP,2,fsq,3*4));
 
-					verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,FALSE));	//turn stencil off ;)
+					verifyc(r_set_state(R_STENCILENABLE,FALSE));	//turn stencil off ;)
 				}
 				else if (settings.Emulation.ModVolMode==MVM_Volume)
 				{
 					//TODO: Find out what ZPixelShader was supposed to be doing.
 					verifyc(dev->SetPixelShader(ZPixelShader));
-					dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-					dev->SetRenderState(D3DRS_SRCBLEND, D3DBLEND_SRCALPHA);
-					dev ->SetRenderState(D3DRS_DESTBLEND, D3DBLEND_INVSRCALPHA); 
-					dev->SetRenderState(D3DRS_ALPHATESTENABLE,FALSE);
+					r_set_state(R_ALPHABLENDENABLE,TRUE);
+					r_set_state(R_SRCBLEND, D3DBLEND_SRCALPHA);
+					r_set_state(R_DESTBLEND, D3DBLEND_INVSRCALPHA); 
+					r_set_state(R_ALPHATESTENABLE,FALSE);
 
-					dev->SetRenderState(D3DRS_ZENABLE,TRUE);
-					dev->SetRenderState(D3DRS_ZWRITEENABLE,FALSE);
-					dev->SetRenderState(D3DRS_CULLMODE,D3DCULL_NONE);
+					r_set_state(R_ZENABLE,TRUE);
+					r_set_state(R_ZWRITEENABLE,FALSE);
+					r_set_state(R_CULLMODE,D3DCULL_NONE);
 
 					verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,pvrrc.modtrig.used,pvrrc.modtrig.data,3*4));
 
 					
 				}
 
-				dev->SetRenderState(D3DRS_ZWRITEENABLE,TRUE);
-				dev->SetRenderState(D3DRS_ZENABLE,TRUE);
-				dev->SetRenderState(D3DRS_ALPHATESTENABLE,TRUE); 
+				r_set_state(R_ZWRITEENABLE,TRUE);
+				r_set_state(R_ZENABLE,TRUE);
+				r_set_state(R_ALPHATESTENABLE,TRUE); 
 
 				dev->SetVertexDeclaration(vdecl);
 				dev->SetStreamSource(0,vb,0,sizeof(Vertex));
@@ -2596,12 +2779,12 @@ __error_out:
 				SetPS(1);
 			}
 
-			dev->SetRenderState(D3DRS_ALPHABLENDENABLE,TRUE);
-			dev->SetRenderState(D3DRS_ALPHAFUNC,D3DCMP_GREATER);
-			dev->SetRenderState(D3DRS_ALPHAREF,0);
+			r_set_state(R_ALPHABLENDENABLE,TRUE);
+			r_set_state(R_ALPHAFUNC,D3DCMP_GREATER);
+			r_set_state(R_ALPHAREF,0);
 			
 			//Disable stencil (we don't support it on transcl. stuff anyway)
-			verifyc(dev->SetRenderState(D3DRS_STENCILENABLE,FALSE));
+			verifyc(r_set_state(R_STENCILENABLE,FALSE));
 			if (!GetAsyncKeyState(VK_F3))
 			{
 				if (dosort && settings.Emulation.AlphaSortMode==1)
@@ -2640,6 +2823,10 @@ __error_out:
 
 			// End the scene
 			dev->EndScene();
+
+			//Reset single pass states
+			g_pvr_states_manager.invalidate_sampler(R_NO_SAMPLER);
+
 		}
 
 		if (rtt)
@@ -2649,7 +2836,7 @@ __error_out:
 		}
 	}
 	//
-	volatile bool running=false;
+	bool running=false;
 	cResetEvent rs(false,true);
 	cResetEvent re(false,true);
 	D3DXMACRO vs_macros[]=
@@ -2832,6 +3019,7 @@ __error_out:
 
 		printf("Device caps... VS : %X ; PS : %X\n",caps.VertexShaderVersion,caps.PixelShaderVersion);
 
+		max_anisotropy = caps.MaxAnisotropy;
 		if (caps.VertexShaderVersion<D3DVS_VERSION(1, 0) || FORCE_SW_VERTEX_SHADERS)
 		{
 			UseSVP=true;
@@ -2845,6 +3033,7 @@ __error_out:
 			UseFixedFunction=false;
 		}
 
+		
 		printf("Will use %s\n",ZBufferModeName[ZBufferMode]);
 		printf(UseSVP?"Will use SVP\n":"Will use Vertex Shaders\n");
 
@@ -2927,6 +3116,7 @@ __error_out:
 		verifyc(dev->CreateTexture(640,480,1,D3DUSAGE_DYNAMIC,D3DFMT_A1R5G5B5,D3DPOOL_DEFAULT,&fb_texture1555,0));
 		verifyc(fb_texture1555->GetSurfaceLevel(0,&fb_surface1555));
 
+		dev->SetSamplerState(0,D3DSAMP_MAXANISOTROPY,max_anisotropy);
 		if (!UseFixedFunction)
 		{
 			verifyc(dev->CreateTexture(16,64,1,D3DUSAGE_DYNAMIC,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&pal_texture,0));
@@ -2951,6 +3141,8 @@ __error_out:
 		D3DXCreateFont( dev, 20, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, 
 			OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &font );
 
+
+
 		/*
 			Reset Render stuff here
 		*/
@@ -2959,6 +3151,8 @@ __error_out:
 		rtt_FrameNumber=0;
 		d3d_init_done=true;
 
+		delete g_pvr_timer;
+		g_pvr_timer = new high_frequency_timer_c();
 		QueryPerformanceCounter(&InitEnd);
 			
 		printf("Initialising 3D Renderer took %.2f ms\n",(InitEnd.QuadPart-InitStart.QuadPart)/(freq.QuadPart/1000.0));
@@ -2969,12 +3163,14 @@ __error_out:
 			EnterCriticalSection(&d3d_lock);
 			if (!running)
 				break;
+#if 0
 			HRESULT hr;
 			hr=dev->TestCooperativeLevel();
 			if (FAILED(hr) )
 			{
 				goto nl;
 			}
+#endif
 			//render
 			DoRender();
 			//if (d3d_do_resize)
@@ -2983,7 +3179,7 @@ __error_out:
 			//	Medidate_fb();
 			//	d3d_do_resize=false;
 			//}
-nl:
+//nl:
 			re.Set();
 			LeaveCriticalSection(&d3d_lock);
 		}
@@ -3038,22 +3234,13 @@ nl:
 		safe_release(shader_consts);
 
 		//kill texture cache
-		TexCacheList<TextureCacheData>::TexCacheEntry* ptext= TexCache.plast;
-		while(ptext)
-		{
-			ptext->data.Destroy();
-			ptext->data.Texture->Release();
-			TexCacheList<TextureCacheData>::TexCacheEntry* pprev;
-			pprev=ptext->prev;
-			TexCache.Remove(ptext);
-			//free it !
-			delete ptext;
-			ptext=pprev;
-		}
+		TexCache.cleanup();
 
 		safe_release2(dev);
 		safe_release2(d3d9);
 
+		delete g_pvr_timer;
+		g_pvr_timer = 0;
 
 		#undef safe_release
 
@@ -3102,8 +3289,32 @@ nl:
 	}
 	void decode_pvr_vertex(u32 base,u32 ptr,Vertex* to);
 	int old_pal_mode;
+
+	s32 gc_callback(TextureCacheData* arg) {
+		if ((FrameNumber-arg->LastUsed) < 60) {
+			return -1;
+		} else if ((arg->dirty) || (settings.Emulation.TexCacheMode==0)) {
+			return 0;
+		}
+		return 1;
+	}
+
+	s32 mark_pal_dirty_callback(TextureCacheData* arg) {
+		if ((arg->tcw.PAL.PixelFmt == 5) || (arg->tcw.PAL.PixelFmt == 6)) {
+			arg->dirty=true;
+			//Force it to recreate the texture
+			if (arg->Texture!=0) {
+				arg->Texture->Release();
+				arg->Texture=0;
+			}
+		}
+		return 1;
+	}
+
 	void StartRender()
 	{
+		EnterCriticalSection(&rend_op_lock);
+
 		SetCurrentPVRRC(PARAM_BASE);
 		VertexCount+= pvrrc.verts.used;
 		render_end_pending_cycles= pvrrc.verts.used*45;
@@ -3114,27 +3325,14 @@ nl:
 		{
 			RenderWasStarted=false;
 			//printf("Render didnt start ..\n");
+			LeaveCriticalSection(&rend_op_lock);
 			return;
 		}
 
-		if (old_pal_mode!=settings.Emulation.PaletteMode)
-		{
+		if (old_pal_mode!=settings.Emulation.PaletteMode) {
+
 			//mark pal texures dirty
-			TexCacheList<TextureCacheData>::TexCacheEntry* ptext= TexCache.plast;
-			while(ptext)
-			{
-				if ((ptext->data.tcw.PAL.PixelFmt == 5) || (ptext->data.tcw.PAL.PixelFmt == 6))
-				{
-					ptext->data.dirty=true;
-					//Force it to recreate the texture
-					if (ptext->data.Texture!=0)
-					{
-						ptext->data.Texture->Release();
-						ptext->data.Texture=0;
-					}
-				}
-				ptext=ptext->prev;
-			}
+			TexCache.traverse(mark_pal_dirty_callback);
 			old_pal_mode=settings.Emulation.PaletteMode;
 		}
 
@@ -3221,21 +3419,21 @@ nl:
 		RenderWasStarted=true;
 		rs.Set();
 		FrameCount++;
-		
+		LeaveCriticalSection(&rend_op_lock);
 	}
 
 	void Write32BitVram(u32 adr,u32 data)
-	{
+	{ 
 		*(u32*)&params.vram[vramlock_ConvOffset32toOffset64(adr)]=data;
 	}
 	void EndRender()
 	{
 		if (!RenderWasStarted)
 		{
-			//printf("Render was not started ..\n");
 			return;
 		}
 		re.Wait();
+
 		if (!(FB_W_SOF1 & 0x1000000))
 		{
 			Write32BitVram(FB_W_SOF1,0xDEADC0DE);
@@ -3252,6 +3450,7 @@ nl:
 			Write32BitVram(FB_W_SOF2+0xA00,0xDEADC0DE);
 			Write32BitVram(FB_W_SOF2+0x1400,0xDEADC0DE);
 		}
+
 		/*
 		if (FB_W_SOF1 & 0x1000000)
 		{
@@ -3281,31 +3480,16 @@ nl:
 */
 		
 
-		for (size_t i=0;i<lock_list.size();i++)
-		{
+		for (size_t i=0;i<lock_list.size();i++) {
 			TextureCacheData* tcd=lock_list[i];
-			if (tcd->lock_block==0 && tcd->dirty==false)
+			if ((tcd->lock_block==0) && (!tcd->dirty)) {
 				tcd->LockVram();
+			}
 			
 		}
 		lock_list.clear();
 		
-		TexCacheList<TextureCacheData>::TexCacheEntry* ptext= TexCache.plast;
-		while(ptext && ((FrameNumber-ptext->data.LastUsed)>60))
-		{
-			TexCacheList<TextureCacheData>::TexCacheEntry* pprev;
-			pprev=ptext->prev;
-
-			if (settings.Emulation.TexCacheMode==0 || ptext->data.dirty==true)
-			{
-				ptext->data.Destroy();
-				ptext->data.Texture->Release();
-				TexCache.Remove(ptext);
-				//free it !
-				delete ptext;
-			}
-			ptext=pprev;
-		}
+		TexCache.traverse(gc_callback);
 
 		int old_rev;
 		static NDC_WINDOW_RECT nwr;
@@ -4131,6 +4315,8 @@ nl:
 	bool InitRenderer()
 	{
 		InitializeCriticalSection(&d3d_lock);
+		InitializeCriticalSection(&rend_op_lock);
+		
 		for (u32 i=0;i<256;i++)
 		{
 			unkpack_bgp_to_float[i]=i/255.0f;
@@ -4150,6 +4336,9 @@ nl:
 	void TermRenderer()
 	{
 		DeleteCriticalSection(&d3d_lock); 
+		DeleteCriticalSection(&rend_op_lock); 
+
+
 		for (u32 i=0;i<rcnt.size();i++)
 		{
 			rcnt[i].Free();
@@ -4158,7 +4347,7 @@ nl:
 
 		TileAccel.Term();
 		//free all textures
-		verify(TexCache.pfirst==0);
+		TexCache.cleanup();
 	}
 
 	void ResetRenderer(bool Manual)

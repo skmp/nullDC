@@ -6,16 +6,16 @@
 
 extern __declspec(align(64)) u8 sq_both[64];
 
-extern Array<RegisterStruct> CCN;		//CCN  : 14 registers
-extern Array<RegisterStruct> UBC;		//UBC  : 9 registers
-extern Array<RegisterStruct> BSC;		//BSC  : 18 registers
-extern Array<RegisterStruct> DMAC;		//DMAC : 17 registers
-extern Array<RegisterStruct> CPG;		//CPG  : 5 registers
-extern Array<RegisterStruct> RTC;		//RTC  : 16 registers
-extern Array<RegisterStruct> INTC;		//INTC : 4 registers
-extern Array<RegisterStruct> TMU;		//TMU  : 12 registers
-extern Array<RegisterStruct> SCI;		//SCI  : 8 registers
-extern Array<RegisterStruct> SCIF;		//SCIF : 10 registers
+extern std::array<RegisterStruct,16> CCN;			//CCN  : 14 registers
+extern std::array<RegisterStruct,9> UBC;			//UBC  : 9 registers
+extern std::array<RegisterStruct,19> BSC;			//BSC  : 18 registers
+extern std::array<RegisterStruct,17> DMAC;		//DMAC : 17 registers
+extern std::array<RegisterStruct,5> CPG;			//CPG  : 5 registers
+extern std::array<RegisterStruct,16> RTC;			//RTC  : 16 registers
+extern std::array<RegisterStruct,4> INTC;			//INTC : 4 registers
+extern std::array<RegisterStruct,12> TMU;			//TMU  : 12 registers
+extern std::array<RegisterStruct,8> SCI;			//SCI  : 8 registers
+extern std::array<RegisterStruct,10> SCIF;		//SCIF : 10 registers
 
 /*
 //Region P4

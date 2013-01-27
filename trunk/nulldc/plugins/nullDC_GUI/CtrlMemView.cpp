@@ -252,7 +252,7 @@ void CtrlMemView::onPaint(WPARAM wParam, LPARAM lParam)
 
 		case MV_SYMBOLS:
 			SetTextColor(hdc,0x0000FF);
-			int fn = address&3;//Debugger_GetSymbolNum(address);
+			//int fn = address&3;//Debugger_GetSymbolNum(address);
 			swprintf(temp,L"MV_SYMBOLS !!!");
 	//		sprintf(temp, "%s (0x%x b)", Debugger_GetSymbolName(fn),Debugger_GetSymbolSize(fn));
 			TextOut(hdc,200,rowY1,temp,(int)wcslen(temp));

@@ -2,6 +2,7 @@
 	This file is a mix of my code, Zezu's, and duno wtf-else (most likely ElSemi's ?)
 */
 #include "../types.h"
+#include "../stdclass.h"
 #include "../dc/mem/sb.h"
 #include "../dc/mem/sh4_mem.h"
 #include "../dc/asic/asic.h"
@@ -498,7 +499,7 @@ u32  ReadMem_naomi(u32 Addr, u32 sz)
 
 	case 0x18:
 		log("naomi reg 0x18 : returning random data\n");
-		return 0x4000^rand();
+		return 0x4000^fastrand();
 		break;
 
 	default: break;

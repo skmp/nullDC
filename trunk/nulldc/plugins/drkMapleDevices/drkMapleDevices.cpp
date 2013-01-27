@@ -6,11 +6,12 @@
 */
 
 // Works with normal keyboards just the same.
-#define _HAS_LGLCD_ 1
+//#define _HAS_LGLCD_ 1
 
 #include "nullDC\plugins\plugin_header.h"
 #include <memory.h>
 #include <math.h>
+#include <random>
 
 emu_info host;
 
@@ -40,6 +41,7 @@ emu_info host;
 
 RAWINPUTDEVICE Rid[2]; // Raw mouse and keyboard	
 
+static std::mt19937 random_dev;
 u16 kcode[4]={0xFFFF,0xFFFF,0xFFFF,0xFFFF};
 u32 vks[4]={0};
 s8 joyx[4]={0},joyy[4]={0};
@@ -791,6 +793,8 @@ s32 FASTCALL Load(emu_info* emu)
 	for (int set=0;set<4;set++)
 		memcpy(joypad_settings[set],joypad_settings_K,sizeof(joypad_settings_K));
 
+	random_dev.seed((u32)__rdtsc());
+
 	//maple_init_params* mpi=(maple_init_params*)aparam;
 	//handle=mpi->WindowHandle;
 	if (oldptr==0)
@@ -1348,7 +1352,7 @@ u32 FASTCALL DreamEye_subDMA(maple_device_instance* device_instance,u32 Command,
 				w32(0x00080000);
 				//mmwaaa?
 				//w32(0x000002FF);
-				w32(rand());
+				w32((u32)random_dev());
 			}
 			printf("DreamEye_subDMA[0x%x | %d %x] : unknown MAPLE COMMAND %d \n",device_instance->port,device_instance->port>>6,device_instance->port&63,Command);
 			printf(" buffer in size : %d\n",buffer_in_len);
@@ -1854,6 +1858,7 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 
 								default:
 									printf("unknown CAP %X\n",State.Cmd);
+								return 0;
 							}
 							buffer_out_len=4*4;
 						}
@@ -2217,6 +2222,7 @@ u32 FASTCALL ControllerDMA_naomi(void* device_instance,u32 Command,u32* buffer_i
 			printState(Command,buffer_in,buffer_in_len);
 			break;
 	}
+	return 0;
 }
 joy_state states[4];
 SOCKET ConnectSocket = INVALID_SOCKET;

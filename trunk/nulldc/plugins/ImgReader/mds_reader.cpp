@@ -263,9 +263,9 @@ bool parse_nrg(wchar*nrg_filename,bool verbose)
 			return false;
 		}
 	}
-    fseek(nrg_file,nrg_trailer_offset, SEEK_SET);
+    fseek(nrg_file,(u32)nrg_trailer_offset, SEEK_SET);
     
-	char *nrg_content = (char*)malloc(nrg_filesize - nrg_trailer_offset);
+	char *nrg_content = (char*)malloc((u32)nrg_filesize - (u32)nrg_trailer_offset);
     if(!nrg_content)
 	{
         fwprintf(stderr,L"Could not allocate a buffer to read the nrg info from <%s>\n",nrg_filename);

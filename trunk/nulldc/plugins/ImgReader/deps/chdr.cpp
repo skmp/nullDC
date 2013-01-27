@@ -341,14 +341,14 @@ INLINE UINT64 get_bigendian_uint64(const UINT8 *base)
 
 INLINE void put_bigendian_uint64(UINT8 *base, UINT64 value)
 {
-	base[0] = value >> 56;
-	base[1] = value >> 48;
-	base[2] = value >> 40;
-	base[3] = value >> 32;
-	base[4] = value >> 24;
-	base[5] = value >> 16;
-	base[6] = value >> 8;
-	base[7] = value;
+	base[0] = (UINT8)(value >> 56);
+	base[1] = (UINT8)(value >> 48);
+	base[2] = (UINT8)(value >> 40);
+	base[3] = (UINT8)(value >> 32);
+	base[4] = (UINT8)(value >> 24);
+	base[5] = (UINT8)(value >> 16);
+	base[6] = (UINT8)(value >> 8);
+	base[7] = (UINT8)value;
 }
 
 
@@ -577,7 +577,7 @@ chd_error chd_open(const wchar *filename, int mode, chd_file *parent, chd_file *
 {
 	chd_error err;
 	core_file *file = NULL;
-	UINT32 openflags;
+//	UINT32 openflags;
 
 	/* choose the proper mode */
 	switch(mode)
@@ -805,7 +805,7 @@ chd_error chd_get_metadata(chd_file *chd, UINT32 searchtag, UINT32 searchindex, 
 
 	/* read the metadata */
 	outputlen = min(outputlen, metaentry.length);
-	fseek(chd->file, metaentry.offset + METADATA_HEADER_SIZE, SEEK_SET);
+	fseek(chd->file, (u32)metaentry.offset + METADATA_HEADER_SIZE, SEEK_SET);
 	count = core_fread(chd->file, output, outputlen);
 	if (count != outputlen)
 		return CHDERR_READ_ERROR;
@@ -884,8 +884,8 @@ chd_error chd_verify_hunk(chd_file *chd)
 		UINT64 bytestochecksum = MIN(chd->header.hunkbytes, chd->header.logicalbytes - hunkoffset);
 		if (bytestochecksum > 0)
 		{
-			MD5Update(&chd->vermd5, chd->cache, bytestochecksum);
-			sha1_update(&chd->versha1, bytestochecksum, chd->cache);
+			MD5Update(&chd->vermd5, chd->cache,(u32) bytestochecksum);
+			sha1_update(&chd->versha1, (u32)bytestochecksum, chd->cache);
 		}
 	}
 
@@ -1240,7 +1240,7 @@ static chd_error map_read(chd_file *chd)
 
 	/* read the map entries in in chunks and extract to the map list */
 	fileoffset = chd->header.length;
-	for (i = 0; i < chd->header.totalhunks; i += MAP_STACK_ENTRIES)
+	for (i = 0; i < (int)chd->header.totalhunks; i += MAP_STACK_ENTRIES)
 	{
 		/* compute how many entries this time */
 		int entries = chd->header.totalhunks - i, j;
@@ -1338,7 +1338,7 @@ static void crcmap_init(chd_file *chd, int prepopulate)
 	}
 
 	/* initialize the free list */
-	for (i = 0; i < chd->header.totalhunks; i++)
+	for (i = 0; i < (int)chd->header.totalhunks; i++)
 	{
 		chd->crcmap[i].next = chd->crcfree;
 		chd->crcfree = &chd->crcmap[i];
@@ -1349,7 +1349,7 @@ static void crcmap_init(chd_file *chd, int prepopulate)
 
 	/* if we're to prepopulate, go for it */
 	if (prepopulate)
-		for (i = 0; i < chd->header.totalhunks; i++)
+		for (i = 0; i < (int)chd->header.totalhunks; i++)
 			crcmap_add_entry(chd, i);
 }
 
@@ -1423,7 +1423,7 @@ static UINT32 crcmap_find_hunk(chd_file *chd, UINT32 hunknum, UINT32 crc, const 
 		return chd->comparehunk;
 
 	/* scan through the CHD's hunk map looking for a match */
-	for (curhunk = 0; curhunk < lasthunk; curhunk++)
+	for (curhunk = 0; curhunk < (int)lasthunk; curhunk++)
 		if (chd->map[curhunk].crc == crc && !(chd->map[curhunk].flags & MAP_ENTRY_FLAG_NO_CRC) && crcmap_verify_hunk_match(chd, curhunk, rawdata))
 			return curhunk;
 

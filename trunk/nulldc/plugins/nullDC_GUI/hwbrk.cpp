@@ -189,7 +189,7 @@ HANDLE SetHardwareBreakpoint(HANDLE hThread,HWBRK_TYPE Type,HWBRK_SIZE Size,void
 
 	h->hEv = CreateEvent(0,0,0,0);
 	h->Opr = 0; // Set Break
-	HANDLE hY = CreateThread(0,0,th,(LPVOID)h,0,0);
+	CreateThread(0,0,th,(LPVOID)h,0,0);
 	WaitForSingleObject(h->hEv,INFINITE);
 	CloseHandle(h->hEv);
 	h->hEv = 0;
@@ -231,7 +231,7 @@ bool RemoveHardwareBreakpoint(HANDLE hBrk)
 
 	h->hEv = CreateEvent(0,0,0,0);
 	h->Opr = 1; // Remove Break
-	HANDLE hY = CreateThread(0,0,th,(LPVOID)h,0,0);
+	CreateThread(0,0,th,(LPVOID)h,0,0);
 	WaitForSingleObject(h->hEv,INFINITE);
 	CloseHandle(h->hEv);
 	h->hEv = 0;
