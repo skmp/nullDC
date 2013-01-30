@@ -141,7 +141,7 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 	u32 FrameNumber=0;
 	u32 fb_FrameNumber=0;
 
-	u32 max_anisotropy = 0;
+	//u32 max_anisotropy = 0;
 	u32 frameStart = 0;
 	u32 frameRate = 0;
 	DWORD timer, timeStart = GetTickCount();
@@ -473,6 +473,7 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 		{
 			Lookups=0;
 			Updates=0;
+			dirty = true;
 		}
 		void PrintTextureName()
 		{
@@ -712,23 +713,24 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 
 		//This is an optimization for games that do massive writes to vram textures of pre-cached addresses
 		if ( (tf) && ((tf->tcw.full != tcw.full) || (tf->tsp.full != tsp.full))) {
-			tf->Lookups++;
-			tf->Updates++;
+			if ( (tf->w != (8<<tsp.TexU)) || (tf->h != (8<<tsp.TexV))  || (tcw.NO_PAL.PixelFmt != tf->tcw.NO_PAL.PixelFmt) ) {
+				if (tcw.NO_PAL.PixelFmt != tf->tcw.NO_PAL.PixelFmt) {
+					tf->Drop();
+				} else {
+					if (0 != tf->Texture) {
+						tf->Texture->Release();
+						tf->Texture = 0;
+					}
+				}
+			}
 			tf->tsp = tsp;
 			tf->tcw = tcw;
-			if ( (tf->w != (8<<tsp.TexU)) || (tf->h != (8<<tsp.TexV))  ) {
-				if (tf->Texture) {
-					tf->Texture->Release();
-					tf->Texture = 0;
-				}
-				tf->Destroy();
-				tf->dirty = true;
-			}
 			tf->w=8<<tsp.TexU;
 			tf->h=8<<tsp.TexV;
-			return tf->Texture;
-		} else if ( (tf) && (tf->tcw.full == tcw.full) && (tf->tsp.full == tsp.full))
-		{
+			//Fallback to following branch
+		}
+		
+		if ( (tf) && (tf->tcw.full == tcw.full) && (tf->tsp.full == tsp.full)) {
 			tf->LastUsed=FrameNumber;
 			if (tf->dirty)
 			{
@@ -1253,7 +1255,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		}
 
 		//printf("poly2 %u\n",pvrrc.global_param_tr.used);
-		std::stable_sort(pvrrc.global_param_tr.data,pvrrc.global_param_tr.data+pvrrc.global_param_tr.used);
+		std::stable_sort(&pvrrc.global_param_tr.data[0],&pvrrc.global_param_tr.data[0]+pvrrc.global_param_tr.used);
 	}
 
 	std::vector<TA_context> rcnt;
@@ -2133,7 +2135,7 @@ __error_out:
 	vector<SortTrig> sorttemp;
 	vector<SortTrig> sort_tmp2;
 	vector<PolyParam> sort_tmp3;
-	u32 pvr_srt_tmp1_best_size = 0;
+	
  
 	//sort and render , only for alpha blended stuff
 	template <bool FFunction>
@@ -2161,7 +2163,6 @@ __error_out:
 			u32 s=gp->first;
 			u32 c=gp->count-2;
 
-		
 			//float *p1=&t1,*p2=&t1;
 			for (u32 j=s;j<(s+c);j++)
 			{
@@ -2185,7 +2186,7 @@ __error_out:
 			return;
 		}
 
-		if (pvr_srt_tmp0.size() > pvr_srt_tmp1_best_size) {
+		if (pvr_srt_tmp0.size() > pvr_srt_tmp1.size()) {
 			pvr_srt_tmp1.clear();
 			pvr_srt_tmp1.resize(pvr_srt_tmp0.size());
 		} 
@@ -2508,8 +2509,8 @@ __error_out:
 			dev->SetVertexDeclaration(vdecl);
 			dev->SetStreamSource(0,vb,0,sizeof(Vertex));
 
-			r_set_sampler_state(0, R_MINFILTER, D3DTEXF_LINEAR);
-			r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_LINEAR);
+			r_set_sampler_state(0, R_MINFILTER, D3DTEXF_POINT);
+			r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_POINT);
 
 			r_set_texture_stage_state(0, D3DTSS_TEXTURETRANSFORMFLAGS,	D3DTTFF_COUNT4 | D3DTTFF_PROJECTED);
 			
@@ -2671,7 +2672,8 @@ __error_out:
 					u32 mod_base=0;	//cur base
 					u32 mod_last=0; //last merge
 
-					u32 cmv_count=(pvrrc.global_param_mvo.used-1);
+					u32 cmv_count=pvrrc.global_param_mvo.used;
+					cmv_count -= cmv_count != 0U;
 					//ISP_Modvol
 					
 					for (u32 cmv=0;cmv<cmv_count;cmv++)
@@ -2693,7 +2695,7 @@ __error_out:
 						{
 							SetMVS_Mode(0,ispc);
 							//Render em (counts intersections)
-							verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,sz,pvrrc.modtrig.data+mod_base,3*4));
+							verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,sz,&pvrrc.modtrig.data[0]+mod_base,3*4));
 						}
 						else if (mv_mode<3)
 						{
@@ -2704,10 +2706,10 @@ __error_out:
 								
 								//Count Intersections (last poly)
 								SetMVS_Mode(0,ispc);
-								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,1,pvrrc.modtrig.data+mod_base,3*4));
+								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,1,&pvrrc.modtrig.data[0]+mod_base,3*4));
 								//Sum the area
 								SetMVS_Mode(mv_mode,ispc);
-								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,mod_base-mod_last+1,pvrrc.modtrig.data+mod_last,3*4));
+								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,mod_base-mod_last+1,&pvrrc.modtrig.data[0]+mod_last,3*4));
 
 								//update pointers
 								mod_last=mod_base+1;
@@ -2763,7 +2765,7 @@ __error_out:
 					r_set_state(R_ZWRITEENABLE,FALSE);
 					r_set_state(R_CULLMODE,D3DCULL_NONE);
 
-					verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,pvrrc.modtrig.used,pvrrc.modtrig.data,3*4));
+					verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,pvrrc.modtrig.used,&pvrrc.modtrig.data[0],3*4));
 
 					
 				}
@@ -2825,7 +2827,7 @@ __error_out:
 			dev->EndScene();
 
 			//Reset single pass states
-			g_pvr_states_manager.invalidate_sampler(R_NO_SAMPLER);
+			//g_pvr_states_manager.invalidate_sampler(R_NO_SAMPLER);
 
 		}
 
@@ -3019,7 +3021,7 @@ __error_out:
 
 		printf("Device caps... VS : %X ; PS : %X\n",caps.VertexShaderVersion,caps.PixelShaderVersion);
 
-		max_anisotropy = caps.MaxAnisotropy;
+		//max_anisotropy = caps.MaxAnisotropy;
 		if (caps.VertexShaderVersion<D3DVS_VERSION(1, 0) || FORCE_SW_VERTEX_SHADERS)
 		{
 			UseSVP=true;
@@ -3116,7 +3118,7 @@ __error_out:
 		verifyc(dev->CreateTexture(640,480,1,D3DUSAGE_DYNAMIC,D3DFMT_A1R5G5B5,D3DPOOL_DEFAULT,&fb_texture1555,0));
 		verifyc(fb_texture1555->GetSurfaceLevel(0,&fb_surface1555));
 
-		dev->SetSamplerState(0,D3DSAMP_MAXANISOTROPY,max_anisotropy);
+		//dev->SetSamplerState(0,D3DSAMP_MAXANISOTROPY,max_anisotropy);
 		if (!UseFixedFunction)
 		{
 			verifyc(dev->CreateTexture(16,64,1,D3DUSAGE_DYNAMIC,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&pal_texture,0));
@@ -3498,7 +3500,7 @@ __error_out:
 		do
 		{
 			old_rev = resizerq.rev;
-			bool same_res=memcmp(&nwr,&resizerq.new_size,sizeof(NDC_WINDOW_RECT))==0 && settings.Video.ResolutionMode==old_res_mode;
+			bool same_res=(memcmp(&nwr,&resizerq.new_size,sizeof(NDC_WINDOW_RECT))==0) && (settings.Video.ResolutionMode==old_res_mode);
 			memcpy(&nwr,(void*)&resizerq.new_size,sizeof(NDC_WINDOW_RECT));
 			do_resize=resizerq.needs_resize & !same_res;
 

@@ -177,11 +177,11 @@ public :
 	
 	void Copy(void* Dst,u32 sz)
 	{
-		u8* dst=(u8*)Dst;
+		u8* dst=static_cast<u8*>(Dst); 
 		for (u32 i=0;i<allocate_list_ptr->size();i++)
 		{
-			u8* src = (u8*)allocate_list_ptr[0][i];
-			std::copy(src,src + allocate_list_sz[0][i],dst);
+			const u8* src = static_cast<const u8*>(allocate_list_ptr[0][i]);
+			memcpy(dst,src,allocate_list_sz[0][i]);
 
 			dst+=allocate_list_sz[0][i];
 			verify(sz>=allocate_list_sz[0][i]);

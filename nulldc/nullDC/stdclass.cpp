@@ -283,7 +283,7 @@ u32 rv;
 
 
 void VArray2::LockRegion(u32 offset,u32 size) {
-#if 0
+#if 1
 	if ((offset == m_last_lock_offs) && (size == m_last_lock_size)) {
 		//printf("Skip Lock %u %u\n",offset,size);
 		return;
@@ -297,7 +297,7 @@ void VArray2::LockRegion(u32 offset,u32 size) {
 	m_last_unlock_size = (u32)-1;
 }
 void VArray2::UnLockRegion(u32 offset,u32 size) {
-#if 0
+#if 1
 	if ((offset == m_last_unlock_offs) && (size == m_last_unlock_size)) {
 		//printf("Skip UNLock %u %u\n",offset,size);
 		return;
