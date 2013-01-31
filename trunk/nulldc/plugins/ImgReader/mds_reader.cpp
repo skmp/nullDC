@@ -1,6 +1,8 @@
 #include "mds_reader.h"
 
 session sessions[256];
+session* mds_sessions = &sessions[0];
+
 int nsessions;
 
 int flen(FILE*f)
