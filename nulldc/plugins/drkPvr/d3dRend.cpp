@@ -3508,14 +3508,10 @@ __error_out:
 
 		resizerq.needs_resize=false;
 
-		//resize renderer
-		if (do_resize)
-		{
-			
-		}
+		if (do_resize || render_restart) {
+			//Reset single pass states
+			g_pvr_states_manager.invalidate_sampler(R_NO_SAMPLER);
 
-		if (do_resize || render_restart)
-		{
 			//resize
 			old_res_mode=settings.Video.ResolutionMode;
 			d3d_do_resize=true;

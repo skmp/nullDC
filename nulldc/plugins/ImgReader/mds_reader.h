@@ -40,6 +40,7 @@ typedef struct _session
 } session;
 
 extern session sessions[256];
+extern session* mds_sessions;
 extern int nsessions;
 
 bool parse_mds(wchar *mds_filename,bool verbose);

@@ -1,5 +1,6 @@
 #include "cdi.h"
 #include "mds_reader.h"
+#include "common.h"
 
 
 SessionInfo mds_ses;
@@ -17,7 +18,8 @@ file_TrackInfo mds_Track[101];
 FILE* fp_mdf=0;
 u8 mds_SecTemp[5120];
 u32 mds_TrackCount;
-void mds_ReadSSect(u8* p_out,u32 sector,u32 secsz)
+
+u32 mds_ReadSSect(u8* p_out,u32 sector,u32 secsz)
 {
 	for (u32 i=0;i<mds_TrackCount;i++)
 	{
@@ -28,10 +30,12 @@ void mds_ReadSSect(u8* p_out,u32 sector,u32 secsz)
 			fread(mds_SecTemp,mds_Track[i].SectorSize,1,fp_mdf);
 
 			ConvertSector(mds_SecTemp,p_out,mds_Track[i].SectorSize,secsz,sector);
-			break;
+			return mds_Track[i].SectorSize;
 		}
 	}
+	return 0;
 }
+
 void FASTCALL mds_DriveReadSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
 {
 //	printf("MDS/NRG->Read : Sector %d , size %d , mode %d \n",StartSector,SectorCount,secsz);
@@ -69,7 +73,6 @@ void mds_CreateToc()
 	printf("Session count : %d\n",mds_ses.SessionCount);
 
 	mds_toc.FistTrack=1;
-	
 
 	for (int s=0;s<nsessions;s++)
 	{
@@ -103,7 +106,6 @@ void mds_CreateToc()
 			
 			//verify((c_track->mode==236) || (c_track->mode==169))
 			 
-
 			mds_toc.tracks[track].Addr=0;//hmm is that ok ?
 			mds_toc.tracks[track].Session=s;
 			mds_toc.tracks[track].Control=c_track->mode>0?4:0;//mode 1 , 2 , else are data , 0 is audio :)
@@ -241,4 +243,78 @@ void mds_DriveGetTocInfo(TocInfo* toc,DiskArea area)
 void mds_GetSessionsInfo(SessionInfo* sessions)
 {
 	memcpy(sessions,&mds_ses,sizeof(SessionInfo));
+}
+
+struct MDSDiskWrapper : Disc
+{
+	MDSDiskWrapper() {
+	}
+
+	bool TryOpen(wchar* file) {
+		if (mds_init(file)) {
+			//printf("Session count %d:\n",nsessions);
+			//s32 tr_c = 1;
+			for (s32 s=0;s<nsessions;++s) {
+				//printf("Session %d:\n",s);
+				session* ses=&mds_sessions[s];
+				//printf("  Track Count: %d\n",ses->ntracks);
+
+				Track tr;
+				for (s32 t=0;t< ses->ntracks;++t) {
+					strack* c_track=&ses->tracks[t];
+
+					if (t==0) {
+						Session ts;
+						ts.FirstTrack = t + 1;//(tr_c++);
+						ts.StartFAD = c_track->sector+150;
+						sessions.push_back(ts);
+						//printf("  Session start FAD: %d\n",mds_ses.SessionFAD[s]);
+					}
+
+					tr.ADDR = 0;
+					tr.StartFAD = c_track->sector+150;
+					tr.EndFAD = 0;
+					tr.CTRL = c_track->mode>0?4:0;
+		
+					//printf("SECTOR SIZE %u\n",c_track->sectorsize);
+					tr.file = new RawTrackFile(fp_mdf,(u32)c_track->offset,tr.StartFAD,c_track->sectorsize);
+				
+					tracks.push_back(tr);
+				}
+			}
+
+			type=mds_Disctype;
+			LeadOut.ADDR=0;
+			LeadOut.CTRL=0;
+			LeadOut.StartFAD=549300;
+
+			EndFAD=549300;
+
+			return true;
+		}
+
+		return false;
+	}
+
+	~MDSDiskWrapper() {
+		mds_term();
+	}
+};
+ 
+Disc* mds_parse(wchar* fname) {
+	MDSDiskWrapper* dsk = new MDSDiskWrapper();
+
+	if (!dsk) {
+		return 0;
+	}
+
+	if (dsk->TryOpen(fname)) {
+		wprintf(L"\n\n Loaded %s\n\n",fname);
+	} else {
+		wprintf(L"\n\n Unable to load %s \n\n",fname);
+		delete dsk;
+		return 0;
+	}
+
+	return dsk;
 }

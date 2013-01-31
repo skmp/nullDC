@@ -15,6 +15,7 @@ Disc*(*drivers[])(wchar* path)=
 	cdi_parse,
 	ioctl_parse,
 	chd_parse,
+	mds_parse,
 	0
 };
 
