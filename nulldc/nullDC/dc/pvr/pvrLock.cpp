@@ -44,22 +44,22 @@ void vramlock_Read32b_sse(u32* pdst,u32 offset,u32 len)
 //Convert offset32 to offset64
 u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 {
-		//64b wide bus is archevied by interleaving the banks every 32 bits
-		//so bank is Address<<3
-		//bits <4 are <<1 to create space for bank num
-		//bank 0 is mapped at 400000 (32b offset) and after
-		u32 bank_bit=VRAM_MASK-(VRAM_MASK/2);
-		const u32 static_bits=(VRAM_MASK-(bank_bit<<1U)+1U)|3U;
-		const u32 moved_bits=VRAM_MASK-static_bits-bank_bit;
+                //64b wide bus is archevied by interleaving the banks every 32 bits
+                //so bank is Address<<3
+                //bits <4 are <<1 to create space for bank num
+                //bank 0 is mapped at 400000 (32b offset) and after
+                const u32 bank_bit=VRAM_MASK-(VRAM_MASK/2);
+                const u32 static_bits=(VRAM_MASK-(bank_bit*2)+1)|3;
+                const u32 moved_bits=VRAM_MASK-static_bits-bank_bit;
 
-		u32 bank=(offset32&bank_bit)/(bank_bit<<2U);//bank will be used as uper offset too
-		u32 lv=offset32&static_bits; //these will survive
-		offset32&=moved_bits;
-		offset32<<=1U;
-		//       |inbank offset    |       bank id        | lower 2 bits (not changed)
-		u32 rv=  offset32 + bank                  + lv;
+                u32 bank=(offset32&bank_bit)/bank_bit*4;//bank will be used as uper offset too
+                u32 lv=offset32&static_bits; //these will survive
+                offset32&=moved_bits;
+                offset32<<=1;
+                //       |inbank offset    |       bank id        | lower 2 bits (not changed)
+                u32 rv=  offset32 + bank                  + lv;
  
-		return rv;
+                return rv;
 }
 //Convert Sh4 address to vram_64 offset
 u32 vramlock_ConvAddrtoOffset64(u32 Address)
