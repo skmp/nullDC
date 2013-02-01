@@ -4,24 +4,16 @@
 #pragma warning(disable:4245)
 
 #include "x86_emitter.h"
-bool IsS8(u32 value)
-{
-	if (((value&0xFFFFFF80)==0xFFFFFF80) ||
-		(value&0xFFFFFF80)==0  )
-		return true;
-	else
-		return false;
-}
 #include "x86_op_encoder.h"
-#include "x86_matcher.h"
-//x86_Label 
-/*
-//x86_ptr/x86_ptr_imm
-x86_ptr x86_ptr::create(void* ptr)
-{
-	x86_ptr rv={ptr};
-	return rv;
-}*/
+
+
+inline const u8 IsS8(u32 value) {
+	u32 t = value&0xFFFFFF80;
+	return (t==0xFFFFFF80) + (0 == t);
+}
+
+#include "x86_matcher.h" //Dependency on IsS8 -.- (FIXME)
+
 x86_ptr x86_ptr::create(unat ptr)
 {
 #pragma warning(disable:4312)
@@ -30,12 +22,7 @@ x86_ptr x86_ptr::create(unat ptr)
 	return rv;
 #pragma warning(default:4312) 
 }
-/*
-x86_ptr_imm x86_ptr_imm::create(void* ptr)
-{
-	x86_ptr_imm rv={ptr};
-	return rv;
-}*/
+
 x86_ptr_imm x86_ptr_imm::create(unat ptr)
 {
 #pragma warning(disable:4312) 
@@ -44,8 +31,7 @@ x86_ptr_imm x86_ptr_imm::create(unat ptr)
 	return rv;
 #pragma warning(default:4312) 
 }
-//x86_block
-//init things
+
 
 #ifdef X86_OP_NAMES
 const char Names[op_count][64] =
@@ -162,7 +148,7 @@ x86_block_externs* x86_block::GetExterns()
 {
 	x86_block_externs_i* rv=new x86_block_externs_i();
 	u8* base=x86_buff;
-	for (u32 i=0;i<patches.size();i++)
+	for (u32 i=0,pl = patches.size();i<pl;i++)
 	{
 		u8* dest=(u8*)patches[i].dest;
 
@@ -183,57 +169,52 @@ x86_block_externs* x86_block::GetExterns()
 
 	return rv;
 }
-#include "windows.h"
-/*void x86_block::CopyTo(void* to)
-{
-	memcpy(to,x86_buff,x86_indx);
-	free(x86_buff);
-	x86_buff=(u8*)to;
 
-	ApplyPatches(x86_buff);
-}
-*/
+
 
 //wut ?
 void x86_block::ApplyPatches(u8* base)
 {
-	for (u32 i=0;i<patches.size();i++)
-	{
-		u8* dest=(u8*)patches[i].dest;
+	for (u32 i=0,pl = patches.size();i<pl;i++) {
+		register code_patch* cp = &patches[i];
+		u8* dest=(u8*)cp->dest;
+		u8* code_offset=base+cp->offset;
+		u8* diff_offset=code_offset+(cp->type&0xF);
 
-		u8* code_offset=base+patches[i].offset;
-		u8* diff_offset=code_offset+(patches[i].type&0xF);
-
-		if (patches[i].type&16)
-		{
-			if (patches[i].lbl->owner==this)
-				dest = base + patches[i].lbl->target_opcode;
+		if (cp->type&16) {
+			if (cp->lbl->owner==this)
+				dest = base + cp->lbl->target_opcode;
 			else
-				dest = patches[i].lbl->owner->x86_buff + patches[i].lbl->target_opcode;
-
+				dest = cp->lbl->owner->x86_buff + cp->lbl->target_opcode;
 		}
 
 		u32 diff=(u32)(dest-diff_offset);
-		if ((patches[i].type&0xF)==1)
+		const u8 type_size = cp->type & 0xf;
+		if (type_size==1)
 		{
 			verify(IsS8(diff));
 			*code_offset=(u8)diff;
+			continue;
 		}
-		else if ((patches[i].type&0xF)==2)
+		else if (type_size==2)
 		{
 			*(u16*)code_offset=(u16)diff;
+			continue;
 		}
-		else if ((patches[i].type&0xF)==4)
+		else if (type_size==4)
 		{
 			*(u32*)code_offset=(u32)diff;
-		}
+			continue;
+		}/* else {
+			verify(0);
+		}*/
 	}
 }
 x86_block::x86_block()
 {
 	_patches=new vector<code_patch>;
-	_labels=new vector<code_patch>;
-	labels.reserve(64);
+	_labels=new vector<x86_Label*>;
+	labels.reserve(32);
 }
 x86_block::~x86_block()
 {
@@ -245,8 +226,10 @@ x86_block::~x86_block()
 //Will free any used resources exept generated code
 void x86_block::Free()
 {
-	for (u32 i =0;i<labels.size();i++)
+	for (u32 i = 0,j = labels.size();i < j;++i) {
 		delete labels[i];
+	}
+	patches.clear();
 	labels.clear();
 }
 void x86_block::x86_buffer_ensure(u32 size)
@@ -254,10 +237,15 @@ void x86_block::x86_buffer_ensure(u32 size)
 	if (this->x86_size<(size+x86_indx))
 	{
 		verify(do_realloc!=false);
-		u32 old_size=x86_size;
-		x86_size+=128;
-		x86_size*=2;
+		const u32 old_size=x86_size;
+		x86_size += size + 128;
+		x86_size = (x86_size + 32) & (~31);
+		x86_size <<= 1;
 		x86_buff=(u8*)ralloc(x86_buff,old_size,x86_size);
+		if (!x86_buff) {
+			x86_size >>= 1;
+			x86_buff=(u8*)ralloc(x86_buff,old_size,x86_size);
+		}
 	}
 }
 void  x86_block::write8(u32 value)
@@ -287,10 +275,11 @@ void  x86_block::write32(u32 value)
 //NOTE : Label position in mem must not chainge
 void x86_block::CreateLabel(x86_Label* lbl,bool mark,u32 sz)
 {
-	memset(lbl,0xFFFFFFFF,sizeof(x86_Label));
+	lbl->target_opcode = 0;
 	lbl->owner=this;
 	lbl->marked=false;
 	lbl->patch_sz=sz;
+	 
 	if (mark)
 		MarkLabel(lbl);
 }
@@ -298,8 +287,9 @@ void x86_block::CreateLabel(x86_Label* lbl,bool mark,u32 sz)
 x86_Label* x86_block::CreateLabel(bool mark,u32 sz)
 {
 	x86_Label* lbl = new x86_Label();
-	CreateLabel(lbl,mark,sz);
+	verify(lbl);
 	labels.push_back(lbl);
+	CreateLabel(lbl,mark,sz);
 	return lbl;
 }
 //Mark a label so that it points to next emitted opcode
