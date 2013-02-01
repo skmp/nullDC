@@ -238,12 +238,12 @@ struct RawTrackFile : TrackFile
 	u32 fmt;
 	bool cleanup;
 
-	RawTrackFile(FILE* file,u32 file_offs,u32 first_fad,u32 secfmt)
+	RawTrackFile(FILE* file,u32 file_offs,u32 first_fad,u32 secfmt,const bool auto_cleanup = true)
 	{
 		this->file=file;
 		this->offset=file_offs-first_fad*secfmt;
 		this->fmt=secfmt;
-		this->cleanup=true;
+		this->cleanup=auto_cleanup;
 	}
 
 	virtual void Read(u32 FAD,u8* dst,SectorFormat* sector_type,u8* subcode,SubcodeFormat* subcode_type)

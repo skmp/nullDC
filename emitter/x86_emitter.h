@@ -289,6 +289,9 @@ private:
 	void ApplyPatches(u8* base);
 	dyna_reallocFP* ralloc;
 	dyna_finalizeFP* allocfin;
+
+	//NOTE : Label position in mem must not chainge
+	void CreateLabel(x86_Label* lbl,bool mark,u32 sz);
 public:
 	void* _patches;
 
@@ -317,8 +320,7 @@ public:
 	void Free();
 
 	//Label related code
-	//NOTE : Label position in mem must not chainge
-	void CreateLabel(x86_Label* lbl,bool mark,u32 sz);
+
 	//Allocate a label and create it :).Will be delete'd when calling free and/or dtor
 	x86_Label* CreateLabel(bool mark,u32 sz);
 	void MarkLabel(x86_Label* lbl);

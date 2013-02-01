@@ -20,8 +20,7 @@
 #if REND_API == REND_D3D
 #pragma comment(lib, "d3d9.lib") 
 #pragma comment(lib, "d3dx9.lib") 
-
-#define use_states_mgr
+ 
 #define MODVOL 1
 #define _float_colors_
 //#define _HW_INT_
@@ -137,7 +136,7 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 	u32 clear_rt=0;
 	u32 last_ps_mode=0xFFFFFFFF;
 	float current_scalef[4];
-	CRITICAL_SECTION rend_op_lock;
+	
 	u32 FrameNumber=0;
 	u32 fb_FrameNumber=0;
 
@@ -166,8 +165,6 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 	//u32 g_pvr_state_frame = 0;
 
 	HRESULT r_set_texture_stage_state(DWORD s,u32 t,DWORD v) {
-#ifdef use_states_mgr
-
 		u64 trans;
 		if (g_pvr_states_manager.cached(s,t,v)) {
 			return D3D_OK;
@@ -175,38 +172,26 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 
 		g_pvr_states_manager.translate(t,trans);
 		return dev->SetTextureStageState(s,(D3DTEXTURESTAGESTATETYPE)trans,v);
-#else
-		return dev->SetTextureStageState(s,t,v);
-#endif
 	}
 
 	HRESULT r_set_texture(DWORD s,IDirect3DBaseTexture9* t) {
-#ifdef use_states_mgr
-
 		if (g_pvr_states_manager.cached(s,R_EXT_OP_TEXTURE_BASE,(u64)t)) {
 			return D3D_OK;
 		}
 		return dev->SetTexture(s,t);
-#else
-		return dev->SetTexture(s,t);
-#endif
 	}
 
 	HRESULT r_set_state(u32 s,DWORD v) { //Temporary(single pass) states
-#ifdef use_states_mgr
 		u64 trans;
 		if (g_pvr_states_manager.cached(R_NO_SAMPLER,s,v)) {
 			return D3D_OK;
 		}
 		g_pvr_states_manager.translate(s,trans);
 		return dev->SetRenderState((D3DRENDERSTATETYPE)trans,v);
-#else
-		return dev->SetRenderState(s,v);
-#endif
 	}
 
 	HRESULT r_set_sampler_state(DWORD s,u32 t,DWORD v) {
-#ifdef use_states_mgr
+
 		u64 trans;
 		if (g_pvr_states_manager.cached(s,t,v)) {
 			return D3D_OK;
@@ -214,10 +199,9 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 
 		g_pvr_states_manager.translate(t,trans);
 		return dev->SetSamplerState(s,(D3DSAMPLERSTATETYPE)trans,v);
-#else
-		return dev->SetSamplerState(s,t,v);
-#endif
 	}
+	 
+
 	//x=emulation mode
 	//y=filter mode
 	//result = {d3dmode,shader id}
@@ -346,7 +330,7 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 
 	f32 f16(u16 v)
 	{
-		u32 z=v<<16;
+		u32 z=(u32)v<<16;		
 		return *(f32*)&z;
 	}
 	const u32 MipPoint[8] =
@@ -499,9 +483,9 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 		}
 		void Update()
 		{
-//			verify(dirty);
-//			verify(lock_block==0);
-
+			if (!dirty) {
+				return;
+			}
 			LastUsed=FrameNumber;
 			Updates++;
 			dirty=false;
@@ -720,6 +704,7 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 					if (0 != tf->Texture) {
 						tf->Texture->Release();
 						tf->Texture = 0;
+						tf->dirty = true;
 					}
 				}
 			}
@@ -757,6 +742,7 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 		return tf->Texture;
 	}
 	
+
 	void VramLockedWrite(vram_block* bl)
 	{
 		TextureCacheData* tcd = (TextureCacheData*)bl->userdata;
@@ -1986,7 +1972,7 @@ __error_out:
 
 				r_set_sampler_state(0, R_MINFILTER, D3DTEXF_POINT);
 				r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_POINT);
-				r_set_sampler_state(0, R_MIPFILTER, D3DTEXF_POINT);	//_NONE ? this disables mipmapping alltogether ?
+				r_set_sampler_state(0, R_MIPFILTER, D3DTEXF_ANISOTROPIC);	//_NONE ? this disables mipmapping alltogether ?
 			}
 			else
 			{
@@ -2045,44 +2031,27 @@ __error_out:
 			}
 		}
 
-		if (df)
-		{
-				r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode+cflip]);
+		//Cullmode
+		if (df){
+			r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode+cflip]);
+		} else {
+			r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode]);
 		}
-		if (gp->isp.full!= cache_isp.full)
-		{
-			cache_isp.full=gp->isp.full;
-			//set cull mode !
-			if (!df) {
-				r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode]);
-			}
-			//set Z mode !
-			if (Type==ListType_Opaque)
-			{
-					r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
 
+		//set Z mode !
+		if (Type==ListType_Opaque) {
+			r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
+		} else if (Type==ListType_Translucent) {
+			if (SortingEnabled) {
+				r_set_state(R_ZFUNC,Zfunction[6]); // : GEQ
+			} else {
+				r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
 			}
-			else if (Type==ListType_Translucent)
-			{
-				if (SortingEnabled) {
-						r_set_state(R_ZFUNC,Zfunction[6]); // : GEQ
-				}
-				else {
-						r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
-				}
-			}
-			else
-			{
-				//gp->isp.DepthMode=6;
-				
-						r_set_state(R_ZFUNC,Zfunction[6]); //PT : LEQ //GEQ ?!?! wtf ? seems like the docs ARE wrong on this one =P
-				
-			}
-
-		
-				r_set_state(R_ZWRITEENABLE,gp->isp.ZWriteDis==0);
-		
+		} else {
+			r_set_state(R_ZFUNC,Zfunction[0]);
 		}
+
+		r_set_state(R_ZWRITEENABLE,gp->isp.ZWriteDis==0);
 	}
 	template <u32 Type,bool FFunction,bool SortingEnabled>
 	__forceinline
@@ -2127,15 +2096,9 @@ __error_out:
 	}
 
 	pvr_algo::pvr_sort_c g_pvr_sort_algo;
-	
-
 	vector<pvr_algo::poly_indice_pair_t> pvr_srt_tmp0;
 	vector<pvr_algo::poly_indice_pair_t> pvr_srt_tmp1;
 
-	vector<SortTrig> sorttemp;
-	vector<SortTrig> sort_tmp2;
-	vector<PolyParam> sort_tmp3;
-	
  
 	//sort and render , only for alpha blended stuff
 	template <bool FFunction>
@@ -2836,6 +2799,9 @@ __error_out:
 			//swap RTT target for next time !
 			rtt_index^=1;
 		}
+
+
+
 	}
 	//
 	bool running=false;
@@ -2994,7 +2960,7 @@ __error_out:
 	u32 THREADCALL RenderThead_internal(void* param)
 	{
 		SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_HIGHEST);
-
+		
 		LARGE_INTEGER freq,InitStart,InitEnd;
 		QueryPerformanceFrequency(&freq);
 		QueryPerformanceCounter(&InitStart);
@@ -3054,7 +3020,7 @@ __error_out:
 		}
 
 		ppar.SwapEffect = D3DSWAPEFFECT_DISCARD;
-		ppar.PresentationInterval=settings.Video.VSync?D3DPRESENT_INTERVAL_ONE:D3DPRESENT_INTERVAL_IMMEDIATE;
+		ppar.PresentationInterval=settings.Video.VSync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
 		ppar.Windowed =   TRUE;
 
 		ppar.EnableAutoDepthStencil=TRUE;
@@ -3152,9 +3118,8 @@ __error_out:
 		rtt_address=-1;
 		rtt_FrameNumber=0;
 		d3d_init_done=true;
-
-		delete g_pvr_timer;
-		g_pvr_timer = new high_frequency_timer_c();
+ 
+		
 		QueryPerformanceCounter(&InitEnd);
 			
 		printf("Initialising 3D Renderer took %.2f ms\n",(InitEnd.QuadPart-InitStart.QuadPart)/(freq.QuadPart/1000.0));
@@ -3241,8 +3206,7 @@ __error_out:
 		safe_release2(dev);
 		safe_release2(d3d9);
 
-		delete g_pvr_timer;
-		g_pvr_timer = 0;
+	 
 
 		#undef safe_release
 
@@ -3315,7 +3279,7 @@ __error_out:
 
 	void StartRender()
 	{
-		EnterCriticalSection(&rend_op_lock);
+		EnterCriticalSection(&d3d_lock);
 
 		SetCurrentPVRRC(PARAM_BASE);
 		VertexCount+= pvrrc.verts.used;
@@ -3327,7 +3291,7 @@ __error_out:
 		{
 			RenderWasStarted=false;
 			//printf("Render didnt start ..\n");
-			LeaveCriticalSection(&rend_op_lock);
+			LeaveCriticalSection(&d3d_lock);
 			return;
 		}
 
@@ -3421,7 +3385,7 @@ __error_out:
 		RenderWasStarted=true;
 		rs.Set();
 		FrameCount++;
-		LeaveCriticalSection(&rend_op_lock);
+		LeaveCriticalSection(&d3d_lock);
 	}
 
 	void Write32BitVram(u32 adr,u32 data)
@@ -3682,9 +3646,11 @@ __error_out:
 			if (vert_reappend)
 			{
 				Vertex* vert=vert_reappend;
-				vert[-1].x=vert[0].x;
-				vert[-1].y=vert[0].y;
-				vert[-1].z=vert[0].z;
+				if (vert != (Vertex*)1) {
+					vert[-1].x=vert[0].x;
+					vert[-1].y=vert[0].y;
+					vert[-1].z=vert[0].z;
+				}
 			}
 			vert_reappend=(Vertex*)1;
 			CurrentPP->count=tarc.verts.used - CurrentPP->first;
@@ -4312,8 +4278,9 @@ __error_out:
 
 	bool InitRenderer()
 	{
+		g_pvr_timer = new high_frequency_timer_c();
 		InitializeCriticalSection(&d3d_lock);
-		InitializeCriticalSection(&rend_op_lock);
+	
 		
 		for (u32 i=0;i<256;i++)
 		{
@@ -4334,7 +4301,7 @@ __error_out:
 	void TermRenderer()
 	{
 		DeleteCriticalSection(&d3d_lock); 
-		DeleteCriticalSection(&rend_op_lock); 
+		
 
 
 		for (u32 i=0;i<rcnt.size();i++)
@@ -4346,6 +4313,8 @@ __error_out:
 		TileAccel.Term();
 		//free all textures
 		TexCache.cleanup();
+		delete g_pvr_timer;
+		g_pvr_timer = 0;
 	}
 
 	void ResetRenderer(bool Manual)

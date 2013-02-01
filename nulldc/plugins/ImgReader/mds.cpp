@@ -277,7 +277,7 @@ struct MDSDiskWrapper : Disc
 					tr.CTRL = c_track->mode>0?4:0;
 		
 					//printf("SECTOR SIZE %u\n",c_track->sectorsize);
-					tr.file = new RawTrackFile(fp_mdf,(u32)c_track->offset,tr.StartFAD,c_track->sectorsize);
+					tr.file = new RawTrackFile(fp_mdf,(u32)c_track->offset,tr.StartFAD,c_track->sectorsize,false);
 				
 					tracks.push_back(tr);
 				}
