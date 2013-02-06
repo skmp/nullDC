@@ -6,8 +6,7 @@
 #include <d3dx9.h>
 
 #include "pvr_algo/pvr_algo.hpp"
-#include "../../nullDC/algo/algo.hpp"
-#include "../../nullDC/timing/timer.hpp"
+
 #include "nullRend.h"
 #include <algorithm>
 #include "d3dRend.h"
@@ -16,11 +15,11 @@
 #include "regs.h"
 #include <vector>
 //#include <xmmintrin.h>
- 
+
 #if REND_API == REND_D3D
 #pragma comment(lib, "d3d9.lib") 
 #pragma comment(lib, "d3dx9.lib") 
- 
+
 #define MODVOL 1
 #define _float_colors_
 //#define _HW_INT_
@@ -28,8 +27,9 @@
 
 using namespace TASplitter;
 
-timer_if* g_pvr_timer = 0;
-bool render_restart = false;
+pvr_algo::pvr_state_manager_c g_pvr_states_manager;
+
+volatile bool render_restart = false;
 bool UseSVP=false;
 bool UseFixedFunction=false;
 bool dosort=false;
@@ -53,7 +53,7 @@ bool dosort=false;
 
 
 //Convert offset32 to offset64
-u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
+u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 {
 		//64b wide bus is archevied by interleaving the banks every 32 bits
 		//so bank is Address<<3
@@ -78,14 +78,11 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 //#define D3DXGetPixelShaderProfile(x) "ps_2_0"
 //#define D3DXGetVertexShaderProfile(x) "vs_2_0"
 
-
 #define PS_SHADER_COUNT (384*4)
-	
-
 	bool RenderWasStarted=false;
-	bool d3d_init_done=false;
-	bool d3d_do_resize=false;
-	bool d3d_do_restart=false;
+	volatile bool d3d_init_done=false;
+	volatile bool d3d_do_resize=false;
+	volatile bool d3d_do_restart=false;
 	IDirect3D9* d3d9;
 	IDirect3DDevice9* dev;
 	IDirect3DVertexBuffer9* vb;
@@ -113,7 +110,6 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 
 	CRITICAL_SECTION d3d_lock;
 	
-
 	struct 
 	{
 		IDirect3DVertexShader9* vs;
@@ -136,11 +132,11 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 	u32 clear_rt=0;
 	u32 last_ps_mode=0xFFFFFFFF;
 	float current_scalef[4];
+	//CRITICAL_SECTION tex_cache_cs;
 	
 	u32 FrameNumber=0;
 	u32 fb_FrameNumber=0;
 
-	//u32 max_anisotropy = 0;
 	u32 frameStart = 0;
 	u32 frameRate = 0;
 	DWORD timer, timeStart = GetTickCount();
@@ -160,10 +156,6 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 		"Z Scale mode 42 (D24yada)",
 	};
 
- 
-	pvr_algo::pvr_state_manager_c g_pvr_states_manager;
-	//u32 g_pvr_state_frame = 0;
-
 	HRESULT r_set_texture_stage_state(DWORD s,u32 t,DWORD v) {
 		u64 trans;
 		if (g_pvr_states_manager.cached(s,t,v)) {
@@ -175,9 +167,10 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 	}
 
 	HRESULT r_set_texture(DWORD s,IDirect3DBaseTexture9* t) {
-		if (g_pvr_states_manager.cached(s,R_EXT_OP_TEXTURE_BASE,(u64)t)) {
+		//Todo : Make sure to flush dirty textures!
+		/*if (g_pvr_states_manager.cached(s,R_EXT_OP_TEXTURE_BASE,(u64)t)) {
 			return D3D_OK;
-		}
+		}*/
 		return dev->SetTexture(s,t);
 	}
 
@@ -200,7 +193,6 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 		g_pvr_states_manager.translate(t,trans);
 		return dev->SetSamplerState(s,(D3DSAMPLERSTATETYPE)trans,v);
 	}
-	 
 
 	//x=emulation mode
 	//y=filter mode
@@ -220,8 +212,8 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 		res_scale[0]=rect[0];
 		res_scale[1]=rect[1];
 
-		res_scale[2]=rect[2] * 0.5f;
-		res_scale[3]=-rect[3] * 0.5f;
+		res_scale[2]=rect[2]/2;
+		res_scale[3]=-rect[3]/2;
 
 		if(do_clear)
 			clear_rt|=1;
@@ -330,7 +322,7 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 
 	f32 f16(u16 v)
 	{
-		u32 z=(u32)v<<16;		
+		u32 z=v<<16;
 		return *(f32*)&z;
 	}
 	const u32 MipPoint[8] =
@@ -346,44 +338,28 @@ u32 __fastcall vramlock_ConvOffset32toOffset64(u32 offset32)
 	};
 
 
-#if 0
-static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
-	return (addr + ((w + h) * comps)) <= VRAM_SIZE;//Not Vram.Size-1 since we basically check the bounds
-}
-#else
-#define vram_valid_offs(_a_,_b_,_c_,_d_) (true)
-#endif
-
-#define twidle_tex(format,components)\
-						if (tcw.NO_PAL.VQ_Comp) {\
-						vq_codebook = (sa < VRAM_SIZE) ? (u8*)&params.vram[sa] : vq_codebook;\
-						if (tcw.NO_PAL.MipMapped) {\
+#define twidle_tex(format)\
+						if (tcw.NO_PAL.VQ_Comp)\
+					{\
+						vq_codebook=(u8*)&params.vram[sa];\
+						if (tcw.NO_PAL.MipMapped)\
 							sa+=MipPoint[tsp.TexU];\
-						}\
-							if (vram_valid_offs(sa,w,h,components)) {\
-								##format##to8888_VQ(&pbt,(u8*)&params.vram[sa],w,h);\
-							}\
+						##format##to8888_VQ(&pbt,(u8*)&params.vram[sa],w,h);\
 					}\
 					else\
 					{\
-						if (tcw.NO_PAL.MipMapped) {\
+						if (tcw.NO_PAL.MipMapped)\
 							sa+=MipPoint[tsp.TexU]<<3;\
-						}\
-						if (vram_valid_offs(sa,w,h,components)) {\
-							##format##to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);\
-						}\
+						##format##to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);\
 					}
+#define norm_text(format) \
+	u32 sr;\
+	if (tcw.NO_PAL.StrideSel)\
+					{sr=(TEXT_CONTROL&31)*32;}\
+					else\
+					{sr=w;}\
+					format(&pbt,(u8*)&params.vram[sa],sr,h);
 
-#define norm_text(format,components) { \
-		u32 sr;\
-		if (tcw.NO_PAL.StrideSel)  \
-						{sr=(TEXT_CONTROL&31)<<5;}\
-						else\
-						{sr=w;}\
-						if (vram_valid_offs(sa,sr,h,components)) {\
-							format(&pbt,(u8*)&params.vram[sa],sr,h);\
-						}\
-		}
 	typedef void fastcall texture_handler_FP(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height);
 
 	/*
@@ -413,51 +389,32 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 	*/
 	struct TextureCacheData;
 	std::vector<TextureCacheData*> lock_list;
-
-	struct TextureCacheData {
-		TCW tcw;
-		TSP tsp;
+	//Texture Cache :)
+	struct TextureCacheData
+	{
+		TCW tcw;TSP tsp;
+		IDirect3DTexture9* Texture;
 		u32 Lookups;
 		u32 Updates;
 		u32 LastUsed;
 		u32 w,h;
 		u32 size;
-		u32 pal_rev;
-		IDirect3DTexture9* Texture;
-		vram_block* lock_block;
 		bool dirty;
+		u32 pal_rev;
+		vram_block* lock_block;
 
-		TextureCacheData() : Texture(0),lock_block(0){
-		}
-
-		~TextureCacheData() {
-			this->Drop();
-		}
-
-		void Drop() {
-
-			this->Destroy();
-
-			if (Texture != 0) {
-				Texture->Release();
-				Texture = 0;
-			}
-
-			this->Reset();
-		}
-
-		void Destroy() {
-			if (lock_block != 0) {
+		//Releases any resources , EXEPT the texture :)
+		void Destroy()
+		{
+			if (lock_block)
 				params.vram_unlock(lock_block);
-				lock_block = 0;
-			}
+			lock_block=0;
 		}
 		//Called when texture entry is reused , resets any texture type info (dynamic/static)
 		void Reset()
 		{
 			Lookups=0;
 			Updates=0;
-			dirty = true;
 		}
 		void PrintTextureName()
 		{
@@ -483,19 +440,14 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 		}
 		void Update()
 		{
-			if (!dirty) {
-				return;
-			}
+//			verify(dirty);
+//			verify(lock_block==0);
+
 			LastUsed=FrameNumber;
 			Updates++;
 			dirty=false;
 
 			u32 sa=(tcw.NO_PAL.TexAddr<<3) & VRAM_MASK;
-			//printf("SA = 0x%x/FMT %u\n",sa,tcw.NO_PAL.PixelFmt);
-			//if ((sa == 0xfbfff8) && (7 == tcw.NO_PAL.PixelFmt)) {
-				//printf("Skip skip\n");
-				//return;
-			//}
 
 			if (Texture==0)
 			{
@@ -516,7 +468,6 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 			PixelBuffer pbt; 
 			pbt.init(rect.pBits,rect.Pitch);
 			
-			
 			switch (tcw.NO_PAL.PixelFmt)
 			{
 			case 0:
@@ -526,13 +477,13 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 				if (tcw.NO_PAL.ScanOrder)
 				{
 					//verify(tcw.NO_PAL.VQ_Comp==0);
-					norm_text(argb1555to8888,2);
+					norm_text(argb1555to8888);
 					//argb1555to8888(&pbt,(u16*)&params.vram[sa],w,h);
 				}
 				else
 				{
 					//verify(tsp.TexU==tsp.TexV);
-					twidle_tex(argb1555,2);
+					twidle_tex(argb1555);
 				}
 				break;
 
@@ -542,13 +493,13 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 				if (tcw.NO_PAL.ScanOrder)
 				{
 					//verify(tcw.NO_PAL.VQ_Comp==0);
-					norm_text(argb565to8888,2);
+					norm_text(argb565to8888);
 					//(&pbt,(u16*)&params.vram[sa],w,h);
 				}
 				else
 				{
 					//verify(tsp.TexU==tsp.TexV);
-					twidle_tex(argb565,2);
+					twidle_tex(argb565);
 				}
 				break;
 
@@ -559,66 +510,61 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 				{
 					//verify(tcw.NO_PAL.VQ_Comp==0);
 					//argb4444to8888(&pbt,(u16*)&params.vram[sa],w,h);
-					norm_text(argb4444to8888,2);
+					norm_text(argb4444to8888);
 				}
 				else
 				{
-					twidle_tex(argb4444,2);
+					twidle_tex(argb4444);
 				}
 
 				break;
 				//3	YUV422 32 bits per 2 pixels; YUYV values: 8 bits each
 			case 3:
-				if (tcw.NO_PAL.ScanOrder) {
-					norm_text(YUV422to8888,2);
+				if (tcw.NO_PAL.ScanOrder)
+				{
+					norm_text(YUV422to8888);
 					//norm_text(ANYtoRAW);
-				} else {
+				}
+				else
+				{
 					//it cant be VQ , can it ?
 					//docs say that yuv can't be VQ ...
 					//HW seems to support it ;p
-					twidle_tex(YUV422,2);
+					twidle_tex(YUV422);
 				}
 				break;
 				//4	Bump Map	16 bits/pixel; S value: 8 bits; R value: 8 bits
 			case 5:
 				//5	4 BPP Palette	Palette texture with 4 bits/pixel
 				verify(tcw.PAL.VQ_Comp==0);
-
-				if (tcw.PAL.MipMapped) {
-					sa+=MipPoint[tsp.TexU]<<1;
-				}
-
+				if (tcw.NO_PAL.MipMapped)
+							sa+=MipPoint[tsp.TexU]<<1;
 				palette_index = tcw.PAL.PalSelect<<4;
 				pal_rev=pal_rev_16[tcw.PAL.PalSelect];
-				if (settings.Emulation.PaletteMode<2) {
-					if (vram_valid_offs(sa,w,h,1)) {
-						PAL4to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
-					}
-				} else {
-					if (vram_valid_offs(sa,w,h,1)) {
-						PAL4toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
-					}
+				if (settings.Emulation.PaletteMode<2)
+				{
+					PAL4to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
+				}
+				else
+				{
+					PAL4toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
 				}
 
 				break;
 			case 6:
 				//6	8 BPP Palette	Palette texture with 8 bits/pixel
 				verify(tcw.PAL.VQ_Comp==0);
-
-				if (tcw.PAL.MipMapped) {
-					sa+=MipPoint[tsp.TexU]<<2;
-				}
-
+				if (tcw.NO_PAL.MipMapped)
+							sa+=MipPoint[tsp.TexU]<<2;
 				palette_index = (tcw.PAL.PalSelect<<4)&(~0xFF);
 				pal_rev=pal_rev_256[tcw.PAL.PalSelect>>4];
-				if (settings.Emulation.PaletteMode<2) {
-					if (vram_valid_offs(sa,w,h,1)) {
-						PAL8to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
-					}
-				} else {
-					if (vram_valid_offs(sa,w,h,1)) {
-						PAL8toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
-					}
+				if (settings.Emulation.PaletteMode<2)
+				{
+					PAL8to8888_TW(&pbt,(u8*)&params.vram[sa],w,h);
+				}
+				else
+				{
+					PAL8toX444_TW(&pbt,(u8*)&params.vram[sa],w,h);
 				}
 				break;
 			default:
@@ -652,8 +598,8 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 		}
 	};
 
-	tex_cache_list_c<TextureCacheData> TexCache;
-
+	TexCacheList<TextureCacheData> TexCache;
+	TexCacheList<TextureCacheData> TexCache_Discard;
 
 	TextureCacheData* __fastcall GenText(TSP tsp,TCW tcw,TextureCacheData* tf)
 	{
@@ -672,18 +618,50 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 
 	TextureCacheData* __fastcall GenText(TSP tsp,TCW tcw)
 	{
-		TextureCacheData* ret;
-		TextureCacheData* tf = new TextureCacheData;
-		TexCache.add(tcw.NO_PAL.TexAddr,tf);
-		ret = GenText(tsp,tcw,tf);
-		return ret;
+		//add new entry to tex cache
+		TextureCacheData* tf = &TexCache.Add(0)->data;
+		//Generate texture 
+		return GenText(tsp,tcw,tf);
 	}
 
 	u32 RenderToTextureAddr;
 
+	inline bool is_fmt_supported(TSP tsp,TCW tcw) {
+			const s32 sw = (s32)((u32)(8<<tsp.TexU));
+			const s32 sh = (s32)((u32)(8<<tsp.TexV));
+			if (( (sw + sh) << 1) > VRAM_SIZE) { //Minimum of 2components
+				printf("Unsupported texture(OUT OF RANGE) w %u h %u fmt %u vq %u\n",8<<tsp.TexU,8<<tsp.TexV,tcw.NO_PAL.VQ_Comp);
+				return false;
+			}
+
+			switch (tcw.NO_PAL.PixelFmt) {
+				case 0:
+				case 1:
+				case 2:
+				case 3:
+				case 7:
+				if (tcw.NO_PAL.ScanOrder) {
+					return (tcw.NO_PAL.VQ_Comp == 0);
+				} 
+				return true;
+
+				case 4:
+					return false;
+
+				case 5:
+					return (tcw.NO_PAL.VQ_Comp==0);
+				case 6:
+					return (tcw.NO_PAL.VQ_Comp==0);
+			}
+		return false;
+	}
+
 	IDirect3DTexture9* __fastcall GetTexture(TSP tsp,TCW tcw)
 	{	
-		
+		if (!is_fmt_supported(tsp,tcw)) {
+			return 0;
+		}
+
 		u32 addr=(tcw.NO_PAL.TexAddr<<3) & VRAM_MASK;
 		if (addr==rtt_address)
 		{
@@ -692,30 +670,10 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 			return rtt_texture[rtt_index];
 		}
 
-		tex_cache_node_t<TextureCacheData>* tf_ent = TexCache.find(tcw.NO_PAL.TexAddr);
-		TextureCacheData* tf = (tf_ent) ? tf_ent->data : 0;
-
-		//This is an optimization for games that do massive writes to vram textures of pre-cached addresses
-		if ( (tf) && ((tf->tcw.full != tcw.full) || (tf->tsp.full != tsp.full))) {
-			if ( (tf->w != (8<<tsp.TexU)) || (tf->h != (8<<tsp.TexV))  || (tcw.NO_PAL.PixelFmt != tf->tcw.NO_PAL.PixelFmt) ) {
-				if (tcw.NO_PAL.PixelFmt != tf->tcw.NO_PAL.PixelFmt) {
-					tf->Drop();
-				} else {
-					if (0 != tf->Texture) {
-						tf->Texture->Release();
-						tf->Texture = 0;
-						tf->dirty = true;
-					}
-				}
-			}
-			tf->tsp = tsp;
-			tf->tcw = tcw;
-			tf->w=8<<tsp.TexU;
-			tf->h=8<<tsp.TexV;
-			//Fallback to following branch
-		}
-		
-		if ( (tf) && (tf->tcw.full == tcw.full) && (tf->tsp.full == tsp.full)) {
+		//EnterCriticalSection(&tex_cache_cs);
+		TextureCacheData* tf = TexCache.Find(tcw.full,tsp.full);
+		if (tf)
+		{
 			tf->LastUsed=FrameNumber;
 			if (tf->dirty)
 			{
@@ -735,25 +693,32 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 				}
 			}
 			tf->Lookups++;
+			//LeaveCriticalSection(&tex_cache_cs);
 			return tf->Texture;
-		} 
-
-		tf = GenText(tsp,tcw);
-		return tf->Texture;
+		}
+		else
+		{
+			tf = GenText(tsp,tcw);
+			//LeaveCriticalSection(&tex_cache_cs);
+			return tf->Texture;
+		}
+		return 0;
 	}
 	
-
 	void VramLockedWrite(vram_block* bl)
 	{
+		//EnterCriticalSection(&tex_cache_cs);
 		TextureCacheData* tcd = (TextureCacheData*)bl->userdata;
 		tcd->dirty=true;
 		tcd->lock_block=0;
-		
-		/*if (tcd->Updates < 2)
+		/*
+		if (tcd->Updates==0)
 		{
-			tcd->Drop();
+			tcd->Texture->Release();
+			tcd->Texture=0;
 		}*/
 		params.vram_unlock(bl);
+		//LeaveCriticalSection(&tex_cache_cs);
 	}
 	extern cThread rth;
 
@@ -771,8 +736,6 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 	void DrawOSD();
 	void VBlank()
 	{
-
-		EnterCriticalSection(&d3d_lock);
 		FrameNumber++;
 		
 		u32 field=0;//default from field 1
@@ -838,6 +801,7 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 		u32 addr1=vramlock_ConvOffset32toOffset64(src);
 		u32* ptest=(u32*)&params.vram[addr1];
 
+		EnterCriticalSection(&d3d_lock);
 		if (d3d_init_done)
 		{
 			IDirect3DTexture9* tex=fb_texture;
@@ -1005,7 +969,7 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 				if (rd.bottom>(LONG)ppar.BackBufferHeight)
 					rd.bottom=(LONG)ppar.BackBufferHeight;
 
-				dev->StretchRect(surf,&rs,backbuffer,&rd, D3DTEXF_POINT);	
+				dev->StretchRect(surf,&rs,backbuffer,&rd, D3DTEXF_LINEAR);	//add an option for D3DTEXF_POINT for pretty pixels?
 			}
 
 			dev->SetRenderTarget(0,backbuffer);
@@ -1196,6 +1160,8 @@ static __forceinline bool vram_valid_offs(u32 addr,u32 w,u32 h,u32 comps) {
 
 	TA_context tarc;
 	TA_context pvrrc;
+ 
+	
 bool operator<(const PolyParam &left, const PolyParam &right)
 {
 /* put any condition you want to sort on here */
@@ -1211,6 +1177,9 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		u32 csegc=0;
 		u32 cseg=-1;
 		Vertex* bptr=0;
+ 
+
+		//g_pvr_sort_module
 		for (u32 i=0;i<pvrrc.global_param_tr.used;i++)
 		{
 			u32 s=pvrrc.global_param_tr.data[i].first;
@@ -1240,8 +1209,8 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 			pvrrc.global_param_tr.data[i].zMin=zmin;*/
 		}
 
-		//printf("poly2 %u\n",pvrrc.global_param_tr.used);
-		std::stable_sort(&pvrrc.global_param_tr.data[0],&pvrrc.global_param_tr.data[0]+pvrrc.global_param_tr.used);
+		 
+		std::stable_sort(pvrrc.global_param_tr.data,pvrrc.global_param_tr.data+pvrrc.global_param_tr.used);
 	}
 
 	std::vector<TA_context> rcnt;
@@ -1313,17 +1282,14 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 	template<u32 state>
 	void SetTexMode(u32 clamp,u32 mirror)
 	{
-		if (clamp) {
-				r_set_sampler_state(0,state,D3DTADDRESS_CLAMP);
-		}
+		if (clamp)
+			r_set_sampler_state(0,state,D3DTADDRESS_CLAMP);
 		else 
 		{
-			if (mirror) {
-					r_set_sampler_state(0,state,D3DTADDRESS_MIRROR);
-			}
-			else {
-						r_set_sampler_state(0,state,D3DTADDRESS_WRAP);
-			}
+			if (mirror)
+				r_set_sampler_state(0,state,D3DTADDRESS_MIRROR);
+			else
+				r_set_sampler_state(0,state,D3DTADDRESS_WRAP);
 		}
 		
 	}
@@ -1642,14 +1608,10 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 			if (chunk_size<0)
 				break;
 			u8* databuf=(u8*)malloc(chunk_size);
-			if (fread(databuf,chunk_size,1,f)!=1) {
-				free(databuf);
+			if (fread(databuf,chunk_size,1,f)!=1)
 				goto __error_out;
-			}
-			if (FAILED(dev->CreatePixelShader((DWORD*)databuf,&compiled_ps[chunk_mode]))) {
-				free(databuf);
+			if (FAILED(dev->CreatePixelShader((DWORD*)databuf,&compiled_ps[chunk_mode])))
 				goto __error_out;
-				}
 			free(databuf);
 		}
 
@@ -1657,7 +1619,6 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		return true;
 
 __error_out:
-
 		for (u32 i=0;i<PS_SHADER_COUNT;i++)
 		{
 			if (compiled_ps[i])
@@ -1810,19 +1771,13 @@ __error_out:
 				{
 					cur_pal_index[1]=gp->tcw.PAL.PalSelect/64.0f;
 					mode|=pal_mode;
-					
-
-					/*if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_ps_pal_index,pf))*/ {
-						dev->SetPixelShaderConstantF(0,cur_pal_index,1);
-					}
+					dev->SetPixelShaderConstantF(0,cur_pal_index,1);
 				}
 				else if (pf==6)
 				{
 					cur_pal_index[1]=(gp->tcw.PAL.PalSelect&~0xF)/64.0f;
 					mode|=pal_mode;
-					/*if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_ps_pal_index,pf))*/ {
-						dev->SetPixelShaderConstantF(0,cur_pal_index,1);
-					}
+					dev->SetPixelShaderConstantF(0,cur_pal_index,1);
 				}
 			}
 			
@@ -1935,14 +1890,13 @@ __error_out:
 	//
 	template <u32 Type,bool FFunction,bool df,bool SortingEnabled>
 	__forceinline
-	void SetGPState(PolyParam* gp,u32 cflip=0) {
+	void SetGPState(PolyParam* gp,u32 cflip=0)
+	{	/*
+		if (gp->tsp.DstSelect ||
+			gp->tsp.SrcSelect)
+			printf("DstSelect  DstSelect\n"); */
 
-		{
-			/*if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_tile_clip,gp->tileclip))*/ {
-				SetTileClip(gp->tileclip);
-			}
-		}
-
+		SetTileClip(gp->tileclip);
 		//has to preserve cache_tsp/cache_isp
 		//can freely use cache_tcw
 		if (FFunction)
@@ -1953,9 +1907,9 @@ __error_out:
 		{
 			SetGPState_ps(gp);
 		}
- 
+
 		const u32 stencil=(gp->pcw.Shadow!=0)?0x80:0;
-		if ((cache_stencil_modvol_on!=stencil) && (settings.Emulation.ModVolMode==MVM_NormalAndClip))
+		if (cache_stencil_modvol_on!=stencil && settings.Emulation.ModVolMode==MVM_NormalAndClip)
 		{
 			cache_stencil_modvol_on=stencil;
 			r_set_state(R_STENCILREF,stencil);						//Clear/Set bit 7 (Clear for non 2 volume stuff)
@@ -1969,10 +1923,9 @@ __error_out:
 
 			if ( gp->tsp.FilterMode == 0 || (settings.Emulation.PaletteMode>1 && ( gp->tcw.PAL.PixelFmt==5|| gp->tcw.PAL.PixelFmt==6) ))
 			{
-
 				r_set_sampler_state(0, R_MINFILTER, D3DTEXF_POINT);
 				r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_POINT);
-				r_set_sampler_state(0, R_MIPFILTER, D3DTEXF_ANISOTROPIC);	//_NONE ? this disables mipmapping alltogether ?
+				r_set_sampler_state(0, R_MIPFILTER, D3DTEXF_POINT);	//_NONE ? this disables mipmapping alltogether ?
 			}
 			else
 			{
@@ -1987,11 +1940,8 @@ __error_out:
 
 				if (Type==ListType_Translucent)
 				{
-
 					r_set_state(R_SRCBLEND, SrcBlendGL[gp->tsp.SrcInstr]);
 					r_set_state(R_DESTBLEND, DstBlendGL[gp->tsp.DstInstr]);
-				
-
 					bool clip_alpha_on_zero=gp->tsp.SrcInstr==4 && (gp->tsp.DstInstr==1 || gp->tsp.DstInstr==5);
 					if (clip_alpha_on_zero!=cache_clip_alpha_on_zero)
 					{
@@ -2007,51 +1957,48 @@ __error_out:
 			if (gp->pcw.Texture)
 			{
 				IDirect3DTexture9* tex=GetTexture(gp->tsp,gp->tcw);
-				
+				r_set_texture(0,tex);
+				float tsz[4];
+				tsz[0]=TextureSizes[gp->tsp.TexU][0];
+				tsz[2]=TextureSizes[gp->tsp.TexU][1];
+				tsz[1]=TextureSizes[gp->tsp.TexV][0];
+				tsz[3]=TextureSizes[gp->tsp.TexV][1];
 
-					/*u64 tex_pair = ((u64)gp->tsp.full << 32U) | (u64)gp->tcw.full;
-					
-					if (  g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_tex_ld,tex_pair)
-					    )*/ {
-						r_set_texture(0,tex);
-						/*u64 tex_uv = ((u64)gp->tsp.TexU << 32U) | (u64)gp->tsp.TexV;
-						if (g_pvr_state_mgr.changed(pvr_algo::pvr_ext_state_tex_uv,tex_uv))*/ {
-							float tsz[4];
-							tsz[0]=TextureSizes[gp->tsp.TexU][0];
-							tsz[2]=TextureSizes[gp->tsp.TexU][1];
-							tsz[1]=TextureSizes[gp->tsp.TexV][0];
-							tsz[3]=TextureSizes[gp->tsp.TexV][1];
-
-							dev->SetPixelShaderConstantF(1,tsz,1);
-							dev->SetVertexShaderConstantF(3,tsz,1);
-						}
-					}
-					
-				
+				dev->SetPixelShaderConstantF(1,tsz,1);
+				dev->SetVertexShaderConstantF(3,tsz,1);
 			}
 		}
 
-		//Cullmode
-		if (df){
+		if (df)
+		{
 			r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode+cflip]);
-		} else {
-			r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode]);
 		}
-
-		//set Z mode !
-		if (Type==ListType_Opaque) {
-			r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
-		} else if (Type==ListType_Translucent) {
-			if (SortingEnabled) {
-				r_set_state(R_ZFUNC,Zfunction[6]); // : GEQ
-			} else {
+		if (gp->isp.full!= cache_isp.full)
+		{
+			cache_isp.full=gp->isp.full;
+			//set cull mode !
+			if (!df)
+				r_set_state(R_CULLMODE,CullMode[gp->isp.CullMode]);
+			//set Z mode !
+			if (Type==ListType_Opaque)
+			{
 				r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
 			}
-		} else {
-			r_set_state(R_ZFUNC,Zfunction[0]);
-		}
+			else if (Type==ListType_Translucent)
+			{
+				if (SortingEnabled)
+					r_set_state(R_ZFUNC,Zfunction[6]); // : GEQ
+				else
+					r_set_state(R_ZFUNC,Zfunction[gp->isp.DepthMode]);
+			}
+			else
+			{
+				//gp->isp.DepthMode=6;
+				r_set_state(R_ZFUNC,Zfunction[6]); //PT : LEQ //GEQ ?!?! wtf ? seems like the docs ARE wrong on this one =P
+			}
 
-		r_set_state(R_ZWRITEENABLE,gp->isp.ZWriteDis==0);
+			r_set_state(R_ZWRITEENABLE,gp->isp.ZWriteDis==0);
+		}
 	}
 	template <u32 Type,bool FFunction,bool SortingEnabled>
 	__forceinline
@@ -2094,6 +2041,8 @@ __error_out:
 		return left.z<right.z;
 		//return left.zMin<right.zMax;
 	}
+
+	 
 
 	pvr_algo::pvr_sort_c g_pvr_sort_algo;
 	vector<pvr_algo::poly_indice_pair_t> pvr_srt_tmp0;
@@ -2198,12 +2147,11 @@ __error_out:
 		{
 			// Create a rectangle to indicate where on the screen it should be drawn						
 			
-			u64 ticks_now = g_pvr_timer->ticks();
-			timer = (DWORD)ticks_now - timeStart;
+			timer = GetTickCount() - timeStart;
 			
 			if ( timer > 250 )
 			{				
-				timeStart = (DWORD)ticks_now;
+				timeStart = GetTickCount();
 
 				frameRate = (u32)((FrameNumber - frameStart) * 1000.0f / timer);
 				frameStart = FrameNumber;			
@@ -2378,8 +2326,6 @@ __error_out:
 		// Clear the backbuffer to a blue color
 		//All of the screen is allways filled w/ smth , no need to clear the color buffer
 		//gives a nice speedup on large resolutions
-
-
 		r_set_state(R_SCISSORTESTENABLE, FALSE); 
 		if (rtt || clear_rt==0)
 		{
@@ -2472,8 +2418,8 @@ __error_out:
 			dev->SetVertexDeclaration(vdecl);
 			dev->SetStreamSource(0,vb,0,sizeof(Vertex));
 
-			r_set_sampler_state(0, R_MINFILTER, D3DTEXF_POINT);
-			r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_POINT);
+			r_set_sampler_state(0, R_MINFILTER, D3DTEXF_LINEAR);
+			r_set_sampler_state(0, R_MAGFILTER, D3DTEXF_LINEAR);
 
 			r_set_texture_stage_state(0, D3DTSS_TEXTURETRANSFORMFLAGS,	D3DTTFF_COUNT4 | D3DTTFF_PROJECTED);
 			
@@ -2635,10 +2581,8 @@ __error_out:
 					u32 mod_base=0;	//cur base
 					u32 mod_last=0; //last merge
 
-					u32 cmv_count=pvrrc.global_param_mvo.used;
-					cmv_count -= cmv_count != 0U;
+					u32 cmv_count=(pvrrc.global_param_mvo.used-1);
 					//ISP_Modvol
-					
 					for (u32 cmv=0;cmv<cmv_count;cmv++)
 					{
 						u32 sz=pvrrc.global_param_mvo.data[cmv+1].id;
@@ -2658,21 +2602,20 @@ __error_out:
 						{
 							SetMVS_Mode(0,ispc);
 							//Render em (counts intersections)
-							verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,sz,&pvrrc.modtrig.data[0]+mod_base,3*4));
+							verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,sz,pvrrc.modtrig.data+mod_base,3*4));
 						}
 						else if (mv_mode<3)
 						{
-							
 							while(sz)
 							{
 								//merge and clear all the prev. stencil bits
 								
 								//Count Intersections (last poly)
 								SetMVS_Mode(0,ispc);
-								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,1,&pvrrc.modtrig.data[0]+mod_base,3*4));
+								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,1,pvrrc.modtrig.data+mod_base,3*4));
 								//Sum the area
 								SetMVS_Mode(mv_mode,ispc);
-								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,mod_base-mod_last+1,&pvrrc.modtrig.data[0]+mod_last,3*4));
+								verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,mod_base-mod_last+1,pvrrc.modtrig.data+mod_last,3*4));
 
 								//update pointers
 								mod_last=mod_base+1;
@@ -2728,7 +2671,7 @@ __error_out:
 					r_set_state(R_ZWRITEENABLE,FALSE);
 					r_set_state(R_CULLMODE,D3DCULL_NONE);
 
-					verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,pvrrc.modtrig.used,&pvrrc.modtrig.data[0],3*4));
+					verifyc(dev->DrawPrimitiveUP(D3DPT_TRIANGLELIST,pvrrc.modtrig.used,pvrrc.modtrig.data,3*4));
 
 					
 				}
@@ -2788,10 +2731,7 @@ __error_out:
 
 			// End the scene
 			dev->EndScene();
-
-			//Reset single pass states
-			//g_pvr_states_manager.invalidate_sampler(R_NO_SAMPLER);
-
+			g_pvr_states_manager.invalidate_sampler(R_NO_SAMPLER);
 		}
 
 		if (rtt)
@@ -2799,12 +2739,9 @@ __error_out:
 			//swap RTT target for next time !
 			rtt_index^=1;
 		}
-
-
-
 	}
 	//
-	bool running=false;
+	volatile bool running=false;
 	cResetEvent rs(false,true);
 	cResetEvent re(false,true);
 	D3DXMACRO vs_macros[]=
@@ -2960,7 +2897,7 @@ __error_out:
 	u32 THREADCALL RenderThead_internal(void* param)
 	{
 		SetThreadPriority(GetCurrentThread(),THREAD_PRIORITY_HIGHEST);
-		
+
 		LARGE_INTEGER freq,InitStart,InitEnd;
 		QueryPerformanceFrequency(&freq);
 		QueryPerformanceCounter(&InitStart);
@@ -2987,7 +2924,6 @@ __error_out:
 
 		printf("Device caps... VS : %X ; PS : %X\n",caps.VertexShaderVersion,caps.PixelShaderVersion);
 
-		//max_anisotropy = caps.MaxAnisotropy;
 		if (caps.VertexShaderVersion<D3DVS_VERSION(1, 0) || FORCE_SW_VERTEX_SHADERS)
 		{
 			UseSVP=true;
@@ -3001,7 +2937,6 @@ __error_out:
 			UseFixedFunction=false;
 		}
 
-		
 		printf("Will use %s\n",ZBufferModeName[ZBufferMode]);
 		printf(UseSVP?"Will use SVP\n":"Will use Vertex Shaders\n");
 
@@ -3020,7 +2955,7 @@ __error_out:
 		}
 
 		ppar.SwapEffect = D3DSWAPEFFECT_DISCARD;
-		ppar.PresentationInterval=settings.Video.VSync ? D3DPRESENT_INTERVAL_ONE : D3DPRESENT_INTERVAL_IMMEDIATE;
+		ppar.PresentationInterval=settings.Video.VSync?D3DPRESENT_INTERVAL_ONE:D3DPRESENT_INTERVAL_IMMEDIATE;
 		ppar.Windowed =   TRUE;
 
 		ppar.EnableAutoDepthStencil=TRUE;
@@ -3084,7 +3019,6 @@ __error_out:
 		verifyc(dev->CreateTexture(640,480,1,D3DUSAGE_DYNAMIC,D3DFMT_A1R5G5B5,D3DPOOL_DEFAULT,&fb_texture1555,0));
 		verifyc(fb_texture1555->GetSurfaceLevel(0,&fb_surface1555));
 
-		//dev->SetSamplerState(0,D3DSAMP_MAXANISOTROPY,max_anisotropy);
 		if (!UseFixedFunction)
 		{
 			verifyc(dev->CreateTexture(16,64,1,D3DUSAGE_DYNAMIC,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&pal_texture,0));
@@ -3109,8 +3043,6 @@ __error_out:
 		D3DXCreateFont( dev, 20, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, 
 			OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &font );
 
-
-
 		/*
 			Reset Render stuff here
 		*/
@@ -3118,8 +3050,7 @@ __error_out:
 		rtt_address=-1;
 		rtt_FrameNumber=0;
 		d3d_init_done=true;
- 
-		
+
 		QueryPerformanceCounter(&InitEnd);
 			
 		printf("Initialising 3D Renderer took %.2f ms\n",(InitEnd.QuadPart-InitStart.QuadPart)/(freq.QuadPart/1000.0));
@@ -3130,14 +3061,12 @@ __error_out:
 			EnterCriticalSection(&d3d_lock);
 			if (!running)
 				break;
-#if 0
 			HRESULT hr;
 			hr=dev->TestCooperativeLevel();
 			if (FAILED(hr) )
 			{
 				goto nl;
 			}
-#endif
 			//render
 			DoRender();
 			//if (d3d_do_resize)
@@ -3146,7 +3075,7 @@ __error_out:
 			//	Medidate_fb();
 			//	d3d_do_resize=false;
 			//}
-//nl:
+nl:
 			re.Set();
 			LeaveCriticalSection(&d3d_lock);
 		}
@@ -3201,12 +3130,22 @@ __error_out:
 		safe_release(shader_consts);
 
 		//kill texture cache
-		TexCache.cleanup();
+		TexCacheList<TextureCacheData>::TexCacheEntry* ptext= TexCache.plast;
+		while(ptext)
+		{
+			ptext->data.Destroy();
+			ptext->data.Texture->Release();
+			TexCacheList<TextureCacheData>::TexCacheEntry* pprev;
+			pprev=ptext->prev;
+			TexCache.Remove(ptext);
+			//free it !
+			delete ptext;
+			ptext=pprev;
+		}
 
 		safe_release2(dev);
 		safe_release2(d3d9);
 
-	 
 
 		#undef safe_release
 
@@ -3255,32 +3194,8 @@ __error_out:
 	}
 	void decode_pvr_vertex(u32 base,u32 ptr,Vertex* to);
 	int old_pal_mode;
-
-	s32 gc_callback(TextureCacheData* arg) {
-		if ((FrameNumber-arg->LastUsed) < 60) {
-			return -1;
-		} else if ((arg->dirty) || (settings.Emulation.TexCacheMode==0)) {
-			return 0;
-		}
-		return 1;
-	}
-
-	s32 mark_pal_dirty_callback(TextureCacheData* arg) {
-		if ((arg->tcw.PAL.PixelFmt == 5) || (arg->tcw.PAL.PixelFmt == 6)) {
-			arg->dirty=true;
-			//Force it to recreate the texture
-			if (arg->Texture!=0) {
-				arg->Texture->Release();
-				arg->Texture=0;
-			}
-		}
-		return 1;
-	}
-
 	void StartRender()
 	{
-		EnterCriticalSection(&d3d_lock);
-
 		SetCurrentPVRRC(PARAM_BASE);
 		VertexCount+= pvrrc.verts.used;
 		render_end_pending_cycles= pvrrc.verts.used*45;
@@ -3291,14 +3206,27 @@ __error_out:
 		{
 			RenderWasStarted=false;
 			//printf("Render didnt start ..\n");
-			LeaveCriticalSection(&d3d_lock);
 			return;
 		}
 
-		if (old_pal_mode!=settings.Emulation.PaletteMode) {
-
+		if (old_pal_mode!=settings.Emulation.PaletteMode)
+		{
 			//mark pal texures dirty
-			TexCache.traverse(mark_pal_dirty_callback);
+			TexCacheList<TextureCacheData>::TexCacheEntry* ptext= TexCache.plast;
+			while(ptext)
+			{
+				if ((ptext->data.tcw.PAL.PixelFmt == 5) || (ptext->data.tcw.PAL.PixelFmt == 6))
+				{
+					ptext->data.dirty=true;
+					//Force it to recreate the texture
+					if (ptext->data.Texture!=0)
+					{
+						ptext->data.Texture->Release();
+						ptext->data.Texture=0;
+					}
+				}
+				ptext=ptext->prev;
+			}
 			old_pal_mode=settings.Emulation.PaletteMode;
 		}
 
@@ -3385,21 +3313,21 @@ __error_out:
 		RenderWasStarted=true;
 		rs.Set();
 		FrameCount++;
-		LeaveCriticalSection(&d3d_lock);
+		
 	}
 
 	void Write32BitVram(u32 adr,u32 data)
-	{ 
+	{
 		*(u32*)&params.vram[vramlock_ConvOffset32toOffset64(adr)]=data;
 	}
 	void EndRender()
 	{
 		if (!RenderWasStarted)
 		{
+			//printf("Render was not started ..\n");
 			return;
 		}
 		re.Wait();
-
 		if (!(FB_W_SOF1 & 0x1000000))
 		{
 			Write32BitVram(FB_W_SOF1,0xDEADC0DE);
@@ -3416,7 +3344,6 @@ __error_out:
 			Write32BitVram(FB_W_SOF2+0xA00,0xDEADC0DE);
 			Write32BitVram(FB_W_SOF2+0x1400,0xDEADC0DE);
 		}
-
 		/*
 		if (FB_W_SOF1 & 0x1000000)
 		{
@@ -3446,16 +3373,31 @@ __error_out:
 */
 		
 
-		for (size_t i=0;i<lock_list.size();i++) {
+		for (size_t i=0;i<lock_list.size();i++)
+		{
 			TextureCacheData* tcd=lock_list[i];
-			if ((tcd->lock_block==0) && (!tcd->dirty)) {
+			if (tcd->lock_block==0 && tcd->dirty==false)
 				tcd->LockVram();
-			}
 			
 		}
 		lock_list.clear();
 		
-		TexCache.traverse(gc_callback);
+		TexCacheList<TextureCacheData>::TexCacheEntry* ptext= TexCache.plast;
+		while(ptext && ((FrameNumber-ptext->data.LastUsed)>60))
+		{
+			TexCacheList<TextureCacheData>::TexCacheEntry* pprev;
+			pprev=ptext->prev;
+
+			if (settings.Emulation.TexCacheMode==0 || ptext->data.dirty==true)
+			{
+				ptext->data.Destroy();
+				ptext->data.Texture->Release();
+				TexCache.Remove(ptext);
+				//free it !
+				delete ptext;
+			}
+			ptext=pprev;
+		}
 
 		int old_rev;
 		static NDC_WINDOW_RECT nwr;
@@ -3464,7 +3406,7 @@ __error_out:
 		do
 		{
 			old_rev = resizerq.rev;
-			bool same_res=(memcmp(&nwr,&resizerq.new_size,sizeof(NDC_WINDOW_RECT))==0) && (settings.Video.ResolutionMode==old_res_mode);
+			bool same_res=memcmp(&nwr,&resizerq.new_size,sizeof(NDC_WINDOW_RECT))==0 && settings.Video.ResolutionMode==old_res_mode;
 			memcpy(&nwr,(void*)&resizerq.new_size,sizeof(NDC_WINDOW_RECT));
 			do_resize=resizerq.needs_resize & !same_res;
 
@@ -3472,10 +3414,14 @@ __error_out:
 
 		resizerq.needs_resize=false;
 
-		if (do_resize || render_restart) {
-			//Reset single pass states
-			g_pvr_states_manager.invalidate_sampler(R_NO_SAMPLER);
+		//resize renderer
+		if (do_resize)
+		{
+			
+		}
 
+		if (do_resize || render_restart)
+		{
 			//resize
 			old_res_mode=settings.Video.ResolutionMode;
 			d3d_do_resize=true;
@@ -3646,11 +3592,9 @@ __error_out:
 			if (vert_reappend)
 			{
 				Vertex* vert=vert_reappend;
-				if (vert != (Vertex*)1) {
-					vert[-1].x=vert[0].x;
-					vert[-1].y=vert[0].y;
-					vert[-1].z=vert[0].z;
-				}
+				vert[-1].x=vert[0].x;
+				vert[-1].y=vert[0].y;
+				vert[-1].z=vert[0].z;
 			}
 			vert_reappend=(Vertex*)1;
 			CurrentPP->count=tarc.verts.used - CurrentPP->first;
@@ -4278,10 +4222,7 @@ __error_out:
 
 	bool InitRenderer()
 	{
-		g_pvr_timer = new high_frequency_timer_c();
 		InitializeCriticalSection(&d3d_lock);
-	
-		
 		for (u32 i=0;i<256;i++)
 		{
 			unkpack_bgp_to_float[i]=i/255.0f;
@@ -4301,9 +4242,6 @@ __error_out:
 	void TermRenderer()
 	{
 		DeleteCriticalSection(&d3d_lock); 
-		
-
-
 		for (u32 i=0;i<rcnt.size();i++)
 		{
 			rcnt[i].Free();
@@ -4312,9 +4250,7 @@ __error_out:
 
 		TileAccel.Term();
 		//free all textures
-		TexCache.cleanup();
-		delete g_pvr_timer;
-		g_pvr_timer = 0;
+		verify(TexCache.pfirst==0);
 	}
 
 	void ResetRenderer(bool Manual)

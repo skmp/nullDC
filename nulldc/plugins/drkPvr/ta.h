@@ -202,8 +202,7 @@ namespace TASplitter
 		static Ta_Dma* fastcall ta_sprite_data(Ta_Dma* data,Ta_Dma* data_end)
 		{
 			verify(data->pcw.ParaType==ParamType_Vertex_Parameter);
-	 
-			if (data>=data_end)
+			if (data==data_end)
 			{
 				//32B more needed , 32B done :)
 				TaCmd=ta_spriteB_data;
@@ -247,18 +246,15 @@ namespace TASplitter
 
 				ta_handle_poly<poly_type,0,false>(data,0);
 		
-				if (data->pcw.EndOfStrip) {
-					StripStarted=false;
-					TA_decoder::EndPolyStrip();
-					return data+poly_size;
-				}
+				if (data->pcw.EndOfStrip)
+					goto strip_end;
 				
 				data+=poly_size;
 			}
 			
 
 			
-			if ((poly_size!=SZ32) && (data>=data_end))//32B part of 64B
+			if ((poly_size!=SZ32) && (data==data_end))//32B part of 64B
 			{
 				ta_handle_poly<poly_type,1,false>(data,0);
 				if (data->pcw.EndOfStrip)
@@ -269,6 +265,11 @@ namespace TASplitter
 			}
 			
 			return data;
+
+strip_end:
+			StripStarted=false;
+			TA_decoder::EndPolyStrip();
+			return data+poly_size;
 		}
 
 				

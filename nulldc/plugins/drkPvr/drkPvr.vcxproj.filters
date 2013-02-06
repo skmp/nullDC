@@ -61,6 +61,9 @@
     <ClCompile Include="d3dRend11.cpp">
       <Filter>Renderer\Direct3D</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\common\x86\x86_mem.cpp">
+      <Filter>plugin</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="drkPvr.h">
@@ -98,6 +101,7 @@
     <ClInclude Include="d3dRend11.h">
       <Filter>Renderer\Direct3D</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\common\x86\x86_mem.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="exports.def">

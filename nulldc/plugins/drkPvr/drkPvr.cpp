@@ -9,8 +9,8 @@
 	Renderer
 */
 
-#include "../../nullDC/timing/timer.hpp"
 #include "drkPvr.h"
+
 #include "ta.h"
 #include "spg.h"
 #include "regs.h"
@@ -27,8 +27,6 @@ wchar emu_name[512];
 pvr_init_params params;
 _settings_type settings;
 
-
-static timer_if* g_drk_prv_timer = 0;
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -191,7 +189,7 @@ void FASTCALL vramLockCB (vram_block* block,u32 addr)
 #include <vector>
 using std::vector;
 
-extern bool render_restart;
+extern volatile bool render_restart;
 
 void EXPORT_CALL handler_Vsync (u32 id,void* win,void* puser)
 {
@@ -322,10 +320,6 @@ void CreateSortMenu()
 //called when plugin is used by emu (you should do first time init here)
 s32 FASTCALL Load(emu_info* emu_inf)
 {
-	if (0 == g_drk_prv_timer) {
-		g_drk_prv_timer = new high_frequency_timer_c();
-	}
-
 	// wchar temp[512]; // Unreferenced
 	memcpy(&emu,emu_inf,sizeof(emu));
 	emu.ConfigLoadStr(L"emu",L"shortname",emu_name,0);
@@ -419,8 +413,7 @@ s32 FASTCALL Load(emu_info* emu_inf)
 //called when plugin is unloaded by emu , olny if dcInitPvr is called (eg , not called to enumerate plugins)
 void FASTCALL Unload()
 {
-	delete g_drk_prv_timer;
-	g_drk_prv_timer = 0;
+	
 }
 
 //It's suposed to reset anything but vram (vram is set to 0 by emu)
@@ -474,6 +467,11 @@ void FASTCALL TermPvr()
 	Regs_Term();
 }
 
+//Helper functions
+float GetSeconds()
+{
+	return timeGetTime()/1000.0f;
+}
 
 //Needed for EMUWARN/EMUERROR to work properly
 //Misc function to get relative source directory for printf's
