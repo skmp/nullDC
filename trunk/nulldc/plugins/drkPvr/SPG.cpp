@@ -1,26 +1,26 @@
 #include "spg.h"
 #include "renderer_if.h"
 #include "regs.h"
-#include "../../nullDC/timing/timer.hpp"
+
 //SPG emulation; Scanline/Raster beam registers & interrupts
 //Time to emulate that stuff correctly ;)
 
-u64 in_vblank=0;
-u64 clc_pvr_scanline;
-u64 pvr_numscanlines=512;
-u64 prv_cur_scanline=-1;
-u64 vblk_cnt=0;
+u32 in_vblank=0;
+u32 clc_pvr_scanline;
+u32 pvr_numscanlines=512;
+u32 prv_cur_scanline=-1;
+u32 vblk_cnt=0;
 
-u64 last_fps=0;
+u32 last_fps=0;
 
 //54 mhz pixel clock :)
 #define PIXEL_CLOCK (54*1000*1000/2)
-u64 Line_Cycles=0;
-u64 Frame_Cycles=0;
+u32 Line_Cycles=0;
+u32 Frame_Cycles=0;
+void CalculateSync()
+{
+	//clc_pvr_scanline=0;
 
-static timer_if* g_spg_timer = 0;
-
-void CalculateSync() {
 	u32 pixel_clock;
 	float scale_x=1,scale_y=1;
 
@@ -116,14 +116,12 @@ void FASTCALL spgUpdatePvr(u32 cycles)
 			//TODO : rend_if_VBlank();
 			rend_vblank();//notify for vblank :)
 			UpdateRRect();
-			const u64 ticks_now = g_spg_timer->ticks();
-
-			if ((ticks_now-last_fps)>1000)
+			if ((timeGetTime()-last_fps)>800)
 			{
-				double spd_fps=(double)(FrameCount)/(double)((double)(ticks_now-(double)last_fps)/1000.0);
-				double spd_vbs=(double)(vblk_cnt)/(double)((double)(ticks_now-(double)last_fps)/1000.0);
+				double spd_fps=(double)(FrameCount)/(double)((double)(timeGetTime()-(double)last_fps)/1000);
+				double spd_vbs=(double)(vblk_cnt)/(double)((double)(timeGetTime()-(double)last_fps)/1000);
 				double spd_cpu=spd_vbs*Frame_Cycles;
-				spd_cpu/=1000000;
+				spd_cpu/=1000000;	//mrhz kthx
 				double fullvbs=(spd_vbs/spd_cpu)*200;
 				double mv=VertexCount;
 				char mv_c=' ';
@@ -139,7 +137,7 @@ void FASTCALL spgUpdatePvr(u32 cycles)
 					mv_c='M';
 				}
 				VertexCount=0;
-				last_fps=ticks_now;
+				last_fps=timeGetTime();
 				FrameCount=0;
 				vblk_cnt=0;
 
@@ -188,14 +186,13 @@ void FASTCALL spgUpdatePvr(u32 cycles)
 }
 
 
-bool spg_Init() {
-	g_spg_timer = new high_frequency_timer_c();
-	return 0 != g_spg_timer;
+bool spg_Init()
+{
+	return true;
 }
 
-void spg_Term() {
-	delete g_spg_timer;
-	g_spg_timer = 0;
+void spg_Term()
+{
 }
 
 void spg_Reset(bool Manual)

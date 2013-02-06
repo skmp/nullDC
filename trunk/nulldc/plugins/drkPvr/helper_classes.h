@@ -1,9 +1,6 @@
 #pragma once
 
-//At some points these lists have to be removed once and for all.Most of the time they cause huge bottlenecks and possible heap corruption bugs.
-//Plus previous chunk allocations are cleared after each pass which makes no sense at all ! Either a large buffer(even vector) or direct writes to vb stream would be much 
-//more efficient (Div22)
-
+#include "../common/x86/x86_mem.hpp"
 #include <vector>
 using namespace std;
 
@@ -33,10 +30,7 @@ public :
 	{
 		//verify(size!=0x000004d7);
 		u32 new_size=used+4+min_size;
-		//MAX 4mb increase each time :)
-		if (new_size>(MaxAllocChunk))
-			new_size=MaxAllocChunk;
-		resize_2(used +new_size);
+		resize_2(new_size);
 	}
 	void resize_2(u32 new_size)
 	{
@@ -177,12 +171,12 @@ public :
 	
 	void Copy(void* Dst,u32 sz)
 	{
-		u8* dst=static_cast<u8*>(Dst); 
+		u8* dst=(u8*)Dst;
 		for (u32 i=0;i<allocate_list_ptr->size();i++)
 		{
-			const u8* src = static_cast<const u8*>(allocate_list_ptr[0][i]);
-			memcpy(dst,src,allocate_list_sz[0][i]);
-
+			//The sse function (sse_memcpy_div22) is too fast for the current timing and vsync isn't reliable.
+			//Ie if we hit perfectly aligned block the copy is 40-45% faster at least 
+			memcpy(dst,allocate_list_ptr[0][i],allocate_list_sz[0][i]);
 			dst+=allocate_list_sz[0][i];
 			verify(sz>=allocate_list_sz[0][i]);
 			sz-=allocate_list_sz[0][i];
@@ -236,7 +230,92 @@ public :
 		used=0;
 	}
 };
+template <class T>
+class List3
+{
+public :
 
+	vector<u8*>* allocate_list_ptr;
+	u8* ptr;
+	static const u32 ItemsPerChunk=ChunkSize/sizeof(T);
+private:
+	__declspec(noinline) u8* NextChunk()
+	{		
+		u8* nptr=GetBuffer()-FreeItems*sizeof(T);
+		FreeItems+=ItemsPerChunk;
+		ptr=nptr;
+		allocate_list_ptr->push_back(nptr);
+		return nptr;
+	}
+	__declspec(noinline) void PrevChunk()
+	{		
+		FreeBuffer(allocate_list_ptr->back());
+		allocate_list_ptr->pop_back();
+		FreeItems-=ItemsPerChunk+1;
+		ptr=allocate_list_ptr->back()+ItemsPerChunk-FreeItems+1;
+	}
+public :
+	s32 FreeItems;//biased by 1
+	void Waste(u32 count)
+	{
+		FreeItems-=count;
+		if (FreeItems>0)
+		{
+			return;
+		}
+		NextChunk();
+	}
+	void UnWaste(u32 count)
+	{
+		FreeItems+=count;
+		if (FreeItems>(ItemsPerChunk+1))
+		{
+			PrevChunk();
+		}
+	}
+	T* Append()
+	{
+		if (--FreeItems==0)
+			return (T*)NextChunk();
+		else
+			return (T*)(ptr+=sizeof(T));
+	}
+
+	
+	void ClearCounters()
+	{
+		ptr=0;
+		FreeItems=1;
+	}
+	void Init()
+	{
+		allocate_list_ptr = new vector<u8*>();
+		ClearCounters();
+	}
+
+	void Clear()
+	{
+		for (u32 i=0;i<allocate_list_ptr->size();i++)
+		{
+			FreeBuffer(allocate_list_ptr[0][i]);
+		}
+		allocate_list_ptr->clear();
+
+		ClearCounters();
+	}
+	void Free()
+	{
+		Clear();
+	}
+	T* Ptr()
+	{
+		return (T*)ptr;
+	}
+	u32 GetUsedCount()
+	{
+		return ItemsPerChunk*(allocate_list_ptr->size()+1)-(FreeItems-1)/sizeof(T);
+	}
+};
 //Windoze code
 //Threads
 #define THREADCALL __stdcall

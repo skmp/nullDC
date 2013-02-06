@@ -22,6 +22,9 @@ int msgboxf(wchar* text,unsigned int type,...);
 #define DCclock (200*1000*1000)
 
 
+float GetSeconds();
+
+
 #define dbgbreak __debugbreak()
 
 #define fastcall __fastcall

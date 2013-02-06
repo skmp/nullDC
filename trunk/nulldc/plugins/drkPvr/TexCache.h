@@ -1,7 +1,5 @@
 #pragma once
 #include "drkPvr.h"
-#include <unordered_map>
-#include <list>
 
 extern u8* vq_codebook;
 extern u32 palette_index;
@@ -12,225 +10,118 @@ extern u32 pal_rev_16[64];
 extern u32 _pal_rev_256[4];
 extern u32 _pal_rev_16[64];
 
-template <class tex_base_c>
-union tex_cache_node_t {
-	struct  {
-		u32 addr;
-		tex_base_c* data;
-		tex_cache_node_t* l;
-		tex_cache_node_t* r;
-	};
-	u8 _pad[sizeof(void*)*4];
-};
-
-//If highmem is set a lut of sizeof(ptr) * (1<<21)+1 is created to store temp pointers and turn find() into O(1) operation
-//Idealy no allocation would be needed if a table of sizeof(tex cache entry) * (1<<21) was created instead (with the obvious drawbacks)
-//DiV22
-
-#define drkprv_high_mem
-template <class tex_base_c>
-class tex_cache_list_c {
+//Generic texture cache list class =P
+template <class TexEntryType>
+class TexCacheList
+{
+public:
+	class TexCacheEntry
+	{
 	public:
-	u32 textures; //lazy a$$;)
-	
-
-	tex_cache_list_c() : textures(0){
-#ifndef drkprv_high_mem
-		m_bitmap_range = (((1<<21) + 8) & (~7)) >> 3;
-		m_bitmap = new u8[m_bitmap_range];
-		verify(m_bitmap != 0);
-		memset(m_bitmap,0,m_bitmap_range);
-#else
-		m_lut = new tex_cache_node_t<tex_base_c>*[(1 << 21) + 1];
-		verify(m_lut != 0);
-
-		for (u32 i = 0;i <= 1<<21;++i) {
-			m_lut[i] = 0;
+		TexCacheEntry(TexCacheEntry* prevt,TexCacheEntry* nextt,TexEntryType* textt)
+		{
+			prev=prevt;
+			next=nextt;
+			if (textt)
+				data=*textt;
 		}
-#endif
+		TexCacheEntry* prev;
+		TexCacheEntry* next;
+		TexEntryType data;
+	};
+	u32 textures;
+	TexCacheEntry* pfirst;
+	TexCacheEntry* plast;
+
+	TexCacheList()
+	{
+		pfirst=0;
+		plast=0;
+		textures=0;
 	}
 
-	~tex_cache_list_c() {
-		this->cleanup();
-#ifndef drkprv_high_mem
-		delete[] m_bitmap;
-#else
-		delete[] m_lut;
-#endif
-	}
 
-	inline void traverse(s32(*cb)(tex_base_c*)) {
-		if (!cb) {
-			return;
-		} else if (0U == textures) {
-			return;
-		}
-		//printf("%u\n",textures);
+	TexEntryType* __fastcall Find(u32 tcw,u32 tsp)
+	{
+		TexCacheEntry* pl= this->pfirst;
+		while (pl)
+		{
+			if (pl->data.tcw.full==tcw && pl->data.tsp.full==tsp)
+			{
+				if (pl->prev!=0)//its not the first one
+				{
+					if (pl->next==0)
+					{
+						//if last one then , the last one is the previous
+						plast=pl->prev;
+					}
 
-		for (register tex_cache_node_t<tex_base_c>* a = m_head;a != 0;) {
-			tex_cache_node_t<tex_base_c>* t = a;
-			a = a->r;
-			s32 ret = cb(t->data);
-			if (ret == 0) {
-				this->remove(t);
-			} 
-		}
-	}
+					//remove the texture from the list
+					textures++;//one is counted down by remove ;)
+					Remove(pl);
 
-	inline void traverse_inv(s32(*cb)(tex_base_c*)) {
-		if (!cb) {
-			return;
-		} else if (0U == textures) {
-			return;
-		}
-		//printf("%u\n",textures);
-		for (register tex_cache_node_t<tex_base_c>* a = m_tail;a != 0;) {
-			tex_cache_node_t<tex_base_c>* t = a;
-			a = a->l;
-			s32 ret = cb(t->data);
-			if ( ret == 0) {
-				this->remove(t);
-			}
-		}
-	}
+					//add it on top
+					pl->prev=0;			//no prev , we are first
+					pl->next=pfirst;	//after us is the old first
+					pfirst->prev=pl;	//we are before the old first
 
-	inline tex_cache_node_t<tex_base_c>* find(u32 addr) {
-#ifndef drkprv_high_mem
-		register u32 t = addr;
-		if (!bm_is_set(t)) {
-			return 0;
-		}
+					//replace pfirst pointer
+					pfirst=pl;
 
-		for (register tex_cache_node_t<tex_base_c>* a = m_head;(a != 0);a = a->r) {
-			if (a->addr == t) {
-				if (m_head == a) {
-					return a;
 				}
-
-				tex_base_c* tmp0 = m_head->data;
-				u32 tmp1 = m_head->addr;
-				m_head->data = a->data;
-				m_head->addr = a->addr;
-				a->data = tmp0;
-				a->addr = tmp1;
-				return m_head;
+				return &pl->data;
 			}
+			else
+				pl=pl->next;
 		}
+
 		return 0;
-#else
-		//printf("%u addr / %u R\n",addr,1 << 21);
-		return (addr <= (1 << 21)) ? m_lut[addr] : 0;
-#endif
 	}
 
-	inline void add(u32 addr,tex_base_c* texture) {
-		u32 t = addr;
-		tex_cache_node_t<tex_base_c>* node;
-
-		node = new tex_cache_node_t<tex_base_c>;
-		//verify(node);
-		node->l = node->r = 0;
-		node->data = texture;
-		node->addr = t;
-		++textures;
-
-		if (0 == m_tail) {
-			m_tail = m_head = node;
-		} else {
-			m_tail->r = node;
-			node->l = m_tail;
-			m_tail = node;
-		}
-
-#ifndef drkprv_high_mem
-		bm_set(t);
-#else
-		if (t <= (1 << 21)) {
-			m_lut[t] = node;
-		}
-#endif
-	}
-
-	inline void remove(tex_cache_node_t<tex_base_c>* node) {
-		if ((0 == m_tail) || (!node)) {
-			return;
-		}
-
-		register tex_cache_node_t<tex_base_c>* l = node->l;
-		register tex_cache_node_t<tex_base_c>* r = node->r;
-
-		if (l != 0) {
-			if (r == 0) {
-				l->r = 0;
-				m_tail = l;
-			} else {
-				l->r = r;
-				r->l = l;
+	TexCacheEntry* Add(TexEntryType* text )
+	{
+		if (pfirst==0)
+		{
+			if (plast!=0)
+			{
+				printf("Texture Cache Error , pfirst!=0 && plast==0\n");
 			}
-		} else if (r != 0) {
-			r->l = 0;
-			m_head = r;
-		} else {
-			m_tail = m_head = 0;
+			pfirst=plast=new TexCacheEntry(0,0,text);
+		}
+		else
+		{
+			pfirst=new TexCacheEntry(0,pfirst,text);
+			pfirst->next->prev=pfirst;
 		}
 
-#ifdef drkprv_high_mem
-		if (node->addr <= (1 << 21)) {
-			m_lut[node->addr] = 0;
-		}
-#endif
-		delete node->data;
-		delete node;
-
-		--textures;
+		textures++;
+		return pfirst;
 	}
-
-	inline void cleanup() {
-		if (0 == m_tail) {
-			return;
+	void Remove(TexCacheEntry* texture)
+	{
+		textures--;
+		if (texture==pfirst)
+		{
+			if (texture->next)
+				pfirst=texture->next;
+			else
+				pfirst=0;
+		}
+		if (texture==plast)
+		{
+			if (texture->prev)
+				plast=texture->prev;
+			else
+				plast=0;
 		}
 
-		for (register tex_cache_node_t<tex_base_c>* a = m_head;a != 0;) {
-			tex_cache_node_t<tex_base_c>* t = a;
-			a = a->r;
-			this->remove(t);
-		}
- 
-		textures = 0U;
-		m_head = m_tail = 0;
-#ifndef drkprv_high_mem
-		memset(m_bitmap,0,m_bitmap_range);
-#endif
+		//if not last one , remove it from next
+		if (texture->next!=0)
+			texture->next->prev=texture->prev;
+		//if not first one , remove it from prev
+		if (texture->prev!=0)
+			texture->prev->next=texture->next;
 	}
-
-	private:
-#ifndef drkprv_high_mem
-	u32 m_bitmap_range;
-	u8* m_bitmap;
-#else
-	tex_cache_node_t<tex_base_c>** m_lut;
-#endif
-	tex_cache_node_t<tex_base_c>* m_head;
-	tex_cache_node_t<tex_base_c>* m_tail;
-
-#ifndef drkprv_high_mem
-	inline bool bm_is_set(u32 addr) {
-		if ((addr >> 3) >= m_bitmap_range) {
-			return false;
-		}
-
-		return !!(m_bitmap[addr >> 3] & (1 << (addr & 7)));
-	}
-
-	inline void bm_set(u32 addr) {
-		if ((addr >> 3) >= m_bitmap_range) {
-			return;
-		} else if (bm_is_set(addr)) {
-			return;
-		}
-		m_bitmap[addr >> 3] |= 1 << (addr & 7);
-	}
-#endif
 };
 
 
@@ -586,7 +477,8 @@ pixelcvt_next(convPAL8_X_TW,2,4)
 pixelcvt_end;
 //hanlder functions
 template<class PixelConvertor>
-void fastcall texture_PL(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height) {
+void fastcall texture_PL(PixelBuffer* pb,u8* p_in,u32 Width,u32 Height)
+{
 	u32 p=0;
 	pb->amove(0,0);
 
