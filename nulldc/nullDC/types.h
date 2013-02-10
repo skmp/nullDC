@@ -53,7 +53,7 @@ using namespace std;
 #define DEV_TOOL_FAST_FW_KEY (VK_PRIOR)
 
 #undef INCLUDE_DEV_TOOLS
-#undef NO_VERIFY
+#define NO_VERIFY
 #undef SB_MAP_UNKNOWN_REGS
 
 //On release we have no checks
@@ -160,7 +160,12 @@ using namespace std;
 #define fastcall __fastcall
 #define FASTCALL __fastcall
 
+#ifndef NO_VERIFY
 #define verify(x) if(!(x)){ msgboxf(_T("Verify Failed  : ") _T(#x) _T("\n in %s -> %s : %d \n"),MBX_ICONERROR,_T(__FUNCTION__),_T(__FILE__),__LINE__); dbgbreak;}
+#else
+	#define verify(x) (x);
+#endif
+
 #define die(reason) { msgboxf(_T("Fatal error : %s\n in %s -> %s : %d \n"),MBX_ICONERROR,_T(reason),_T(__FUNCTION__),_T(__FILE__),__LINE__); dbgbreak;}
 #define fverify verify
 

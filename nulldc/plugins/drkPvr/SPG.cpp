@@ -116,7 +116,7 @@ void FASTCALL spgUpdatePvr(u32 cycles)
 			//TODO : rend_if_VBlank();
 			rend_vblank();//notify for vblank :)
 			UpdateRRect();
-			if ((timeGetTime()-last_fps)>800)
+			if ((timeGetTime()-last_fps)>1000)
 			{
 				double spd_fps=(double)(FrameCount)/(double)((double)(timeGetTime()-(double)last_fps)/1000);
 				double spd_vbs=(double)(vblk_cnt)/(double)((double)(timeGetTime()-(double)last_fps)/1000);

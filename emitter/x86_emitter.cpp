@@ -214,7 +214,8 @@ x86_block::x86_block()
 {
 	_patches=new vector<code_patch>;
 	_labels=new vector<x86_Label*>;
-	labels.reserve(32);
+	labels.reserve(64);
+	patches.reserve(32);
 }
 x86_block::~x86_block()
 {
