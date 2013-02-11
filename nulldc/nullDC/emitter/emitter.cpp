@@ -62,8 +62,7 @@ void x86_features::detect()
 		mmx=false;
 	}
 
-	if (mmx)
-		__asm emms;
+
 
 
 	wchar* command_line = GetCommandLine();
@@ -113,5 +112,21 @@ void x86_features::detect()
 	log("\n");
 	log("\n");
 
-	
+	__try
+	{
+		__asm sfence;
+	}
+	__except(EXCEPTION_EXECUTE_HANDLER) 
+	{
+		//Blah
+	}	
+
+	__try
+	{
+		__asm emms;
+	}
+	__except(EXCEPTION_EXECUTE_HANDLER) 
+	{
+		//Blah
+	}	
 }

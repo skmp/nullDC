@@ -47,7 +47,7 @@ u32 THREADCALL SoundThread1(void* param)
 {
 	for(;;)
 	{
-		u32 rv = WaitForMultipleObjects(sound_buffer_count,buffer_events,FALSE,100);
+		u32 rv = WaitForMultipleObjects(sound_buffer_count,buffer_events,FALSE,400);
 		
 		if (!soundthread_running)
 			break;

@@ -1,7 +1,6 @@
 #include "audiostream.h"
 #include "sdl_audiostream.h"
 #include "ds_audiostream.h"
-#include "../../nullDC/timing/timer.hpp"
 
 
 /*
@@ -23,9 +22,8 @@ u32 BufferByteSz;
 u32 BufferSampleCount;
 
 u32 gen_samples=0;
-
-timer_if* as_timer = 0;
-u64 as_time_diff,as_last_time;
+LARGE_INTEGER time_now,time_last;
+LARGE_INTEGER time_diff;
 
 #ifdef LOG_SOUND
 WaveWriter rawout("d:\\aica_out.wav");
@@ -97,19 +95,16 @@ bool asRingStretchPitchChange(u8* dst,u32 outcount,u32 usedcount)
 {
 	bool rv=asRingRead((u8*)TempBuffer,usedcount);
 	verify(rv==true);//can't be false ...
+	u32 steps=usedcount*outcount*2;
 
-	if (0U != outcount) {
-		u32 steps=(usedcount+outcount) << 1;
+	//this does change pitch, but for a few samples it won't matter much ...
+	for (u32 cs=outcount-1;cs<steps;cs+=usedcount*2)
+	{
+		u32 srcidx=cs/(outcount*2) ;
+		verify(srcidx<usedcount);
 
-		//this does change pitch, but for a few samples it won't matter much ...
-		for (u32 cs=outcount-1;cs<steps;cs+=usedcount << 1)
-		{
-			u32 srcidx=cs/(outcount << 1) ;
-			verify(srcidx<usedcount);
-
-			*(SoundSample*)dst=TempBuffer[srcidx];
-			dst+=sizeof(SoundSample);
-		}
+		*(SoundSample*)dst=TempBuffer[srcidx];
+		dst+=sizeof(SoundSample);
 	}
 	return true;
 }
@@ -227,19 +222,15 @@ void WriteSample(s16 r, s16 l)
 
 	gen_samples++;
 	//while limit on, 128 samples done, there is a buffer ready to be service AND speed is too fast then wait ;p
-
-	while ((settings.LimitFPS==1) && (gen_samples>128) && (asRingUsedCount()>BufferSampleCount) )
+	while (settings.LimitFPS==1 && gen_samples>128 && asRingUsedCount()>BufferSampleCount && QueryPerformanceCounter(&time_now) && (time_now.QuadPart-time_last.QuadPart)<=time_diff.QuadPart )
 	{
-		u64 t = as_timer->ticks_qp();
-		//printf("Here %llu %llu %llu\n",t,as_last_time,(t-as_last_time));
-		if ((t - as_last_time) >= as_time_diff) {
-			break;
-		}
+		__noop;
 	}
 
-	if (settings.LimitFPS==1 && gen_samples>128) {
+	if (settings.LimitFPS==1 && gen_samples>128)
+	{
 		gen_samples=0;
-		as_last_time = as_timer->ticks_qp();
+		QueryPerformanceCounter(&time_last);
 	}
 
 	const u32 ptr=(WritePtr+1)%RingBufferSampleCount;
@@ -262,18 +253,10 @@ void WriteSamples2(s16* rl , u32 sample_count)
 
 void InitAudio()
 {
-#if 1
-	as_timer = new cpu_timer_c();
-#else
-	as_timer = new high_frequency_timer_c();
-#endif
-	verify(as_timer != 0);
-	as_last_time = as_timer->ticks_qp();
-#if 1
-	as_time_diff = 1000;
-#else
-	as_time_diff = (as_timer->ticks_qp() * 128U) / 44100U;
-#endif
+	QueryPerformanceFrequency(&time_diff);
+	time_diff.QuadPart*=128;
+	time_diff.QuadPart/=44100;
+
 	InitAudBuffers(settings.BufferSize);
 	if (settings.SoundRenderer)
 	{
@@ -288,9 +271,6 @@ void InitAudio()
 }
 void TermAudio()
 {
-	delete as_timer;
-	as_timer = 0;
-
 	if (settings.SoundRenderer)
 	{
 		ds_TermAudio();
