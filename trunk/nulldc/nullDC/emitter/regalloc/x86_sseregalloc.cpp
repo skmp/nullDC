@@ -281,8 +281,13 @@ class SimpleSSERegAlloc:public FloatRegAllocator
 	}
 	virtual void FlushRegCache()
 	{
-		for (int i=0;i<16;i++)
+		for (int i=0;i<16;i++) {
 			FlushRegister(fr_0+i);
+		}
+
+		//Notes (Div22) :
+		//x86e->Emit(op_emms); //Results in no-op due to previous mov r,m (if any)
+		//x86e->Emit(op_sfence); //7-10% speed penalty
 	}
 	//WriteBackRegister	: write reg to reg location
 	virtual void WriteBackRegister(u32 reg)

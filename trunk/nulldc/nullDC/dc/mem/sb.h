@@ -13,7 +13,7 @@ void sb_Init();
 void sb_Reset(bool Manual);
 void sb_Term();
 
-extern std::array<RegisterStruct,0x540> sb_regs;	
+extern __declspec(align(32)) RegisterStruct sb_regs[0x540];	
 
 
 #define SB_BASE 0x005F6800

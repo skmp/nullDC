@@ -100,7 +100,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>false</ExceptionHandling>
-      <StructMemberAlignment>16Bytes</StructMemberAlignment>
+      <StructMemberAlignment>4Bytes</StructMemberAlignment>
       <FloatingPointExceptions>false</FloatingPointExceptions>
     </ClCompile>
     <Link>

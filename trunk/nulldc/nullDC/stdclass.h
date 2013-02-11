@@ -2,7 +2,6 @@
 #include "types.h"
 #include <memory.h>
 #include <vector>
-#include <array>
 #include <random>
 #include "log/logging_interface.h"
 

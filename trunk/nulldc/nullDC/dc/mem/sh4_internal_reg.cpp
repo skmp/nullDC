@@ -23,20 +23,20 @@ __declspec(align(64)) u8 sq_both[64];
 //i know , its because of templates :)
 #pragma warning( disable : 4127 /*4244*/)
 
-std::array<u8,OnChipRAM_SIZE> OnChipRAM;
-
+__declspec(align(32)) u8 OnChipRAM[OnChipRAM_SIZE];
 //All registers are 4 byte alligned
 
-std::array<RegisterStruct,16> CCN;			//CCN  : 14 registers
-std::array<RegisterStruct,9> UBC;			//UBC  : 9 registers
-std::array<RegisterStruct,19> BSC;			//BSC  : 18 registers
-std::array<RegisterStruct,17> DMAC;		//DMAC : 17 registers
-std::array<RegisterStruct,5> CPG;			//CPG  : 5 registers
-std::array<RegisterStruct,16> RTC;			//RTC  : 16 registers
-std::array<RegisterStruct,4> INTC;			//INTC : 4 registers
-std::array<RegisterStruct,12> TMU;			//TMU  : 12 registers
-std::array<RegisterStruct,8> SCI;			//SCI  : 8 registers
-std::array<RegisterStruct,10> SCIF;		//SCIF : 10 registers
+__declspec(align(32)) RegisterStruct CCN[20];
+__declspec(align(32)) RegisterStruct UBC[20];
+__declspec(align(32)) RegisterStruct BSC[20];
+__declspec(align(32)) RegisterStruct DMAC[20];
+__declspec(align(32)) RegisterStruct CPG[20];
+__declspec(align(32)) RegisterStruct RTC[20];
+__declspec(align(32)) RegisterStruct INTC[20];
+__declspec(align(32)) RegisterStruct TMU[20];
+__declspec(align(32)) RegisterStruct SCI[20];
+__declspec(align(32)) RegisterStruct SCIF[20];
+
 
 
 //helper functions
@@ -436,7 +436,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(CCN_BASE_addr):
 		if (addr<=0x1F00003C)
 		{
-			return (T)RegSRead<sz>(CCN.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(CCN,addr & 0xFF);
 		}
 		else
 		{
@@ -447,7 +447,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(UBC_BASE_addr):
 		if (addr<=0x1F200020)
 		{
-			return (T)RegSRead<sz>(UBC.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(UBC,addr & 0xFF);
 		}
 		else
 		{
@@ -458,7 +458,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(BSC_BASE_addr):
 		if (addr<=0x1F800048)
 		{
-			return (T)RegSRead<sz>(BSC.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(BSC,addr & 0xFF);
 		}
 		else if ((addr>=BSC_SDMR2_addr) && (addr<= 0x1F90FFFF))
 		{
@@ -481,7 +481,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(DMAC_BASE_addr):
 		if (addr<=0x1FA00040)
 		{
-			return (T)RegSRead<sz>(DMAC.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(DMAC,addr & 0xFF);
 		}
 		else
 		{
@@ -492,7 +492,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(CPG_BASE_addr):
 		if (addr<=0x1FC00010)
 		{
-			return (T)RegSRead<sz>(CPG.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(CPG,addr & 0xFF);
 		}
 		else
 		{
@@ -503,7 +503,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(RTC_BASE_addr):
 		if (addr<=0x1FC8003C)
 		{
-			return (T)RegSRead<sz>(RTC.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(RTC,addr & 0xFF);
 		}
 		else
 		{
@@ -514,7 +514,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(INTC_BASE_addr):
 		if (addr<=0x1FD0000C)
 		{
-			return (T)RegSRead<sz>(INTC.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(INTC,addr & 0xFF);
 		}
 		else
 		{
@@ -525,7 +525,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(TMU_BASE_addr):
 		if (addr<=0x1FD8002C)
 		{
-			return (T)RegSRead<sz>(TMU.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(TMU,addr & 0xFF);
 		}
 		else
 		{
@@ -536,7 +536,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(SCI_BASE_addr):
 		if (addr<=0x1FE0001C)
 		{
-			return (T)RegSRead<sz>(SCI.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(SCI,addr & 0xFF);
 		}
 		else
 		{
@@ -547,7 +547,7 @@ T __fastcall ReadMem_area7(u32 addr)
 	case A7_REG_HASH(SCIF_BASE_addr):
 		if (addr<=0x1FE80024)
 		{
-			return (T)RegSRead<sz>(SCIF.data(),addr & 0xFF);
+			return (T)RegSRead<sz>(SCIF,addr & 0xFF);
 		}
 		else
 		{
@@ -587,7 +587,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(CCN_BASE_addr):
 		if (addr<=0x1F00003C)
 		{
-			RegSWrite<sz>(CCN.data(),addr & 0xFF,data);
+			RegSWrite<sz>(CCN,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -599,7 +599,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(UBC_BASE_addr):
 		if (addr<=0x1F200020)
 		{
-			RegSWrite<sz>(UBC.data(),addr & 0xFF,data);
+			RegSWrite<sz>(UBC,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -611,7 +611,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(BSC_BASE_addr):
 		if (addr<=0x1F800048)
 		{
-			RegSWrite<sz>(BSC.data(),addr & 0xFF,data);
+			RegSWrite<sz>(BSC,addr & 0xFF,data);
 			return;
 		}
 		else if ((addr>=BSC_SDMR2_addr) && (addr<= 0x1F90FFFF))
@@ -635,7 +635,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(DMAC_BASE_addr):
 		if (addr<=0x1FA00040)
 		{
-			RegSWrite<sz>(DMAC.data(),addr & 0xFF,data);
+			RegSWrite<sz>(DMAC,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -647,7 +647,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(CPG_BASE_addr):
 		if (addr<=0x1FC00010)
 		{
-			RegSWrite<sz>(CPG.data(),addr & 0xFF,data);
+			RegSWrite<sz>(CPG,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -659,7 +659,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(RTC_BASE_addr):
 		if (addr<=0x1FC8003C)
 		{
-			RegSWrite<sz>(RTC.data(),addr & 0xFF,data);
+			RegSWrite<sz>(RTC,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -671,7 +671,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(INTC_BASE_addr):
 		if (addr<=0x1FD0000C)
 		{
-			RegSWrite<sz>(INTC.data(),addr & 0xFF,data);
+			RegSWrite<sz>(INTC,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -683,7 +683,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(TMU_BASE_addr):
 		if (addr<=0x1FD8002C)
 		{
-			RegSWrite<sz>(TMU.data(),addr & 0xFF,data);
+			RegSWrite<sz>(TMU,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -695,7 +695,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(SCI_BASE_addr):
 		if (addr<=0x1FE0001C)
 		{
-			RegSWrite<sz>(SCI.data(),addr & 0xFF,data);
+			RegSWrite<sz>(SCI,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -707,7 +707,7 @@ void __fastcall WriteMem_area7(u32 addr,T data)
 	case A7_REG_HASH(SCIF_BASE_addr):
 		if (addr<=0x1FE80024)
 		{
-			RegSWrite<sz>(SCIF.data(),addr & 0xFF,data);
+			RegSWrite<sz>(SCIF,addr & 0xFF,data);
 			return;
 		}
 		else
@@ -790,18 +790,18 @@ void __fastcall WriteMem_area7_OCR_T(u32 addr,T data)
 //Init/Res/Term
 void sh4_internal_reg_Init()
 {
-	for (u32 i=0;i<30;i++)
+	for (u32 i=0;i<20;i++)
 	{
-		if (i<CCN.size())	CCN[i].flags=REG_NOT_IMPL;	//(16,true);	//CCN  : 14 registers
-		if (i<UBC.size())	UBC[i].flags=REG_NOT_IMPL;	//(9,true);		//UBC  : 9 registers
-		if (i<BSC.size())	BSC[i].flags=REG_NOT_IMPL;	//(19,true);	//BSC  : 18 registers
-		if (i<DMAC.size())DMAC[i].flags=REG_NOT_IMPL;	//(17,true);	//DMAC : 17 registers
-		if (i<CPG.size())	CPG[i].flags=REG_NOT_IMPL;	//(5,true);		//CPG  : 5 registers
-		if (i<RTC.size())	RTC[i].flags=REG_NOT_IMPL;	//(16,true);	//RTC  : 16 registers
-		if (i<INTC.size())INTC[i].flags=REG_NOT_IMPL;	//(4,true);		//INTC : 4 registers
-		if (i<TMU.size())	TMU[i].flags=REG_NOT_IMPL;	//(12,true);	//TMU  : 12 registers
-		if (i<SCI.size())	SCI[i].flags=REG_NOT_IMPL;	//(8,true);		//SCI  : 8 registers
-		if (i<SCIF.size())SCIF[i].flags=REG_NOT_IMPL;	//(10,true);	//SCIF : 10 registers
+		CCN[i].flags=REG_NOT_IMPL;	//(16,true);	//CCN  : 14 registers
+		UBC[i].flags=REG_NOT_IMPL;	//(9,true);		//UBC  : 9 registers
+		BSC[i].flags=REG_NOT_IMPL;	//(19,true);	//BSC  : 18 registers
+		DMAC[i].flags=REG_NOT_IMPL;	//(17,true);	//DMAC : 17 registers
+		CPG[i].flags=REG_NOT_IMPL;	//(5,true);		//CPG  : 5 registers
+		RTC[i].flags=REG_NOT_IMPL;	//(16,true);	//RTC  : 16 registers
+		INTC[i].flags=REG_NOT_IMPL;	//(4,true);		//INTC : 4 registers
+		TMU[i].flags=REG_NOT_IMPL;	//(12,true);	//TMU  : 12 registers
+		SCI[i].flags=REG_NOT_IMPL;	//(8,true);		//SCI  : 8 registers
+		SCIF[i].flags=REG_NOT_IMPL;	//(10,true);	//SCIF : 10 registers
 	}
 
 	//initialise Register structs
@@ -819,7 +819,7 @@ void sh4_internal_reg_Init()
 
 void sh4_internal_reg_Reset(bool Manual)
 {
-	for (u32 i = 0;i < OnChipRAM.size();++i) {
+	for (u32 i = 0;i < OnChipRAM_SIZE;++i) {
 		OnChipRAM[i] = 0;
 	}
 
