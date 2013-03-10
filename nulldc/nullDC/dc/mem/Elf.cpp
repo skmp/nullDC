@@ -64,15 +64,25 @@ bool LoadELF( wchar* szFileName )
 	u32 flen = ftell(fElf);
 	fseek(fElf, 0, SEEK_SET);
 
-	if( (flen < sizeof(Elf32_Ehdr)) || (flen > 0x400000) )	// >4MB not likely 
+	if( (flen < sizeof(Elf32_Ehdr)) || (flen > 0x400000) )	// >4MB not likely
+	{
+		fclose(fElf);
 		return false;
+	}
 
 	unsigned char * pElf = new unsigned char [ flen ] ;
 	if(!pElf)
+	{
+		fclose(fElf);
 		return false;
+	}
 
 	if( fread(pElf, 1, flen, fElf) != flen )
+	{
+		fclose(fElf);
+		delete[] pElf;
 		return false;
+	}
 
 	fclose(fElf);
 
