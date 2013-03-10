@@ -3408,7 +3408,7 @@ nl:
 			old_rev = resizerq.rev;
 			bool same_res=memcmp(&nwr,&resizerq.new_size,sizeof(NDC_WINDOW_RECT))==0 && settings.Video.ResolutionMode==old_res_mode;
 			memcpy(&nwr,(void*)&resizerq.new_size,sizeof(NDC_WINDOW_RECT));
-			do_resize=resizerq.needs_resize & !same_res;
+			do_resize=resizerq.needs_resize && !same_res;
 
 		} while(old_rev!=resizerq.rev);
 

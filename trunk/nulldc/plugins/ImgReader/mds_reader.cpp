@@ -67,11 +67,14 @@ bool parse_mds(wchar *mds_filename,bool verbose)
 		return false;
 	}
     
-    int  mds_size = flen(mds_file);
+    int mds_size = flen(mds_file);
 
 	//if its too small ..
 	if (mds_size<16)
+	{
+		fclose(mds_file);
 		return false;
+	}
 
 	//do NOT load whole file to memory before checking ... cna be deadly for .nrg/.iso/ anything :p
 	char mds_key[16];
