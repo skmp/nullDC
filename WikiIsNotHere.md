@@ -1,0 +1,1 @@
+The nullDC wiki is at http://nulldc.emudev.org/wiki, in order to avoid inflation of svn revs with wiki edits.
