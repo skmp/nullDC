@@ -44,7 +44,7 @@ float GetSeconds();
 
 #define log0(xx) printf(xx " (from "__FUNCTION__ ")\n");
 #define log1(xx,yy) printf(xx " (from "__FUNCTION__ ")\n",yy);
-#define log2(xx,yy,zz) printf(xx " (from "__FUNCTION__ ")\n",yy,zz);
+#define logXX2(xx,yy,zz) printf(xx " (from "__FUNCTION__ ")\n",yy,zz);
 #define log3(xx,yy,gg) printf(xx " (from "__FUNCTION__ ")\n",yy,zz,gg);
 
 #include "helper_classes.h"

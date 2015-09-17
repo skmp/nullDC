@@ -14,6 +14,7 @@
 #include "dc/sh4/sh4_registers.h"
 #include "dc/asic/asic.h"
 
+#include <algorithm>
 
 enum gd_states
 {

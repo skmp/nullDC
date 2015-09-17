@@ -194,6 +194,7 @@ void FASTCALL edReset(bool Manual)
 //called when entering sh4 thread , from the new thread context (for any thread speciacific init)
 s32 FASTCALL edInit(ext_device_init_params* p)
 {
+#if 0
 	params=*p;
 	if (settings.mode!=0)
 	{
@@ -211,15 +212,17 @@ s32 FASTCALL edInit(ext_device_init_params* p)
 	}
 	if (settings.mode==3)
 		bba_init();
-
+#endif
 	return rv_ok;
 }
 
 //called when exiting from sh4 thread , from the new thread context (for any thread speciacific de init) :P
 void FASTCALL edTerm()
 {
+#if 0
 	if (settings.mode!=0)
 		pcap_io_close();
+#endif
 }
 
 

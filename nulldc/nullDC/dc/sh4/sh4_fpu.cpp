@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <float.h>
+#include <algorithm>
 
 #define sh4op(str) void __fastcall str (u32 op)
 #define GetN(str) ((str>>8) & 0xf)

@@ -3,7 +3,7 @@
 #if _DEBUG
 #define D3D_DEBUG_INFO
 #endif
-#include <d3dx9.h>
+//#include <d3dx9.h>
 
 #include "pvr_algo/pvr_algo.hpp"
 
@@ -17,8 +17,11 @@
 //#include <xmmintrin.h>
 
 #if REND_API == REND_D3D
+#include <d3d9.h>
+#include <d3dcompiler.h>
+
 #pragma comment(lib, "d3d9.lib") 
-#pragma comment(lib, "d3dx9.lib") 
+#pragma comment(lib, "d3dcompiler.lib") 
 
 #define MODVOL 1
 #define _float_colors_
@@ -102,8 +105,8 @@ u32 vramlock_ConvOffset32toOffset64(u32 offset32)
 	IDirect3DSurface9* fb_surf=0,* rtt_surf[2]={0,0},* fb_surface8888=0,* fb_surface565=0,* fb_surface1555=0;
 	IDirect3DSurface9* backbuffer=0;
 	D3DSURFACE_DESC fb_surf_desc;
-	ID3DXFont* font;
-	ID3DXConstantTable* shader_consts;
+//	ID3DXFont* font;
+	//ID3DXConstantTable* shader_consts;
 	RECT window_rect;
 	D3DPRESENT_PARAMETERS ppar;
 	u32 ppar_BackBufferWidth,ppar_BackBufferHeight;
@@ -1465,7 +1468,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 	#define idx_ZBufferMode 6
 	#define idx_pp_FogCtrl 7
 
-	D3DXMACRO ps_macros[]=
+	D3D_SHADER_MACRO ps_macros[] =
 	{
 		{"pp_Texture","0"},
 		{"pp_Offset","0"},
@@ -1510,12 +1513,13 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		verify(mode<(PS_SHADER_COUNT));
 		if (compiled_ps[mode]!=0)
 			return;
-		ID3DXBuffer* perr;
-		ID3DXBuffer* shader;
-		ID3DXConstantTable* consts;
+		ID3DBlob* perr = 0;
+		ID3DBlob* shader = 0;
+		//ID3DXConstantTable* consts;
 
-		D3DXCompileShaderFromFileA("ps_hlsl.fx"
-			,ps_macros,NULL,"PixelShader_main",profile,SHADER_DEBUG/*D3DXSHADER_DEBUG|D3DXSHADER_SKIPOPTIMIZATION*/,&shader,&perr,&consts);
+		D3DCompileFromFile(L"ps_hlsl.fx", ps_macros, 0, "PixelShader_main", profile, 0, 0, &shader, &perr);
+		//D3DXCompileShaderFromFileA("ps_hlsl.fx"
+		//	,ps_macros,NULL,"PixelShader_main",profile,SHADER_DEBUG/*D3DXSHADER_DEBUG|D3DXSHADER_SKIPOPTIMIZATION*/,&shader,&perr,&consts);
 		if (perr)
 		{
 			char* text=(char*)perr->GetBufferPointer();
@@ -1526,7 +1530,7 @@ bool operator<(const PolyParam &left, const PolyParam &right)
 		if (perr)
 			perr->Release();
 		shader->Release();
-		consts->Release();
+		//consts->Release();
 	}
 	/*
 		Cache file format :
@@ -1649,12 +1653,12 @@ __error_out:
 	void PrecompilePS()
 	{
 		char temp[30];
-		strcpy(temp,D3DXGetPixelShaderProfile(dev));
+		strcpy(temp,"ps_3_0"); //D3DXGetPixelShaderProfile(dev)
 		//printf(&temp[3]);
 
 		ps_macros[idx_ZBufferMode].Definition=ps_macro_numers[ZBufferMode];
 
-		const char * profile=D3DXGetPixelShaderProfile(dev);
+		const char * profile = "ps_3_0";//D3DXGetPixelShaderProfile(dev);
 
 		u8 file_hash[16];
 		if (hash_file("ps_hlsl.fx",profile,ps_macros[idx_ZBufferMode].Definition,file_hash))
@@ -2172,7 +2176,7 @@ __error_out:
 			//font->
 			// Draw some text
 			//i need to set a new PS/FP state here .. meh ... 
-			font->DrawText(NULL, fps_text, -1, &rct, DT_LEFT, D3DCOLOR_ARGB(150,0x00,0xFF,0x00) );
+//			font->DrawText(NULL, fps_text, -1, &rct, DT_LEFT, D3DCOLOR_ARGB(150,0x00,0xFF,0x00) );
 		}
 		if (settings.OSD.ShowStats)
 		{
@@ -2193,7 +2197,7 @@ __error_out:
 			//font->
 			// Draw some text
 			//i need to set a new PS/FP state here .. meh ...
-			font->DrawText(NULL, text, -1, &rct, DT_LEFT, D3DCOLOR_ARGB(150,0x00,0x00,0xFF)  );
+//			font->DrawText(NULL, text, -1, &rct, DT_LEFT, D3DCOLOR_ARGB(150,0x00,0x00,0xFF)  );
 		}
 	}
 	//
@@ -2744,7 +2748,7 @@ __error_out:
 	volatile bool running=false;
 	cResetEvent rs(false,true);
 	cResetEvent re(false,true);
-	D3DXMACRO vs_macros[]=
+	D3D_SHADER_MACRO vs_macros[]=
 	{
 		{"ZBufferMode",0},		//Z mode. 0 -> D24FS8, 1 -> D24S8 + FPemu, 2 -> D24S8 + scaling, 3 -> more scale, 4-> more, linear, scale
 		{"FixedFunction",0},
@@ -2763,14 +2767,16 @@ __error_out:
 		d3d9->Release();
 	}
 
-	IDirect3DVertexShader9* CompileVS(const char* file, const char* function,const char* vsp,const D3DXMACRO* pDefines)
+	IDirect3DVertexShader9* CompileVS(const wchar* file, const char* function,const char* vsp,const D3D_SHADER_MACRO* pDefines)
 	{
 		IDirect3DVertexShader9* rv=0;
-		ID3DXBuffer* perr;
-		ID3DXBuffer* shader;
+		ID3DBlob* perr = 0;
+		ID3DBlob* shader = 0;
 		
-		verifyc(D3DXCompileShaderFromFileA(file,pDefines,NULL,function,vsp , SHADER_DEBUG, &shader,&perr,&shader_consts));
+		//TODO: FIXME w/ D3DCompile
+		//verifyc(D3DXCompileShaderFromFileA(file,pDefines,NULL,function,vsp , SHADER_DEBUG, &shader,&perr,&shader_consts));
 		
+		D3DCompileFromFile(file, pDefines, NULL, function, vsp, 0, 0, &shader, &perr);
 		if (perr)
 		{
 			char* text=(char*)perr->GetBufferPointer();
@@ -2780,23 +2786,22 @@ __error_out:
 		verifyc(dev->CreateVertexShader((DWORD*)shader->GetBufferPointer(),&rv));
 		
 		shader->Release();
-		if (shader_consts) 
-			shader_consts->Release();
-		shader_consts=0;
+		//if (shader_consts) 
+		//	shader_consts->Release();
+		//shader_consts=0;
 		shader=0;
 
 		return rv;
 	}
 
-	IDirect3DPixelShader9* CompilePS(const char* file, const char* function,const D3DXMACRO* pDefines)
+	IDirect3DPixelShader9* CompilePS(const wchar* file, const char* function,const D3D_SHADER_MACRO* pDefines)
 	{
 		IDirect3DPixelShader9* rv=0;
-		ID3DXBuffer* perr;
-		ID3DXBuffer* shader;
-		ID3DXConstantTable* consts;
+		ID3DBlob* perr = 0;
+		ID3DBlob* shader = 0;
+		//ID3DXConstantTable* consts;
 
-		D3DXCompileShaderFromFileA(file
-			,pDefines,NULL,function,D3DXGetPixelShaderProfile(dev),SHADER_DEBUG,&shader,&perr,&consts);
+		D3DCompileFromFile(file, pDefines,NULL,function,"ps_3_0",0, 0,&shader,&perr);
 		if (perr)
 		{
 			char* text=(char*)perr->GetBufferPointer();
@@ -2806,7 +2811,7 @@ __error_out:
 		if (perr)
 			perr->Release();
 		shader->Release();
-		consts->Release();
+		//consts->Release();
 
 		return rv;
 	}
@@ -2982,7 +2987,7 @@ __error_out:
 
 		Medidate_fb();
 
-		LPCSTR vsp= D3DXGetVertexShaderProfile(dev);
+		LPCSTR vsp = "vs_3_0"; //D3DXGetVertexShaderProfile(dev);
 		if (vsp==0)
 		{
 			vsp="vs_3_0";
@@ -2993,7 +2998,7 @@ __error_out:
 			vsp="vs_3_sw";
 
 		printf(UseSVP?"Using SVP/%s\n":"Using Vertex Shaders/%s\n",vsp);
-		printf(UseFixedFunction?"Using Fixed Function\n":"Using Pixel Shaders/%s\n",D3DXGetPixelShaderProfile(dev));
+		printf(UseFixedFunction?"Using Fixed Function\n":"Using Pixel Shaders/%s\n","ps_3_0");
 		
 		vs_macros[0].Definition=ps_macro_numers[ZBufferMode];
 		vs_macros[1].Definition=ps_macro_numers[UseFixedFunction?1:0];
@@ -3006,9 +3011,9 @@ __error_out:
 		verifyc(dev->CreateVertexDeclaration(vertelem_osd,&vdecl_osd));
 		
 
-		compiled_vs=CompileVS("vs_hlsl.fx","VertexShader_main",vsp,vs_macros);
+		compiled_vs=CompileVS(L"vs_hlsl.fx","VertexShader_main",vsp,vs_macros);
 
-		Composition.vs=CompileVS("composition.fx","VertexMain",vsp,0);
+		Composition.vs=CompileVS(L"composition.fx","VertexMain",vsp,0);
 
 		verifyc(dev->CreateTexture(640,480,1,D3DUSAGE_DYNAMIC,D3DFMT_A8R8G8B8,D3DPOOL_DEFAULT,&fb_texture8888,0));
 		verifyc(fb_texture8888->GetSurfaceLevel(0,&fb_surface8888));
@@ -3031,17 +3036,17 @@ __error_out:
 			printf("Compiling and loading shaders took %.2f ms\n",(ps_compile_end.QuadPart-ps_compile_start.QuadPart)/(freq.QuadPart/1000.0));
 
 #if MODVOL
-			ShadeColPixelShader=CompilePS("ps_hlsl.fx","PixelShader_ShadeCol",ps_macros);
-			ZPixelShader=CompilePS("ps_hlsl.fx","PixelShader_Z",ps_macros);
+			ShadeColPixelShader=CompilePS(L"ps_hlsl.fx","PixelShader_ShadeCol",ps_macros);
+			ZPixelShader = CompilePS(L"ps_hlsl.fx", "PixelShader_Z", ps_macros);
 #endif
-			Composition.ps_DrawA=CompilePS("composition.fx","ps_DrawA",0);
-			Composition.ps_DrawFB=CompilePS("composition.fx","ps_DrawFB",0);
-			Composition.ps_DrawRGB=CompilePS("composition.fx","ps_DrawRGB",0);
-			Composition.ps_DrawRGBA=CompilePS("composition.fx","ps_DrawRGBA",0);
+			Composition.ps_DrawA = CompilePS(L"composition.fx", "ps_DrawA", 0);
+			Composition.ps_DrawFB = CompilePS(L"composition.fx", "ps_DrawFB", 0);
+			Composition.ps_DrawRGB = CompilePS(L"composition.fx", "ps_DrawRGB", 0);
+			Composition.ps_DrawRGBA = CompilePS(L"composition.fx", "ps_DrawRGBA", 0);
 		}
 
-		D3DXCreateFont( dev, 20, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, 
-			OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &font );
+//		D3DXCreateFont( dev, 20, 0, FW_BOLD, 0, FALSE, DEFAULT_CHARSET, 
+	//		OUT_DEFAULT_PRECIS, DEFAULT_QUALITY, DEFAULT_PITCH | FF_DONTCARE, TEXT("Arial"), &font );
 
 		/*
 			Reset Render stuff here
@@ -3126,8 +3131,8 @@ nl:
 		safe_release(fb_texture);
 
 		
-		safe_release(font);
-		safe_release(shader_consts);
+		//safe_release(font);
+		//safe_release(shader_consts);
 
 		//kill texture cache
 		TexCacheList<TextureCacheData>::TexCacheEntry* ptext= TexCache.plast;

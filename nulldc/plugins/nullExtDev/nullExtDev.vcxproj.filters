@@ -33,9 +33,6 @@
     <ClCompile Include="bba.cpp">
       <Filter>bba</Filter>
     </ClCompile>
-    <ClCompile Include="pcap_io.cpp">
-      <Filter>bba</Filter>
-    </ClCompile>
     <ClCompile Include="rtl8139c.cpp">
       <Filter>bba</Filter>
     </ClCompile>
