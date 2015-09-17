@@ -147,7 +147,7 @@ float CompressZ(float w)
 	x=clamp(x-16,-63,0);	//s6e18, max : 2^16*(2^18-1)/2(^18) , min : 2^-47*(2^18-1)/2(^18)
 	x+=62;					//bias to positive, +1 more is done by the add below.x_max =62,x_min = -1 (63;0)
 	//y						//mantissa bits, allways in [1..2) range as 0 is not a valid input :)
-	return (x+y) * (1.0f/64.0f);		//Combine and save the exp + mantissa at the mantissa field.Min value is 0 (-1+1), max value is 63 +(2^18-1)/2(^18).
+	return (x+y)/64.0f;		//Combine and save the exp + mantissa at the mantissa field.Min value is 0 (-1+1), max value is 63 +(2^18-1)/2(^18).
 							//Normalised by 64 so that it falls in the [0..1) range :)
 }
 float fog_mode2(float invW)
