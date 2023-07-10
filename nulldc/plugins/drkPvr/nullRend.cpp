@@ -2,6 +2,9 @@
 
 /*
 	This hasn't been touched in a VERY long time
+
+	Parts of this seems to have been derived from: https://web.archive.org/web/20120220025947/http://devmaster.net/forums/topic/1145-advanced-rasterization
+ 	See https://github.com/skmp/nullDC-svn/commit/a6bfb450fd8e4db1731c33e99227004318fd52d6#commitcomment-121127862 for more details
 */
 
 #if REND_API == REND_SW
